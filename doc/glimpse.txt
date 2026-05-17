@@ -1,0 +1,148 @@
+ glimpse.nvim - Visualização de imagens inline no Neovim.
+
+ Renderiza imagens diretamente no terminal via Kitty Graphics Protocol,
+ com fallback para Sixel e painéis externos (WezTerm, iTerm, tmux).
+
+ Uso básico:
+ >lua
+   require('glimpse').setup()
+ <
+
+ Keymaps padrão (Oil.nvim):
+   `<leader>p` - Preview da imagem ao lado
+   `;`         - Abre imagem em nova aba
+   `q`         - Fecha buffer de imagem
+
+ Terminais suportados:
+   Kitty, Ghostty (inline), WezTerm (painel), iTerm2 (painel),
+   xterm/foot/mlterm (Sixel via tmux)
+
+                                                                  *glimpse.nvim*
+GlimpseConfig                                                    *GlimpseConfig*
+     @see credits https://github.com/folke/snacks.nvim (snacks.image)
+     @see source https://www.reddit.com/r/neovim/comments/1e1txpz/some_fun_with_oilnvim_and_wezterm_for_image/
+     Configuração do glimpse.nvim.
+
+    Fields: ~
+        {strategy?}       ("auto"|"inline"|"pane")     Método de renderização (default: 'auto')
+        {pane_position?}  ("right"|"bottom")           Posição do painel externo (default: 'right')
+        {pane_size?}      (number)                     Tamanho do painel em percentual (default: 40)
+        {inline?}         (GlimpseInlineConfig)        Opções para renderização inline
+        {keys?}           (GlimpseKeysConfig)          Keymaps configuráveis
+        {debounce?}       (GlimpseDebounceConfig)      Tempos de debounce em ms
+        {cell_size?}      (GlimpseCellSizeConfig)      Pixels estimados por célula do terminal
+        {cache_dir?}      (string)                     Diretório para cache de imagens convertidas
+        {loading_text?}   (string)                     Texto exibido durante carregamento
+        {formats?}        (string[])                   Extensões de imagem suportadas
+        {video_formats?}  (string[])                   Extensões de vídeo suportadas (requer ffmpeg)
+        {video_open?}     (string)                     Comando para abrir vídeos externamente (e.g. 'open', 'xdg-open')
+        {integrations?}   (GlimpseIntegrationsConfig)  Integrações com plugins
+
+
+GlimpseInlineConfig                                        *GlimpseInlineConfig*
+
+    Fields: ~
+        {rerender_on_tab?}  (boolean)  Re-renderiza ao voltar para aba com imagem (default: true)
+        {close_with_q?}     (boolean)  Mapeia tecla para fechar buffer de imagem (default: true)
+
+
+GlimpseKeysConfig                                            *GlimpseKeysConfig*
+
+    Fields: ~
+        {preview?}  (string)  Keymap para preview no Oil (default: '<leader>p')
+        {open?}     (string)  Keymap para abrir em aba no Oil (default: ';')
+        {close?}    (string)  Keymap para fechar buffer de imagem (default: 'q')
+
+
+GlimpseDebounceConfig                                    *GlimpseDebounceConfig*
+
+    Fields: ~
+        {prefetch?}  (number)  ms antes de pré-converter ao mover cursor (default: 200)
+        {resize?}    (number)  ms antes de re-renderizar ao redimensionar (default: 100)
+
+
+GlimpseCellSizeConfig                                    *GlimpseCellSizeConfig*
+
+    Fields: ~
+        {width?}   (number)  Pixels estimados por coluna (default: 20)
+        {height?}  (number)  Pixels estimados por linha (default: 40)
+
+
+GlimpseIntegrationsConfig                            *GlimpseIntegrationsConfig*
+
+    Fields: ~
+        {oil?}        (boolean)  Keymaps no Oil.nvim (default: true)
+        {neotree?}    (boolean)  Keymaps no NeoTree (default: false)
+        {telescope?}  (boolean)  Preview no Telescope (default: true)
+
+
+Glimpse                                                                *Glimpse*
+
+
+M.setup({opts?})                                                       *M.setup*
+     Configura o plugin.
+
+    Parameters: ~
+        {opts?}  (GlimpseConfig)  Opções de configuração (merge com defaults)
+
+
+M.show({filepath})                                                      *M.show*
+     Exibe imagem ou thumbnail de vídeo (escolhe estratégia automaticamente).
+
+    Parameters: ~
+        {filepath}  (string)  Caminho absoluto do arquivo
+
+
+M.preview({filepath})                                                *M.preview*
+     Exibe imagem/vídeo reutilizando janela existente (para navegação em exploradores).
+
+    Parameters: ~
+        {filepath}  (string)  Caminho absoluto do arquivo
+
+
+M.close()                                                              *M.close*
+     Fecha preview ativo.
+
+
+M.get_config()                                                    *M.get_config*
+     Retorna a configuração atual.
+
+    Returns: ~
+        (GlimpseConfig)
+
+
+M.get_terminal()                                                *M.get_terminal*
+     Detecta o terminal emulador atual (inclusive dentro do tmux).
+     Resultado é cacheado para evitar chamadas repetidas a vim.fn.system.
+     @return string|nil terminal 'wezterm' | 'kitty' | 'ghostty' | 'iterm' | nil
+
+
+M.supports_inline()                                          *M.supports_inline*
+     Verifica se o terminal suporta renderização inline (Kitty Graphics Protocol).
+     @return boolean
+
+
+M.in_tmux()                                                          *M.in_tmux*
+     Verifica se estamos dentro do tmux.
+     @return boolean
+
+
+M.is_image()                                                        *M.is_image*
+     Verifica se o arquivo é uma imagem suportada.
+     @param filepath string
+     @return boolean
+
+
+M.is_video()                                                        *M.is_video*
+     Verifica se o arquivo é um vídeo suportado.
+     @param filepath string
+     @return boolean
+
+
+M.is_previewable()                                            *M.is_previewable*
+     Verifica se o arquivo é previewable (imagem ou vídeo).
+     @param filepath string
+     @return boolean
+
+
+vim:tw=78:ts=8:noet:ft=help:norl:

@@ -1,0 +1,21 @@
+#!/bin/sh
+# Pre-commit hook: auto-format com stylua + lint com luacheck
+
+FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.lua$')
+[ -z "$FILES" ] && exit 0
+
+# Auto-format e re-stage
+if command -v stylua >/dev/null 2>&1; then
+	echo "$FILES" | xargs stylua
+	echo "$FILES" | xargs git add
+fi
+
+# Linting
+if command -v luacheck >/dev/null 2>&1; then
+	echo "$FILES" | xargs luacheck --quiet || {
+		echo "❌ luacheck: erros encontrados."
+		exit 1
+	}
+fi
+
+exit 0

@@ -1,0 +1,10 @@
+M._should_use_inline	glimpse.txt	/*M._should_use_inline*
+M.close	glimpse.txt	/*M.close*
+M.get_config	glimpse.txt	/*M.get_config*
+M.get_terminal	glimpse.txt	/*M.get_terminal*
+M.in_tmux	glimpse.txt	/*M.in_tmux*
+M.is_image	glimpse.txt	/*M.is_image*
+M.preview	glimpse.txt	/*M.preview*
+M.setup	glimpse.txt	/*M.setup*
+M.show	glimpse.txt	/*M.show*
+M.supports_inline	glimpse.txt	/*M.supports_inline*
