@@ -154,6 +154,27 @@ img.get_terminal()          -- retorna terminal detectado
 | iTerm2 | pane | `imgcat` |
 | xterm/foot/mlterm | pane (sixel) | `magick ... sixel:-` via tmux |
 
+### WezTerm + tmux
+
+O `wezterm cli` precisa acessar o socket do WezTerm GUI. Dentro do tmux, a variavel
+`WEZTERM_UNIX_SOCKET` pode ficar desatualizada se o WezTerm reiniciar.
+
+Adicione ao `tmux.conf`:
+
+```bash
+set -ga update-environment WEZTERM_UNIX_SOCKET
+```
+
+Se o preview parar de funcionar, atualize manualmente:
+
+```bash
+# Encontrar o socket ativo
+ls ~/.local/share/wezterm/gui-sock-*
+
+# Exportar o correto
+tmux set-environment WEZTERM_UNIX_SOCKET ~/.local/share/wezterm/gui-sock-<PID>
+```
+
 ## Formatos suportados
 
 **Imagens:** PNG, JPG, JPEG, GIF, BMP, WebP, AVIF, SVG, PDF, PICT
