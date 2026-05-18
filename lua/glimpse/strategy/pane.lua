@@ -27,6 +27,11 @@ end
 --- @param position string
 --- @param size number
 function M._show_wezterm(filepath, position, size)
+	local socket = M._find_wezterm_socket()
+	if not socket then
+		vim.notify('[glimpse] WezTerm socket not found', vim.log.levels.WARN)
+		return
+	end
 	local direction = position == 'bottom' and '--bottom' or '--right'
 	local cmd = {
 		'wezterm',
@@ -40,7 +45,26 @@ function M._show_wezterm(filepath, position, size)
 		'-c',
 		string.format('wezterm imgcat "%s"; read -n 1', filepath),
 	}
-	vim.fn.jobstart(cmd, { detach = true })
+	vim.fn.jobstart(cmd, {
+		detach = true,
+		env = { WEZTERM_UNIX_SOCKET = socket },
+	})
+end
+
+--- Encontra o socket ativo do WezTerm.
+--- @return string|nil
+function M._find_wezterm_socket()
+	local env_socket = os.getenv('WEZTERM_UNIX_SOCKET')
+	if env_socket and vim.uv.fs_stat(env_socket) then
+		return env_socket
+	end
+	local sockets = vim.fn.glob(vim.fn.expand('~/.local/share/wezterm/gui-sock-*'), true, true)
+	for _, sock in ipairs(sockets) do
+		if vim.uv.fs_stat(sock) then
+			return sock
+		end
+	end
+	return nil
 end
 
 --- @param filepath string
