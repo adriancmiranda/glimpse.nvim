@@ -34,8 +34,6 @@ GlimpseConfig                                                    *GlimpseConfig*
         {cache_dir?}      (string)                     Diretório para cache de imagens convertidas
         {loading_text?}   (string)                     Texto exibido durante carregamento
         {formats?}        (string[])                   Extensões de imagem suportadas
-        {video_formats?}  (string[])                   Extensões de vídeo suportadas (requer ffmpeg)
-        {video_open?}     (string)                     Comando para abrir vídeos externamente (e.g. 'open', 'xdg-open')
         {integrations?}   (GlimpseIntegrationsConfig)  Integrações com plugins
 
 
@@ -87,17 +85,17 @@ M.setup({opts?})                                                       *M.setup*
 
 
 M.show({filepath})                                                      *M.show*
-     Exibe imagem ou thumbnail de vídeo (escolhe estratégia automaticamente).
+     Exibe imagem (escolhe estratégia automaticamente).
 
     Parameters: ~
-        {filepath}  (string)  Caminho absoluto do arquivo
+        {filepath}  (string)  Caminho absoluto do arquivo de imagem
 
 
 M.preview({filepath})                                                *M.preview*
-     Exibe imagem/vídeo reutilizando janela existente (para navegação em exploradores).
+     Exibe imagem reutilizando janela existente (para navegação em exploradores).
 
     Parameters: ~
-        {filepath}  (string)  Caminho absoluto do arquivo
+        {filepath}  (string)  Caminho absoluto do arquivo de imagem
 
 
 M.close()                                                              *M.close*
