@@ -106,7 +106,10 @@ local config = {
 	},
 	integrations = {
 		oil = true,
-		neotree = false,
+		neotree = {
+			enable = false,
+			auto_preview = true,
+		},
 		telescope = true,
 	},
 	video_formats = {
@@ -131,6 +134,12 @@ function M.setup(opts)
 	end
 	if config.integrations.oil then
 		require('glimpse.integrations.oil').setup()
+	end
+	local neotree = config.integrations.neotree
+	if type(neotree) == 'table' and neotree.enable then
+		require('glimpse.integrations.neotree').setup()
+	elseif neotree == true then
+		require('glimpse.integrations.neotree').setup()
 	end
 end
 
