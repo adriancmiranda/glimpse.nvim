@@ -2,6 +2,8 @@
 
 > Visualização de imagens e vídeos inline no Neovim via Kitty Graphics Protocol, com fallback para Sixel e painéis externos.
 
+<video src="https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb" width="100%" autoplay loop muted></video>
+
 ## Funcionalidades
 
 - 🖼️ Renderização inline via **Kitty Graphics Protocol** (Kitty, Ghostty)
@@ -53,50 +55,53 @@ magick --version
 
 ## Uso
 
-### Setup
+### Setup (lazy.nvim)
 
 ```lua
-require('glimpse').setup({
-  strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
-  pane_position = 'right',  -- 'right' | 'bottom'
-  pane_size = 40,           -- percentual do split/pane
-  inline = {
-    rerender_on_tab = true, -- re-renderiza ao voltar para aba com imagem
-    close_with_q = true,    -- mapeia tecla para fechar buffer de imagem
-  },
-  keys = {
-    preview = '<leader>p',  -- preview da imagem/vídeo ao lado (Oil)
-    open = ';',             -- abre imagem em aba ou vídeo com player externo (Oil)
-    close = 'q',            -- fecha buffer de imagem
-  },
-  debounce = {
-    prefetch = 200,         -- ms antes de pré-converter ao mover cursor
-    resize = 100,           -- ms antes de re-renderizar ao redimensionar
-  },
-  cell_size = {
-    width = 20,             -- pixels estimados por coluna do terminal
-    height = 40,            -- pixels estimados por linha do terminal
-  },
-  cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
-  loading_text = '  ⏳ Carregando...',
-  formats = {               -- extensões de imagem suportadas
-    '.png', '.jpg', '.jpeg', '.gif', '.bmp',
-    '.webp', '.avif', '.svg', '.pdf', '.pict',
-  },
-  video_formats = {         -- extensões de vídeo suportadas (requer ffmpeg)
-    '.mp4', '.mkv', '.avi', '.mov',
-    '.webm', '.flv', '.wmv', '.m4v',
-  },
-  video_open = nil,         -- comando ou função para abrir vídeos externamente
-                            -- string: 'open' (macOS), 'xdg-open' (Linux)
-                            -- function: fun(filepath) para lógica customizada
-                            -- nil: abre como buffer no Neovim
+{
+  'adriancmiranda/glimpse.nvim',
+  ft = 'oil',
+  opts = {
+    strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
+    pane_position = 'right',  -- 'right' | 'bottom'
+    pane_size = 40,           -- percentual do split/pane
+    inline = {
+      rerender_on_tab = true, -- re-renderiza ao voltar para aba com imagem
+      close_with_q = true,    -- mapeia tecla para fechar buffer de imagem
+    },
+    keys = {
+      preview = '<leader>p',  -- preview da imagem/video ao lado (Oil)
+      open = ';',             -- abre imagem em aba ou video com player externo (Oil)
+      close = 'q',            -- fecha buffer de imagem
+    },
+    debounce = {
+      prefetch = 200,         -- ms antes de pre-converter ao mover cursor
+      resize = 100,           -- ms antes de re-renderizar ao redimensionar
+    },
+    cell_size = {
+      width = 20,             -- pixels estimados por coluna do terminal
+      height = 40,            -- pixels estimados por linha do terminal
+    },
+    cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
+    loading_text = '  ⏳ Carregando...',
+    formats = {               -- extensoes de imagem suportadas
+      '.png', '.jpg', '.jpeg', '.gif', '.bmp',
+      '.webp', '.avif', '.svg', '.pdf', '.pict',
+    },
+    video_formats = {         -- extensoes de video suportadas (requer ffmpeg)
+      '.mp4', '.mkv', '.avi', '.mov',
+      '.webm', '.flv', '.wmv', '.m4v',
+    },
+    video_open = nil,         -- comando ou funcao para abrir videos externamente
+                              -- string: 'open' (macOS), 'xdg-open' (Linux)
+                              -- function: fun(filepath) para logica customizada
+                              -- nil: abre como buffer no Neovim
   integrations = {
     oil = true,             -- keymaps no Oil
     neotree = false,        -- keymaps no NeoTree
     telescope = true,       -- carrega via require('telescope').load_extension('glimpse')
   },
-})
+}
 ```
 
 ### Keymaps (Oil.nvim)
