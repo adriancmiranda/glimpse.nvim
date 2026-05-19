@@ -39,7 +39,12 @@ end
 --- @return number
 local function next_id()
 	image_id_counter = image_id_counter + 1
-	return image_id_counter
+	if not M._pane_offset then
+		local pane_id = vim.fn.system({ 'tmux', 'display-message', '-p', '#{pane_id}' })
+		local pane_num = tonumber(vim.trim(pane_id):match('%%(%d+)')) or 0
+		M._pane_offset = pane_num * 10000
+	end
+	return M._pane_offset + image_id_counter
 end
 
 --- Codifica string em base64.
