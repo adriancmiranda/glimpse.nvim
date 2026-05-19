@@ -59,6 +59,9 @@ function M.setup()
 					if util.is_image(fpath) then
 						oil.close()
 						vim.cmd('edit ' .. vim.fn.fnameescape(fpath))
+						vim.schedule(function()
+							pcall(vim.api.nvim_buf_set_name, 0, fpath)
+						end)
 						return
 					end
 				end
