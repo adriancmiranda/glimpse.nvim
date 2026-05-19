@@ -113,6 +113,15 @@ magick --version
 | `;` | Open image in tab or video with external player |
 | `q` | Close image buffer and residual empty window |
 
+### Keymaps (Neo-tree)
+
+Enable with `integrations = { neotree = true }` in setup.
+
+| Tecla | Acao |
+|-------|------|
+| `<leader>p` | Preview da imagem/video ao lado |
+| `;` | Abre imagem inline ou video com player externo |
+
 ### Telescope
 
 The recommended approach is to use `buffer_previewer_maker` in Telescope defaults:

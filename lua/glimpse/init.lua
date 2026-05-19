@@ -132,6 +132,9 @@ function M.setup(opts)
 	if config.integrations.oil then
 		require('glimpse.integrations.oil').setup()
 	end
+	if config.integrations.neotree then
+		require('glimpse.integrations.neotree').setup()
+	end
 end
 
 ---@private
