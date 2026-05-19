@@ -115,12 +115,12 @@ magick --version
 
 ### Keymaps (Neo-tree)
 
-Enable with `integrations = { neotree = true }` in setup.
+Enable with `integrations = { neotree = { enable = true } }` in setup.
 
-| Tecla | Acao |
+| Key | Action |
 |-------|------|
-| `<leader>p` | Preview da imagem/video ao lado |
-| `;` | Abre imagem inline ou video com player externo |
+| `<leader>p` | Preview image/video side by side |
+| `;` | Open image inline or video with external player |
 
 ### Telescope
 
