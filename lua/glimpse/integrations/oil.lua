@@ -99,6 +99,31 @@ function M.setup()
 			})
 		end,
 	})
+
+	-- Cleanup WezTerm pane when leaving Oil
+	vim.api.nvim_create_autocmd('BufLeave', {
+		group = group,
+		pattern = 'oil://*',
+		callback = function()
+			local pane = require('glimpse.strategy.pane')
+			if pane._wezterm_preview_pane then
+				vim.fn.jobstart({ 'wezterm', 'cli', 'kill-pane', '--pane-id', pane._wezterm_preview_pane }, { detach = true })
+				pane._wezterm_preview_pane = nil
+			end
+		end,
+	})
+
+	-- Cleanup WezTerm pane when Neovim exits
+	vim.api.nvim_create_autocmd('VimLeavePre', {
+		group = group,
+		callback = function()
+			local pane = require('glimpse.strategy.pane')
+			if pane._wezterm_preview_pane then
+				vim.fn.system({ 'wezterm', 'cli', 'kill-pane', '--pane-id', pane._wezterm_preview_pane })
+				pane._wezterm_preview_pane = nil
+			end
+		end,
+	})
 end
 
 return M

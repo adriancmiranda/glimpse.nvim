@@ -135,6 +135,12 @@ function M._close_preview()
 	end
 	preview_win = nil
 	preview_buf = nil
+	-- Close WezTerm pane if exists
+	local pane = require('glimpse.strategy.pane')
+	if pane._wezterm_preview_pane then
+		vim.fn.jobstart({ 'wezterm', 'cli', 'kill-pane', '--pane-id', pane._wezterm_preview_pane }, { detach = true })
+		pane._wezterm_preview_pane = nil
+	end
 end
 
 return M

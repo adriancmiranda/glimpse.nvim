@@ -32,8 +32,17 @@ function M._show_wezterm(filepath, position, size)
 		vim.notify('[glimpse] WezTerm socket not found', vim.log.levels.WARN)
 		return
 	end
+	vim.env.WEZTERM_UNIX_SOCKET = socket
+
+	-- Close previous preview pane if exists
+	if M._wezterm_preview_pane then
+		vim.fn.jobstart({ 'wezterm', 'cli', 'kill-pane', '--pane-id', M._wezterm_preview_pane }, { detach = true })
+		M._wezterm_preview_pane = nil
+	end
+
+	-- Create new pane with preview
 	local direction = position == 'bottom' and '--bottom' or '--right'
-	local cmd = {
+	vim.fn.jobstart({
 		'wezterm',
 		'cli',
 		'split-pane',
@@ -43,11 +52,20 @@ function M._show_wezterm(filepath, position, size)
 		'--',
 		'bash',
 		'-c',
-		string.format('wezterm imgcat "%s"; read -n 1', filepath),
-	}
-	vim.fn.jobstart(cmd, {
-		detach = true,
-		env = { WEZTERM_UNIX_SOCKET = socket },
+		string.format('trap "exit 0" INT TERM; wezterm imgcat "%s"; sleep 86400', filepath),
+	}, {
+		stdout_buffered = true,
+		on_stdout = function(_, data)
+			local pane_id = vim.trim(table.concat(data or {}, ''))
+			if pane_id ~= '' then
+				M._wezterm_preview_pane = pane_id
+			end
+		end,
+		on_exit = function()
+			-- Return focus to the Neovim pane
+			local focus_dir = position == 'bottom' and 'Up' or 'Left'
+			vim.fn.jobstart({ 'wezterm', 'cli', 'activate-pane-direction', focus_dir }, { detach = true })
+		end,
 	})
 end
 
@@ -55,20 +73,20 @@ end
 --- @return string|nil
 function M._find_wezterm_socket()
 	local env_socket = os.getenv('WEZTERM_UNIX_SOCKET')
-	if env_socket then
-		local pid = tonumber(env_socket:match('gui%-sock%-(%d+)'))
-		if pid and vim.uv.kill(pid, 0) == 0 then
-			return env_socket
-		end
+	if env_socket and vim.uv.fs_stat(env_socket) then
+		return env_socket
 	end
 	local sockets = vim.fn.glob(os.getenv('HOME') .. '/.local/share/wezterm/gui-sock-*', true, true)
+	local newest = nil
+	local newest_mtime = 0
 	for _, sock in ipairs(sockets) do
-		local pid = tonumber(sock:match('gui%-sock%-(%d+)'))
-		if pid and vim.uv.kill(pid, 0) == 0 then
-			return sock
+		local stat = vim.uv.fs_stat(sock)
+		if stat and stat.mtime.sec > newest_mtime then
+			newest_mtime = stat.mtime.sec
+			newest = sock
 		end
 	end
-	return nil
+	return newest
 end
 
 --- @param filepath string
