@@ -6,6 +6,16 @@ local preview_buf = nil
 function M.setup()
 	local group = vim.api.nvim_create_augroup('GlimpseNeoTree', { clear = true })
 	local util = require('glimpse.util')
+	local config = require('glimpse').get_config()
+	local neotree_config = config.integrations.neotree
+	local auto_preview = true
+	if type(neotree_config) == 'table' and neotree_config.auto_preview ~= nil then
+		auto_preview = neotree_config.auto_preview
+	end
+
+	if not auto_preview then
+		return
+	end
 
 	vim.api.nvim_create_autocmd('FileType', {
 		pattern = 'neo-tree',
@@ -59,7 +69,6 @@ function M.setup()
 									renderer.render(preview_buf, target, { winid = preview_win })
 								end)
 							else
-								local config = glimpse.get_config()
 								require('glimpse.strategy.pane').show(target, {
 									position = config.pane_position,
 									size = config.pane_size,
@@ -77,9 +86,33 @@ function M.setup()
 						else
 							render(fpath)
 						end
-					end, require('glimpse').get_config().debounce.prefetch)
+					end, config.debounce.prefetch)
 				end,
 			})
+
+			-- Cleanup preview when Neo-tree buffer is closed
+			vim.api.nvim_create_autocmd('BufWipeout', {
+				buffer = info.buf,
+				group = group,
+				callback = function()
+					M._close_preview()
+				end,
+			})
+		end,
+	})
+
+	-- Cleanup preview when Neo-tree window is closed
+	vim.api.nvim_create_autocmd('WinClosed', {
+		group = group,
+		callback = function(ev)
+			local win = tonumber(ev.match)
+			if not win then
+				return
+			end
+			local buf = vim.api.nvim_win_get_buf(win)
+			if vim.bo[buf].filetype == 'neo-tree' then
+				M._close_preview()
+			end
 		end,
 	})
 end
