@@ -2,7 +2,7 @@
 
 > Visualização de imagens e vídeos inline no Neovim via Kitty Graphics Protocol, com fallback para Sixel e painéis externos.
 
-<video src="https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb" width="100%" autoplay loop muted></video>
+https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 
 ## Funcionalidades
 

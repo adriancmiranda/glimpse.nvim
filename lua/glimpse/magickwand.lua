@@ -1,5 +1,5 @@
 --- FFI bindings para libMagickWand - decodificação e resize de imagens em memória.
---- Elimina o overhead de spawnar o processo `magick` CLI (~700ms → ~0ms).
+--- Elimina o overhead de spawnar o processo `magick` CLI (~700ms -> ~0ms).
 
 local ffi = require('ffi')
 
