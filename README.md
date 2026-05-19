@@ -1,33 +1,33 @@
 # glimpse.nvim
 
-> Visualização de imagens e vídeos inline no Neovim via Kitty Graphics Protocol, com fallback para Sixel e painéis externos.
+> Inline image and video preview for Neovim via Kitty Graphics Protocol, with Sixel and external pane fallbacks.
 
 https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 
-## Funcionalidades
+## Features
 
-- 🖼️ Renderização inline via **Kitty Graphics Protocol** (Kitty, Ghostty)
-- 🎬 **Preview de vídeos** via thumbnail extraído com ffmpeg (cached)
-- 🪟 Painel externo via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
-- 🎨 Fallback **Sixel** para terminais sem suporte a Kitty Graphics
-- 📂 Integração com **Oil.nvim** (`<leader>p` para preview, `;` para abrir em aba)
-- 🔭 Integração com **Telescope** (previewer customizado para imagens e vídeos)
-- 🌳 Integração com **NeoTree**
-- ⚡ Cache de imagens convertidas + prefetch em background
-- 🔄 Re-render automático ao redimensionar janela ou trocar de aba
-- 📐 Contain resize (imagens sempre visíveis por completo)
+- 🖼️ Inline rendering via **Kitty Graphics Protocol** (Kitty, Ghostty)
+- 🎬 **Video preview** via ffmpeg thumbnail extraction (cached)
+- 🪟 External pane via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
+- 🎨 **Sixel** fallback for terminals without Kitty Graphics support
+- 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
+- 🔭 **Telescope** integration (custom previewer for images and videos)
+- 🌳 **Neo-tree** integration
+- ⚡ Image conversion cache + background prefetch
+- 🔄 Auto re-render on window resize or tab switch
+- 📐 Contain resize (images always fully visible)
 
-## Requisitos
+## Requirements
 
 - Neovim >= 0.10
-- [ImageMagick](https://imagemagick.org/) (`magick` CLI) - conversão e redimensionamento
-- [ffmpeg](https://ffmpeg.org/) (opcional) - extração de thumbnails de vídeos
-- Terminal com suporte a pelo menos um dos protocolos:
-  - **Kitty Graphics** (recomendado): Kitty, Ghostty
+- [ImageMagick](https://imagemagick.org/) (`magick` CLI) - conversion and resizing
+- [ffmpeg](https://ffmpeg.org/) (optional) - video thumbnail extraction
+- Terminal with support for at least one protocol:
+  - **Kitty Graphics** (recommended): Kitty, Ghostty
   - **Terminal CLI**: WezTerm, iTerm2
   - **Sixel**: xterm, foot, mlterm, contour
 
-## Instalação de dependências
+## Installing dependencies
 
 ### macOS (Homebrew)
 
@@ -47,13 +47,13 @@ sudo apt install imagemagick ffmpeg
 sudo pacman -S imagemagick ffmpeg
 ```
 
-### Verificar instalação
+### Verify installation
 
 ```bash
 magick --version
 ```
 
-## Uso
+## Usage
 
 ### Setup (lazy.nvim)
 
@@ -64,60 +64,61 @@ magick --version
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
     pane_position = 'right',  -- 'right' | 'bottom'
-    pane_size = 40,           -- percentual do split/pane
+    pane_size = 40,           -- split/pane size percentage
     inline = {
-      rerender_on_tab = true, -- re-renderiza ao voltar para aba com imagem
-      close_with_q = true,    -- mapeia tecla para fechar buffer de imagem
+      rerender_on_tab = true, -- re-render when switching back to image tab
+      close_with_q = true,    -- map key to close image buffer
     },
     keys = {
-      preview = '<leader>p',  -- preview da imagem/video ao lado (Oil)
-      open = ';',             -- abre imagem em aba ou video com player externo (Oil)
-      close = 'q',            -- fecha buffer de imagem
+      preview = '<leader>p',  -- preview image/video side by side (Oil)
+      open = ';',             -- open image in tab or video with external player (Oil)
+      close = 'q',            -- close image buffer
     },
     debounce = {
-      prefetch = 200,         -- ms antes de pre-converter ao mover cursor
-      resize = 100,           -- ms antes de re-renderizar ao redimensionar
+      prefetch = 200,         -- ms before pre-converting on cursor move
+      resize = 100,           -- ms before re-rendering on resize
     },
     cell_size = {
-      width = 20,             -- pixels estimados por coluna do terminal
-      height = 40,            -- pixels estimados por linha do terminal
+      width = 20,             -- estimated pixels per terminal column
+      height = 40,            -- estimated pixels per terminal row
     },
     cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
-    loading_text = '  ⏳ Carregando...',
-    formats = {               -- extensoes de imagem suportadas
+    loading_text = '  ⏳ Loading...',
+    formats = {               -- supported image extensions
       '.png', '.jpg', '.jpeg', '.gif', '.bmp',
       '.webp', '.avif', '.svg', '.pdf', '.pict',
     },
-    video_formats = {         -- extensoes de video suportadas (requer ffmpeg)
+    video_formats = {         -- supported video extensions (requires ffmpeg)
       '.mp4', '.mkv', '.avi', '.mov',
       '.webm', '.flv', '.wmv', '.m4v',
     },
-    video_open = nil,         -- comando ou funcao para abrir videos externamente
+    video_open = nil,         -- command or function to open videos externally
                               -- string: 'open' (macOS), 'xdg-open' (Linux)
-                              -- function: fun(filepath) para logica customizada
-                              -- nil: abre como buffer no Neovim
-  integrations = {
-    oil = true,             -- keymaps no Oil
-    neotree = false,        -- keymaps no NeoTree
-    telescope = true,       -- carrega via require('telescope').load_extension('glimpse')
+                              -- function: fun(filepath) for custom logic
+                              -- nil: opens as buffer in Neovim
+    integrations = {
+      oil = true,             -- keymaps in Oil
+      neotree = false,        -- keymaps in Neo-tree
+      telescope = true,       -- loads via require('telescope').load_extension('glimpse')
+    },
   },
 }
 ```
 
 ### Keymaps (Oil.nvim)
 
-| Tecla | Ação |
-|-------|------|
-| `<leader>p` | Preview da imagem/vídeo ao lado (reutiliza janela) |
-| `;` | Abre imagem em aba ou vídeo com player externo |
-| `q` | Fecha buffer de imagem e janela vazia residual |
+| Key | Action |
+|-----|--------|
+| `<leader>p` | Preview image/video side by side (reuses window) |
+| `;` | Open image in tab or video with external player |
+| `q` | Close image buffer and residual empty window |
 
 ### Telescope
 
-A forma recomendada e usar `buffer_previewer_maker` nos defaults do Telescope:
+The recommended approach is to use `buffer_previewer_maker` in Telescope defaults:
 
 ```lua
--- No setup do Telescope (defaults):
+-- In Telescope setup (defaults):
 defaults = {
   buffer_previewer_maker = function(filepath, bufnr, opts)
     opts = opts or {}
@@ -130,29 +131,29 @@ defaults = {
 }
 ```
 
-> **NOTA**: NAO adicione `'glimpse'` ao `extensions_list` do Telescope.
-> Isso forca o carregamento do Telescope no startup, aumentando o tempo de inicializacao em ~1300ms.
+> **NOTE**: Do NOT add `'glimpse'` to Telescope's `extensions_list`.
+> This forces Telescope to load on startup, increasing init time by ~1300ms.
 
-O previewer renderiza imagens inline no painel de preview e faz fallback ao previewer padrão para arquivos não-imagem. A troca entre arquivos é instantânea graças ao cleanup automático de placements e cache de conversões.
+The previewer renders images inline in the preview pane and falls back to the default previewer for non-image files. Switching between files is instant thanks to automatic placement cleanup and conversion cache.
 
 ### API
 
 ```lua
 local img = require('glimpse')
 
-img.show(filepath)          -- exibe imagem ou thumbnail de vídeo
-img.preview(filepath)       -- exibe reutilizando janela existente
-img.close()                 -- fecha preview ativo
-img.is_image(filepath)      -- verifica se é imagem suportada
-img.is_video(filepath)      -- verifica se é vídeo suportado
-img.is_previewable(filepath) -- verifica se é imagem ou vídeo
-img.get_terminal()          -- retorna terminal detectado
+img.show(filepath)           -- show image or video thumbnail
+img.preview(filepath)        -- show reusing existing window
+img.close()                  -- close active preview
+img.is_image(filepath)       -- check if supported image
+img.is_video(filepath)       -- check if supported video
+img.is_previewable(filepath) -- check if image or video
+img.get_terminal()           -- return detected terminal
 ```
 
-## Terminais suportados
+## Supported terminals
 
-| Terminal | Estratégia | Método |
-|----------|-----------|--------|
+| Terminal | Strategy | Method |
+|----------|----------|--------|
 | Kitty | inline | Kitty Graphics + unicode placeholders |
 | Ghostty | inline | Kitty Graphics + unicode placeholders |
 | WezTerm | pane | `wezterm cli split-pane` + `wezterm imgcat` |
@@ -161,56 +162,56 @@ img.get_terminal()          -- retorna terminal detectado
 
 ### WezTerm + tmux
 
-O `wezterm cli` precisa acessar o socket do WezTerm GUI. Dentro do tmux, a variavel
-`WEZTERM_UNIX_SOCKET` pode ficar desatualizada se o WezTerm reiniciar.
+`wezterm cli` needs access to the WezTerm GUI socket. Inside tmux, the
+`WEZTERM_UNIX_SOCKET` variable can become stale if WezTerm restarts.
 
-Adicione ao `tmux.conf`:
+Add to `tmux.conf`:
 
 ```bash
 set -ga update-environment WEZTERM_UNIX_SOCKET
 ```
 
-Se o preview parar de funcionar, atualize manualmente:
+If preview stops working, update manually:
 
 ```bash
-# Encontrar o socket ativo
+# Find the active socket
 ls ~/.local/share/wezterm/gui-sock-*
 
-# Exportar o correto
+# Export the correct one
 tmux set-environment WEZTERM_UNIX_SOCKET ~/.local/share/wezterm/gui-sock-<PID>
 ```
 
-## Formatos suportados
+## Supported formats
 
-**Imagens:** PNG, JPG, JPEG, GIF, BMP, WebP, AVIF, SVG, PDF, PICT
+**Images:** PNG, JPG, JPEG, GIF, BMP, WebP, AVIF, SVG, PDF, PICT
 
-**Vídeos:** MP4, MKV, AVI, MOV, WebM, FLV, WMV, M4V (requer ffmpeg)
+**Videos:** MP4, MKV, AVI, MOV, WebM, FLV, WMV, M4V (requires ffmpeg)
 
-## Arquitetura
+## Architecture
 
 ```bash
 lua/
 ├── glimpse/
-│   ├── init.lua              -- API pública: setup(), show(), preview(), close()
-│   ├── detect.lua            -- Detecção de terminal
-│   ├── kitty.lua             -- Protocolo Kitty Graphics (transmit, delete, prefetch)
-│   ├── renderer.lua          -- Gerenciamento de placements e extmarks
-│   ├── sixel.lua             -- Protocolo Sixel (fallback)
-│   ├── thumbnail.lua         -- Extração de thumbnails de vídeo (ffmpeg)
-│   ├── magickwand.lua        -- FFI bindings para libMagickWand
-│   ├── util.lua              -- Detecção de formatos de imagem e vídeo
+│   ├── init.lua              -- Public API: setup(), show(), preview(), close()
+│   ├── detect.lua            -- Terminal detection via tmux client_termname
+│   ├── kitty.lua             -- Kitty Graphics Protocol (transmit, delete, prefetch)
+│   ├── renderer.lua          -- Placement management and extmarks
+│   ├── sixel.lua             -- Sixel protocol (fallback)
+│   ├── thumbnail.lua         -- Video thumbnail extraction (ffmpeg, async)
+│   ├── magickwand.lua        -- FFI bindings for libMagickWand
+│   ├── util.lua              -- Image and video format detection
 │   ├── strategy/
-│   │   ├── inline.lua        -- Renderização inline + autocmds
-│   │   └── pane.lua          -- Renderização via painel externo
+│   │   ├── inline.lua        -- Inline rendering + autocmds
+│   │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
 │   └── integrations/
-│       └── oil.lua           -- Integração Oil.nvim
+│       └── oil.lua           -- Oil.nvim integration
 └── telescope/
     └── _extensions/
-        └── glimpse.lua       -- Extensão Telescope (previewer customizado)
+        └── glimpse.lua       -- Telescope extension (custom previewer)
 ```
 
-## Créditos
+## Credits
 
-- [snacks.nvim](https://github.com/folke/snacks.nvim) - inspiração para o protocolo de renderização
-- [Yazi](https://github.com/sxyazi/yazi) - inspiração para otimizações de performance
-- [Reddit post](https://www.reddit.com/r/neovim/comments/1e1txpz/) - conceito original de preview com WezTerm
+- [snacks.nvim](https://github.com/folke/snacks.nvim) - inspiration for the rendering protocol
+- [Yazi](https://github.com/sxyazi/yazi) - inspiration for performance optimizations
+- [Reddit post](https://www.reddit.com/r/neovim/comments/1e1txpz/) - original WezTerm preview concept
