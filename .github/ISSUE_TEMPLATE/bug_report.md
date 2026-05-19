@@ -1,32 +1,37 @@
 ---
 name: Bug Report
-about: Reportar um problema com o glimpse.nvim
+about: Report a problem with glimpse.nvim
 title: "[bug] "
 labels: bug
 ---
 
-## Descrição
+## Description
 
-<!-- Descreva o bug de forma clara e concisa. -->
+<!-- Describe the bug clearly and concisely. -->
 
-## Reprodução
+## Steps to reproduce
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
-## Comportamento esperado
+## Expected behavior
 
-<!-- O que deveria acontecer? -->
+<!-- What should happen? -->
 
-## Ambiente
+## Actual behavior
 
-- **Terminal**: (ex: Kitty, Ghostty, WezTerm, iTerm2)
-- **Neovim**: (output de `nvim --version`)
-- **OS**: 
-- **tmux**: sim/não (versão)
-- **ImageMagick**: (output de `magick --version`)
+<!-- What happens instead? -->
+
+## Environment
+
+- **Terminal**: (e.g. Kitty, Ghostty, WezTerm, iTerm2)
+- **Neovim**: (output of `nvim --version`)
+- **OS**:
+- **tmux**: yes/no (version)
+- **ImageMagick**: (output of `magick --version`)
+- **ffmpeg**: (output of `ffmpeg -version`, if video related)
 
 ## Logs / Screenshots
 
-<!-- Cole logs relevantes ou screenshots aqui. -->
+<!-- Paste relevant logs or screenshots here. -->
