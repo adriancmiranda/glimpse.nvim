@@ -98,7 +98,10 @@ magick --version
                               -- nil: opens as buffer in Neovim
     integrations = {
       oil = true,             -- keymaps in Oil
-      neotree = false,        -- keymaps in Neo-tree
+      neotree = {             -- Neo-tree integration
+        enable = false,       -- enable auto-preview in Neo-tree
+        auto_preview = true,  -- preview on cursor move (set false to disable)
+      },
       telescope = true,       -- loads via require('telescope').load_extension('glimpse')
     },
   },
@@ -213,7 +216,8 @@ lua/
 │   │   ├── inline.lua        -- Inline rendering + autocmds
 │   │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
 │   └── integrations/
-│       └── oil.lua           -- Oil.nvim integration
+│       ├── oil.lua           -- Oil.nvim integration
+│       └── neotree.lua       -- Neo-tree integration (auto-preview)
 └── telescope/
     └── _extensions/
         └── glimpse.lua       -- Telescope extension (custom previewer)

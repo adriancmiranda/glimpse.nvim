@@ -44,7 +44,8 @@ lua/glimpse/
 │   ├── inline.lua        -- Renderização inline + autocmds
 │   └── pane.lua          -- Renderização via painel externo (WezTerm, iTerm2)
 └── integrations/
-    └── oil.lua           -- Integração Oil.nvim (preview, open, prefetch)
+    ├── oil.lua           -- Integração Oil.nvim (preview, open, prefetch)
+    └── neotree.lua       -- Integração Neo-tree (auto-preview, cleanup)
 
 lua/telescope/
 └── _extensions/
