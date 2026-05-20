@@ -139,6 +139,7 @@ end
 --- @param filepath string
 --- @param opts? { width?: number, height?: number }
 --- @param callback fun(id: number|nil, err: string|nil, w_px: number|nil, h_px: number|nil)
+--- @return number|nil job_id ID do job externo (nil se resolvido via cache/FFI)
 function M.transmit_async(filepath, opts, callback)
 	opts = opts or {}
 	local width_px = (opts.width or 80) * get_config().cell_size.width
@@ -194,7 +195,7 @@ function M.transmit_async(filepath, opts, callback)
 		return
 	end
 	local tmp = get_cache_dir() .. '/' .. vim.fn.sha256(cache_key) .. '.png'
-	vim.fn.jobstart({
+	local job_id = vim.fn.jobstart({
 		'magick',
 		filepath,
 		'-resize',
@@ -224,6 +225,7 @@ function M.transmit_async(filepath, opts, callback)
 			end
 		end,
 	})
+	return job_id
 end
 
 --- Pré-converte uma imagem em background (popula o cache).

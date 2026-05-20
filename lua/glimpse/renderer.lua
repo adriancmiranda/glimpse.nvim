@@ -122,7 +122,14 @@ function M.render(buf, filepath, opts, on_done)
 	local cols = vim.api.nvim_win_get_width(win)
 	local rows = vim.api.nvim_win_get_height(win)
 
-	kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
+	-- Cancela job de conversao anterior se ainda estiver rodando
+	if placement.job_id then
+		pcall(vim.fn.jobstop, placement.job_id)
+		placement.job_id = nil
+	end
+
+	placement.job_id = kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
+		placement.job_id = nil
 		if err or not id then
 			vim.notify('[glimpse] ' .. (err or 'falha'), vim.log.levels.WARN)
 			return
@@ -203,7 +210,14 @@ function M.rerender(buf)
 	local cols = vim.api.nvim_win_get_width(win)
 	local rows = vim.api.nvim_win_get_height(win)
 
-	kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
+	-- Cancela job de conversao anterior se ainda estiver rodando
+	if placement.job_id then
+		pcall(vim.fn.jobstop, placement.job_id)
+		placement.job_id = nil
+	end
+
+	placement.job_id = kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
+		placement.job_id = nil
 		if err or not id then
 			return
 		end
