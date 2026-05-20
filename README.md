@@ -164,13 +164,28 @@ img.is_previewable(filepath) -- check if image or video
 img.get_terminal()           -- return detected terminal
 ```
 
-## Security
+## Security & Privacy
 
-glimpse validates files before processing:
+glimpse.nvim runs **only local commands** on files you explicitly select.
+It never makes network requests or sends data externally.
+
+### File validation
 
 - **Symlinks** are rejected (prevents reading unintended targets)
 - **Large files** above `max_file_size` are skipped (default: 50MB)
-- **Shell commands** use list arguments (no string interpolation)
+- **SVG files** are processed with restricted XML parsing (no entity expansion, no external resources)
+- **Shell commands** use list arguments (no shell interpolation)
+
+### External tools used
+
+| Tool | Purpose | When |
+|------|---------|------|
+| magick (ImageMagick) | Image resize/conversion | Image preview |
+| ffmpeg | Video thumbnail extraction | Video preview |
+| zipinfo | Archive listing (read-only) | Archive preview |
+| tar | Archive listing (read-only) | tar/tgz preview |
+
+No files are extracted, modified, or uploaded. All processing is local and read-only.
 
 For additional protection, consider configuring ImageMagick's
 [policy.xml](https://imagemagick.org/script/security-policy.php)
