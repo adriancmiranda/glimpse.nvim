@@ -27,6 +27,17 @@ local function get_cache_dir()
 	return dir
 end
 
+--- Retorna argumentos extras de seguranca para SVGs.
+--- @param filepath string
+--- @return string[] args
+local function svg_safety_args(filepath)
+	local ext = (filepath:match('%.(%w+)$') or ''):lower()
+	if ext == 'svg' or ext == 'svgz' then
+		return { '-define', 'svg:xml-parse-huge=false', '-define', 'svg:extern-resources=false' }
+	end
+	return {}
+end
+
 --- Lê dimensões de um PNG diretamente do header (sem spawnar processo).
 --- @param filepath string
 --- @return number|nil w, number|nil h
@@ -119,7 +130,9 @@ function M.transmit(filepath, opts)
 			return nil, 'magick not found'
 		end
 		tmp = get_cache_dir() .. '/' .. vim.fn.sha256(cache_key) .. '.png'
-		vim.fn.system({ 'magick', filepath, '-resize', width_px .. '>', tmp })
+		local cmd = vim.list_extend({ 'magick' }, svg_safety_args(filepath))
+		vim.list_extend(cmd, { filepath, '-resize', width_px .. '>', tmp })
+		vim.fn.system(cmd)
 		if vim.v.shell_error ~= 0 then
 			return nil, 'magick falhou'
 		end
@@ -195,8 +208,8 @@ function M.transmit_async(filepath, opts, callback)
 		return
 	end
 	local tmp = get_cache_dir() .. '/' .. vim.fn.sha256(cache_key) .. '.png'
-	local job_id = vim.fn.jobstart({
-		'magick',
+	local cmd = vim.list_extend({ 'magick' }, svg_safety_args(filepath))
+	vim.list_extend(cmd, {
 		filepath,
 		'-resize',
 		width_px .. 'x' .. height_px .. '>',
@@ -205,7 +218,8 @@ function M.transmit_async(filepath, opts, callback)
 		'-format',
 		'%w %h',
 		'info:',
-	}, {
+	})
+	local job_id = vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
 		on_stdout = function(_, data)
 			vim.schedule(function()
@@ -246,8 +260,8 @@ function M.prefetch(filepath, opts)
 	end
 
 	local tmp = get_cache_dir() .. '/' .. vim.fn.sha256(cache_key) .. '.png'
-	vim.fn.jobstart({
-		'magick',
+	local cmd = vim.list_extend({ 'magick' }, svg_safety_args(filepath))
+	vim.list_extend(cmd, {
 		filepath,
 		'-resize',
 		width_px .. 'x' .. height_px .. '>',
@@ -256,7 +270,8 @@ function M.prefetch(filepath, opts)
 		'-format',
 		'%w %h',
 		'info:',
-	}, {
+	})
+	vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
 		on_stdout = function(_, data)
 			vim.schedule(function()
