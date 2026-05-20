@@ -115,15 +115,18 @@ function M.transmit(filepath, opts)
 	local tmp = convert_cache[cache_key]
 
 	if not tmp or vim.fn.filereadable(tmp) == 0 then
+		if vim.fn.executable('magick') == 0 then
+			return nil, 'magick not found'
+		end
 		tmp = get_cache_dir() .. '/' .. vim.fn.sha256(cache_key) .. '.png'
-		vim.fn.system(string.format('magick "%s" -resize \'%d>\' "%s"', filepath, width_px, tmp))
+		vim.fn.system({ 'magick', filepath, '-resize', width_px .. '>', tmp })
 		if vim.v.shell_error ~= 0 then
 			return nil, 'magick falhou'
 		end
 		convert_cache[cache_key] = tmp
 	end
 
-	local info = vim.fn.system(string.format('magick identify -format "%%w %%h" "%s"', tmp))
+	local info = vim.fn.system({ 'magick', 'identify', '-format', '%w %h', tmp })
 	local w_px, h_px = info:match('(%d+) (%d+)')
 	w_px = tonumber(w_px) or width_px
 	h_px = tonumber(h_px) or 400
@@ -186,15 +189,22 @@ function M.transmit_async(filepath, opts, callback)
 	end
 
 	-- Fallback: magick CLI (assíncrono)
+	if vim.fn.executable('magick') == 0 then
+		callback(nil, 'magick not found')
+		return
+	end
 	local tmp = get_cache_dir() .. '/' .. vim.fn.sha256(cache_key) .. '.png'
-	local cmd = string.format(
-		'magick "%s" -resize \'%dx%d>\' -write "%s" -format \'%%w %%h\' info:',
+	vim.fn.jobstart({
+		'magick',
 		filepath,
-		width_px,
-		height_px,
-		tmp
-	)
-	vim.fn.jobstart(cmd, {
+		'-resize',
+		width_px .. 'x' .. height_px .. '>',
+		'-write',
+		tmp,
+		'-format',
+		'%w %h',
+		'info:',
+	}, {
 		stdout_buffered = true,
 		on_stdout = function(_, data)
 			vim.schedule(function()
@@ -229,27 +239,32 @@ function M.prefetch(filepath, opts)
 		return
 	end
 
+	if vim.fn.executable('magick') == 0 then
+		return
+	end
+
 	local tmp = get_cache_dir() .. '/' .. vim.fn.sha256(cache_key) .. '.png'
-	vim.fn.jobstart(
-		string.format(
-			'magick "%s" -resize \'%dx%d>\' -write "%s" -format \'%%w %%h\' info:',
-			filepath,
-			width_px,
-			height_px,
-			tmp
-		),
-		{
-			stdout_buffered = true,
-			on_stdout = function(_, data)
-				vim.schedule(function()
-					convert_cache[cache_key] = tmp
-					local output = table.concat(data or {}, '')
-					local w_px, h_px = output:match('(%d+) (%d+)')
-					dims_cache[cache_key] = { w = tonumber(w_px), h = tonumber(h_px) }
-				end)
-			end,
-		}
-	)
+	vim.fn.jobstart({
+		'magick',
+		filepath,
+		'-resize',
+		width_px .. 'x' .. height_px .. '>',
+		'-write',
+		tmp,
+		'-format',
+		'%w %h',
+		'info:',
+	}, {
+		stdout_buffered = true,
+		on_stdout = function(_, data)
+			vim.schedule(function()
+				convert_cache[cache_key] = tmp
+				local output = table.concat(data or {}, '')
+				local w_px, h_px = output:match('(%d+) (%d+)')
+				dims_cache[cache_key] = { w = tonumber(w_px), h = tonumber(h_px) }
+			end)
+		end,
+	})
 end
 
 return M

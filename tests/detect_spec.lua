@@ -7,6 +7,14 @@ describe('detect', function()
 	before_each(function()
 		orig_getenv = os.getenv
 		detect._reset()
+		-- Mock TMUX como nil por padrao para isolar testes do ambiente real
+		local real_getenv = orig_getenv
+		os.getenv = function(var)
+			if var == 'TMUX' then
+				return nil
+			end
+			return real_getenv(var)
+		end
 	end)
 
 	after_each(function()
@@ -19,6 +27,12 @@ describe('detect', function()
 				if var == 'TERM_PROGRAM' then
 					return 'kitty'
 				end
+				if var == 'TMUX' then
+					return nil
+				end
+				if var == 'TMUX' then
+					return nil
+				end
 				return orig_getenv(var)
 			end
 			assert.equals('kitty', detect.get_terminal())
@@ -28,6 +42,12 @@ describe('detect', function()
 			os.getenv = function(var)
 				if var == 'TERM_PROGRAM' then
 					return 'ghostty'
+				end
+				if var == 'TMUX' then
+					return nil
+				end
+				if var == 'TMUX' then
+					return nil
 				end
 				return orig_getenv(var)
 			end
@@ -39,6 +59,9 @@ describe('detect', function()
 				if var == 'TERM_PROGRAM' then
 					return 'WezTerm'
 				end
+				if var == 'TMUX' then
+					return nil
+				end
 				return orig_getenv(var)
 			end
 			assert.equals('wezterm', detect.get_terminal())
@@ -49,6 +72,9 @@ describe('detect', function()
 				if var == 'TERM_PROGRAM' then
 					return 'iTerm2'
 				end
+				if var == 'TMUX' then
+					return nil
+				end
 				return orig_getenv(var)
 			end
 			assert.equals('iterm', detect.get_terminal())
@@ -58,6 +84,9 @@ describe('detect', function()
 			os.getenv = function(var)
 				if var == 'TERM_PROGRAM' then
 					return 'alacritty'
+				end
+				if var == 'TMUX' then
+					return nil
 				end
 				return orig_getenv(var)
 			end
@@ -71,6 +100,9 @@ describe('detect', function()
 				if var == 'TERM_PROGRAM' then
 					return 'kitty'
 				end
+				if var == 'TMUX' then
+					return nil
+				end
 				return orig_getenv(var)
 			end
 			assert.is_true(detect.supports_inline())
@@ -81,6 +113,9 @@ describe('detect', function()
 				if var == 'TERM_PROGRAM' then
 					return 'ghostty'
 				end
+				if var == 'TMUX' then
+					return nil
+				end
 				return orig_getenv(var)
 			end
 			assert.is_true(detect.supports_inline())
@@ -90,6 +125,9 @@ describe('detect', function()
 			os.getenv = function(var)
 				if var == 'TERM_PROGRAM' then
 					return 'WezTerm'
+				end
+				if var == 'TMUX' then
+					return nil
 				end
 				return orig_getenv(var)
 			end
@@ -103,6 +141,9 @@ describe('detect', function()
 				if var == 'TMUX' then
 					return '/tmp/tmux-501/default,12345,0'
 				end
+				if var == 'TMUX' then
+					return nil
+				end
 				return orig_getenv(var)
 			end
 			assert.is_true(detect.in_tmux())
@@ -110,6 +151,9 @@ describe('detect', function()
 
 		it('returns false when TMUX is not set', function()
 			os.getenv = function(var)
+				if var == 'TMUX' then
+					return nil
+				end
 				if var == 'TMUX' then
 					return nil
 				end
