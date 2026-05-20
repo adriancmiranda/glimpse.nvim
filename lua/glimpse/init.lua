@@ -35,6 +35,7 @@
 ---@field cell_size? GlimpseCellSizeConfig Pixels estimados por célula do terminal
 ---@field cache_dir? string Diretório para cache de imagens convertidas
 ---@field cache_max_age_days? number Dias para manter arquivos no cache (default: 7)
+---@field max_file_size? number Tamanho maximo em bytes para processar (default: 50MB)
 ---@field loading_text? string Texto exibido durante carregamento
 ---@field formats? string[] Extensões de imagem suportadas
 ---@field integrations? GlimpseIntegrationsConfig Integrações com plugins
@@ -62,6 +63,7 @@
 ---@field telescope? boolean Preview no Telescope (default: true)
 
 local detect = require('glimpse.detect')
+local safety = require('glimpse.safety')
 local util = require('glimpse.util')
 local pane = require('glimpse.strategy.pane')
 local inline = require('glimpse.strategy.inline')
@@ -93,6 +95,7 @@ local config = {
 	},
 	cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
 	cache_max_age_days = 7,
+	max_file_size = 50 * 1024 * 1024,
 	loading_text = '  ⏳ Carregando...',
 	formats = {
 		'.png',
@@ -165,6 +168,11 @@ end
 --- Exibe imagem (escolhe estratégia automaticamente).
 ---@param filepath string Caminho absoluto do arquivo de imagem
 function M.show(filepath)
+	local safe, reason = safety.check(filepath, { max_size = config.max_file_size })
+	if not safe then
+		vim.notify('[glimpse] ' .. reason .. ': ' .. filepath, vim.log.levels.WARN)
+		return
+	end
 	if not util.is_image(filepath) then
 		vim.notify('[glimpse] Não é uma imagem: ' .. filepath, vim.log.levels.WARN)
 		return
@@ -179,6 +187,10 @@ end
 --- Exibe imagem reutilizando janela existente (para navegação em exploradores).
 ---@param filepath string Caminho absoluto do arquivo de imagem
 function M.preview(filepath)
+	local safe, _ = safety.check(filepath, { max_size = config.max_file_size })
+	if not safe then
+		return
+	end
 	if not util.is_image(filepath) then
 		return
 	end

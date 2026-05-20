@@ -84,6 +84,7 @@ magick --version
     },
     cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
     cache_max_age_days = 7,   -- auto-remove cached files older than N days (0 to disable)
+    max_file_size = 50 * 1024 * 1024, -- skip files larger than 50MB
     loading_text = '  ⏳ Loading...',
     formats = {               -- supported image extensions
       '.png', '.jpg', '.jpeg', '.gif', '.bmp',
@@ -162,6 +163,18 @@ img.is_video(filepath)       -- check if supported video
 img.is_previewable(filepath) -- check if image or video
 img.get_terminal()           -- return detected terminal
 ```
+
+## Security
+
+glimpse validates files before processing:
+
+- **Symlinks** are rejected (prevents reading unintended targets)
+- **Large files** above `max_file_size` are skipped (default: 50MB)
+- **Shell commands** use list arguments (no string interpolation)
+
+For additional protection, consider configuring ImageMagick's
+[policy.xml](https://imagemagick.org/script/security-policy.php)
+to limit resource usage.
 
 ## Supported terminals
 
