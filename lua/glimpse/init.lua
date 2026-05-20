@@ -34,6 +34,7 @@
 ---@field debounce? GlimpseDebounceConfig Tempos de debounce em ms
 ---@field cell_size? GlimpseCellSizeConfig Pixels estimados por célula do terminal
 ---@field cache_dir? string Diretório para cache de imagens convertidas
+---@field cache_max_age_days? number Dias para manter arquivos no cache (default: 7)
 ---@field loading_text? string Texto exibido durante carregamento
 ---@field formats? string[] Extensões de imagem suportadas
 ---@field integrations? GlimpseIntegrationsConfig Integrações com plugins
@@ -91,6 +92,7 @@ local config = {
 		height = 40,
 	},
 	cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
+	cache_max_age_days = 7,
 	loading_text = '  ⏳ Carregando...',
 	formats = {
 		'.png',
@@ -140,6 +142,12 @@ function M.setup(opts)
 		require('glimpse.integrations.neotree').setup()
 	elseif neotree == true then
 		require('glimpse.integrations.neotree').setup()
+	end
+	-- Limpa cache antigo em background
+	if config.cache_max_age_days and config.cache_max_age_days > 0 then
+		vim.defer_fn(function()
+			require('glimpse.cache').cleanup(config.cache_dir, config.cache_max_age_days)
+		end, 0)
 	end
 end
 
