@@ -83,6 +83,7 @@ magick --version
       height = 40,            -- estimated pixels per terminal row
     },
     cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
+    cache_max_age_days = 7,   -- auto-remove cached files older than N days (0 to disable)
     loading_text = '  ⏳ Loading...',
     formats = {               -- supported image extensions
       '.png', '.jpg', '.jpeg', '.gif', '.bmp',
