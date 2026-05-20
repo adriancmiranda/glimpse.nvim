@@ -54,11 +54,19 @@ function M.is_archive(filepath)
 	return false
 end
 
---- Verifica se o arquivo é previewable (imagem, vídeo ou archive).
+--- Verifica se o arquivo é um banco SQLite.
+--- @param filepath string
+--- @return boolean
+function M.is_sqlite(filepath)
+	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
+	return ext == 'db' or ext == 'sqlite' or ext == 'sqlite3'
+end
+
+--- Verifica se o arquivo é previewable (imagem, vídeo, archive ou sqlite).
 --- @param filepath string
 --- @return boolean
 function M.is_previewable(filepath)
-	return M.is_image(filepath) or M.is_video(filepath) or M.is_archive(filepath)
+	return M.is_image(filepath) or M.is_video(filepath) or M.is_archive(filepath) or M.is_sqlite(filepath)
 end
 
 return M
