@@ -97,7 +97,7 @@ M.preview({filepath})                                                *M.preview*
      Exibe imagem reutilizando janela existente (para navegação em exploradores).
 
     Parameters: ~
-        {filepath}  (string)  Caminho absoluto do arquivo de imagem
+        {filepath}  (string)  Caminho absoluto do arquivo
 
 
 M.close()                                                              *M.close*
@@ -139,8 +139,14 @@ M.is_video()                                                        *M.is_video*
      @return boolean
 
 
+M.is_archive()                                                    *M.is_archive*
+     Verifica se o arquivo é um archive suportado.
+     @param filepath string
+     @return boolean
+
+
 M.is_previewable()                                            *M.is_previewable*
-     Verifica se o arquivo é previewable (imagem ou vídeo).
+     Verifica se o arquivo é previewable (imagem, vídeo ou archive).
      @param filepath string
      @return boolean
 
