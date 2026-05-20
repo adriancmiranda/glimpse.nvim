@@ -33,6 +33,7 @@ GlimpseConfig                                                    *GlimpseConfig*
         {cell_size?}           (GlimpseCellSizeConfig)      Pixels estimados por célula do terminal
         {cache_dir?}           (string)                     Diretório para cache de imagens convertidas
         {cache_max_age_days?}  (number)                     Dias para manter arquivos no cache (default: 7)
+        {max_file_size?}       (number)                     Tamanho maximo em bytes para processar (default: 50MB)
         {loading_text?}        (string)                     Texto exibido durante carregamento
         {formats?}             (string[])                   Extensões de imagem suportadas
         {integrations?}        (GlimpseIntegrationsConfig)  Integrações com plugins
