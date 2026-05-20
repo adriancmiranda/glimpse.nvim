@@ -57,11 +57,20 @@ function M.setup()
 						return
 					end
 					if util.is_image(fpath) then
-						oil.close()
-						vim.cmd('edit ' .. vim.fn.fnameescape(fpath))
-						vim.schedule(function()
-							pcall(vim.api.nvim_buf_set_name, 0, fpath)
-						end)
+						local glimpse = require('glimpse')
+						if glimpse._should_use_inline() then
+							oil.close()
+							vim.cmd('edit ' .. vim.fn.fnameescape(fpath))
+							vim.schedule(function()
+								pcall(vim.api.nvim_buf_set_name, 0, fpath)
+							end)
+						else
+							local config = glimpse.get_config()
+							require('glimpse.strategy.pane').show(fpath, {
+								position = config.pane_position,
+								size = config.pane_size,
+							})
+						end
 						return
 					end
 				end
@@ -97,6 +106,33 @@ function M.setup()
 					end, require('glimpse').get_config().debounce.prefetch)
 				end,
 			})
+		end,
+	})
+
+	-- Cleanup WezTerm pane when leaving Oil or exiting Neovim
+	vim.api.nvim_create_autocmd({ 'BufLeave' }, {
+		group = group,
+		pattern = 'oil://*',
+		callback = function()
+			local pane = require('glimpse.strategy.pane')
+			if pane._wezterm_preview_pane then
+				vim.fn.jobstart(
+					{ 'wezterm', 'cli', 'kill-pane', '--pane-id', pane._wezterm_preview_pane },
+					{ on_exit = function() end }
+				)
+				pane._wezterm_preview_pane = nil
+			end
+		end,
+	})
+
+	vim.api.nvim_create_autocmd('VimLeavePre', {
+		group = group,
+		callback = function()
+			local pane = require('glimpse.strategy.pane')
+			if pane._wezterm_preview_pane then
+				vim.fn.system({ 'wezterm', 'cli', 'kill-pane', '--pane-id', pane._wezterm_preview_pane })
+				pane._wezterm_preview_pane = nil
+			end
 		end,
 	})
 end
