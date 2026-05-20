@@ -11,6 +11,16 @@ local function get_config()
 	return require('glimpse').get_config()
 end
 
+--- Gera uma chave de cache que inclui mtime para invalidacao automatica.
+--- @param filepath string
+--- @param suffix string
+--- @return string
+local function make_cache_key(filepath, suffix)
+	local stat = vim.uv.fs_stat(filepath)
+	local mtime = stat and tostring(stat.mtime.sec) or '0'
+	return filepath .. ':' .. mtime .. ':' .. suffix
+end
+
 local function get_cache_dir()
 	local dir = get_config().cache_dir
 	vim.fn.mkdir(dir, 'p')
@@ -101,7 +111,7 @@ function M.transmit(filepath, opts)
 	opts = opts or {}
 	local id = next_id()
 	local width_px = (opts.width or 80) * get_config().cell_size.width
-	local cache_key = filepath .. ':' .. width_px
+	local cache_key = make_cache_key(filepath, tostring(width_px))
 	local tmp = convert_cache[cache_key]
 
 	if not tmp or vim.fn.filereadable(tmp) == 0 then
@@ -130,7 +140,7 @@ function M.transmit_async(filepath, opts, callback)
 	opts = opts or {}
 	local width_px = (opts.width or 80) * get_config().cell_size.width
 	local height_px = (opts.height or 40) * get_config().cell_size.height
-	local cache_key = filepath .. ':' .. width_px .. 'x' .. height_px
+	local cache_key = make_cache_key(filepath, width_px .. 'x' .. height_px)
 	local id = next_id()
 
 	-- Cache hit: dimensões já conhecidas, arquivo já convertido
@@ -213,7 +223,7 @@ function M.prefetch(filepath, opts)
 	opts = opts or {}
 	local width_px = (opts.width or 80) * get_config().cell_size.width
 	local height_px = (opts.height or 40) * get_config().cell_size.height
-	local cache_key = filepath .. ':' .. width_px .. 'x' .. height_px
+	local cache_key = make_cache_key(filepath, width_px .. 'x' .. height_px)
 
 	if convert_cache[cache_key] then
 		return
