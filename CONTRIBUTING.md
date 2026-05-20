@@ -1,83 +1,84 @@
-# Contribuindo para o glimpse.nvim
+# Contributing to glimpse.nvim
 
-## Ambiente de desenvolvimento
+## Development environment
 
-### Dependências obrigatórias
+### Required dependencies
 
 - **Neovim** >= 0.10
 - **ImageMagick** >= 7 (`magick` CLI)
 
-### Dependências opcionais
+### Optional dependencies
 
-| Dependência | Uso |
-|-------------|-----|
-| ffmpeg | Extração de thumbnails de video |
-| tmux >= 3.4 | Passthrough de escape sequences (Kitty Graphics via tmux) |
-| `kitten` | Incluso no Kitty |
-| `wezterm` CLI | Painel externo no WezTerm |
-| `imgcat` | Incluso no iTerm2 shell integration |
+| Dependency | Usage |
+|------------|-------|
+| ffmpeg | Video thumbnail extraction |
+| tmux >= 3.4 | Escape sequence passthrough (Kitty Graphics via tmux) |
+| `kitten` | Included with Kitty |
+| `wezterm` CLI | External pane in WezTerm |
+| `imgcat` | Included with iTerm2 shell integration |
 
-### Configuração do tmux (opcional)
+### tmux configuration (optional)
 
 ```bash
-# Necessário para Kitty Graphics via tmux
+# Required for Kitty Graphics via tmux
 set -gq allow-passthrough on
 set -g visual-activity off
 
-# Propagar variáveis de ambiente para novas sessoes
+# Propagate environment variables to new sessions
 set -ga update-environment WEZTERM_UNIX_SOCKET
 ```
 
-## Estrutura do código
+## Code structure
 
 ```bash
 lua/glimpse/
-├── init.lua              -- API pública: setup(), show(), preview(), close()
-├── detect.lua            -- Detecção de terminal via tmux client_termname
-├── kitty.lua             -- Protocolo Kitty Graphics (transmit, delete, prefetch)
-├── renderer.lua          -- Gerenciamento de placements e extmarks
-├── sixel.lua             -- Protocolo Sixel (fallback)
-├── thumbnail.lua         -- Extração de thumbnails de video (ffmpeg, async)
-├── magickwand.lua        -- Interface com ImageMagick para conversão
-├── util.lua              -- Detecção de formatos de imagem e video
+├── init.lua              -- Public API: setup(), show(), preview(), close()
+├── detect.lua            -- Terminal detection via tmux client_termname
+├── kitty.lua             -- Kitty Graphics Protocol (transmit, delete, prefetch)
+├── renderer.lua          -- Placement management and extmarks
+├── sixel.lua             -- Sixel protocol (fallback)
+├── thumbnail.lua         -- Video thumbnail extraction (ffmpeg, async)
+├── magickwand.lua        -- ImageMagick interface for conversion
+├── util.lua              -- Image and video format detection
 ├── strategy/
-│   ├── inline.lua        -- Renderização inline + autocmds
-│   └── pane.lua          -- Renderização via painel externo (WezTerm, iTerm2)
+│   ├── inline.lua        -- Inline rendering + autocmds
+│   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
 └── integrations/
-    ├── oil.lua           -- Integração Oil.nvim (preview, open, prefetch)
-    └── neotree.lua       -- Integração Neo-tree (auto-preview, cleanup)
+    ├── oil.lua           -- Oil.nvim integration (preview, open, prefetch)
+    ├── lir.lua           -- lir.nvim integration (preview, open, prefetch)
+    └── neotree.lua       -- Neo-tree integration (auto-preview, cleanup)
 
 lua/telescope/
 └── _extensions/
-    └── glimpse.lua       -- Extensão Telescope (previewer customizado)
+    └── glimpse.lua       -- Telescope extension (custom previewer)
 ```
 
-## Protocolos de imagem
+## Image protocols
 
 ### Kitty Graphics Protocol
 
-- Transmissão via `t=f` (file path) - terminal le do disco
-- Unicode placeholders (`U=1`) - caractere U+10EEEE com diacríticos para row/col
-- Image ID codificado no foreground color do highlight (`nvim_set_hl`)
-- Dentro do tmux: escape sequences envolvidas em `\ePtmux;...\e\\`
+- Transmission via `t=f` (file path) - terminal reads from disk
+- Unicode placeholders (`U=1`) - character U+10EEEE with diacritics for row/col
+- Image ID encoded in foreground color of highlight (`nvim_set_hl`)
+- Inside tmux: escape sequences wrapped in `\ePtmux;...\e\\`
 
 ### Sixel
 
-- Conversão via `magick ... sixel:-`
-- Exibido em painel tmux (não inline)
+- Conversion via `magick ... sixel:-`
+- Displayed in tmux pane (not inline)
 
-## Convenções
+## Conventions
 
-- Comentários em portugues brasileiro
-- Funções públicas em camelCase
-- Funções privadas com `_` prefixo ou `local`
+- Comments in Brazilian Portuguese
+- Public functions in camelCase
+- Private functions with `_` prefix or `local`
 - Type annotations via `@param`, `@return`, `@class`
-- Formatação via [StyLua](https://github.com/JohnnyMorganz/StyLua) (`.stylua.toml`)
+- Formatting via [StyLua](https://github.com/JohnnyMorganz/StyLua) (`.stylua.toml`)
 - Linting via [luacheck](https://github.com/mpeterv/luacheck) (`.luacheckrc`)
 
-## Ferramentas
+## Tools
 
-### Formatação
+### Formatting
 
 ```bash
 stylua lua/ tests/
@@ -89,13 +90,13 @@ stylua lua/ tests/
 luacheck lua/ tests/
 ```
 
-### Testes
+### Tests
 
 ```bash
 make test
 ```
 
-Requer [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) e `ffmpeg` instalados.
+Requires [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) and `ffmpeg` installed.
 
 ### Benchmark
 
@@ -103,29 +104,29 @@ Requer [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) e `ffmpeg` insta
 make bench
 ```
 
-## Testes manuais
+## Manual testing
 
-```bash
-# Testar deteccao de terminal
+```vim
+" Test terminal detection
 :lua print(require('glimpse.detect').get_terminal())
 
-# Testar renderização de imagem
+" Test image rendering
 :lua require('glimpse').show('/path/to/image.png')
 
-# Testar preview de video (async thumbnail)
+" Test video preview (async thumbnail)
 :lua require('glimpse').preview('/path/to/video.mp4')
 
-# Testar prefetch
+" Test prefetch
 :lua require('glimpse.kitty').prefetch('/path/to/image.png', { width = 40, height = 30 })
 
-# Testar socket do WezTerm
+" Test WezTerm socket
 :lua print(require('glimpse.strategy.pane')._find_wezterm_socket())
 ```
 
-## Limitações conhecidas
+## Known limitations
 
-- **Latência no primeiro load**: `magick` leva ~700ms-2s para converter imagens grandes. Cache resolve para acessos subsequentes.
-- **Latência do terminal**: após transmitir, o terminal leva ~200-500ms para renderizar. Fora do nosso controle.
-- **WezTerm**: não suporta unicode placeholders - usa painel externo via `wezterm cli`.
-- **WezTerm + tmux**: requer `WEZTERM_UNIX_SOCKET` propagado via `update-environment`.
-- **Video thumbnails**: primeira extração é síncrona (~500ms). Subsequentes usam cache.
+- **First load latency**: `magick` takes ~700ms-2s for large images. Cache resolves subsequent accesses.
+- **Terminal latency**: after transmission, the terminal takes ~200-500ms to render. Outside our control.
+- **WezTerm**: does not support unicode placeholders - uses external pane via `wezterm cli`.
+- **WezTerm + tmux**: requires `WEZTERM_UNIX_SOCKET` propagated via `update-environment`.
+- **Video thumbnails**: first extraction is synchronous (~500ms). Subsequent uses cache.
