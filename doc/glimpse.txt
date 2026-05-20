@@ -24,17 +24,18 @@ GlimpseConfig                                                    *GlimpseConfig*
      Configuração do glimpse.nvim.
 
     Fields: ~
-        {strategy?}       ("auto"|"inline"|"pane")     Método de renderização (default: 'auto')
-        {pane_position?}  ("right"|"bottom")           Posição do painel externo (default: 'right')
-        {pane_size?}      (number)                     Tamanho do painel em percentual (default: 40)
-        {inline?}         (GlimpseInlineConfig)        Opções para renderização inline
-        {keys?}           (GlimpseKeysConfig)          Keymaps configuráveis
-        {debounce?}       (GlimpseDebounceConfig)      Tempos de debounce em ms
-        {cell_size?}      (GlimpseCellSizeConfig)      Pixels estimados por célula do terminal
-        {cache_dir?}      (string)                     Diretório para cache de imagens convertidas
-        {loading_text?}   (string)                     Texto exibido durante carregamento
-        {formats?}        (string[])                   Extensões de imagem suportadas
-        {integrations?}   (GlimpseIntegrationsConfig)  Integrações com plugins
+        {strategy?}            ("auto"|"inline"|"pane")     Método de renderização (default: 'auto')
+        {pane_position?}       ("right"|"bottom")           Posição do painel externo (default: 'right')
+        {pane_size?}           (number)                     Tamanho do painel em percentual (default: 40)
+        {inline?}              (GlimpseInlineConfig)        Opções para renderização inline
+        {keys?}                (GlimpseKeysConfig)          Keymaps configuráveis
+        {debounce?}            (GlimpseDebounceConfig)      Tempos de debounce em ms
+        {cell_size?}           (GlimpseCellSizeConfig)      Pixels estimados por célula do terminal
+        {cache_dir?}           (string)                     Diretório para cache de imagens convertidas
+        {cache_max_age_days?}  (number)                     Dias para manter arquivos no cache (default: 7)
+        {loading_text?}        (string)                     Texto exibido durante carregamento
+        {formats?}             (string[])                   Extensões de imagem suportadas
+        {integrations?}        (GlimpseIntegrationsConfig)  Integrações com plugins
 
 
 GlimpseInlineConfig                                        *GlimpseInlineConfig*
