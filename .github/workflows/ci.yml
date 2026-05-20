@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg imagemagick
       - name: Install plenary.nvim
         run: |
           git clone --depth 1 https://github.com/nvim-lua/plenary.nvim /tmp/plenary.nvim
