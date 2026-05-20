@@ -55,12 +55,16 @@ end
 --- @return string|nil
 function M._find_wezterm_socket()
 	local env_socket = os.getenv('WEZTERM_UNIX_SOCKET')
-	if env_socket and vim.uv.fs_stat(env_socket) then
-		return env_socket
+	if env_socket then
+		local pid = tonumber(env_socket:match('gui%-sock%-(%d+)'))
+		if pid and vim.uv.kill(pid, 0) == 0 then
+			return env_socket
+		end
 	end
-	local sockets = vim.fn.glob(vim.fn.expand('~/.local/share/wezterm/gui-sock-*'), true, true)
+	local sockets = vim.fn.glob(os.getenv('HOME') .. '/.local/share/wezterm/gui-sock-*', true, true)
 	for _, sock in ipairs(sockets) do
-		if vim.uv.fs_stat(sock) then
+		local pid = tonumber(sock:match('gui%-sock%-(%d+)'))
+		if pid and vim.uv.kill(pid, 0) == 0 then
 			return sock
 		end
 	end
