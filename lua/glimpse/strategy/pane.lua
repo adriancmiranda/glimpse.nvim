@@ -32,30 +32,70 @@ function M._show_wezterm(filepath, position, size)
 		vim.notify('[glimpse] WezTerm socket not found', vim.log.levels.WARN)
 		return
 	end
-	local direction = position == 'bottom' and '--bottom' or '--right'
-	local cmd = {
-		'wezterm',
-		'cli',
-		'split-pane',
-		direction,
-		'--percent',
-		tostring(size),
-		'--',
-		'bash',
-		'-c',
-		string.format('wezterm imgcat "%s"; read -n 1', filepath),
-	}
-	vim.fn.jobstart(cmd, {
-		detach = true,
-		env = { WEZTERM_UNIX_SOCKET = socket },
-	})
+	vim.env.WEZTERM_UNIX_SOCKET = socket
+
+	if M._wezterm_preview_pane then
+		-- Reuse existing pane: send clear + imgcat
+		local text = 'clear && wezterm imgcat "' .. filepath .. '"\n'
+		vim.fn.jobstart({
+			'wezterm',
+			'cli',
+			'send-text',
+			'--pane-id',
+			M._wezterm_preview_pane,
+			'--no-paste',
+			text,
+		}, { on_exit = function() end })
+	else
+		-- First time: create pane running a read-eval loop (no echo)
+		local direction = position == 'bottom' and '--bottom' or '--right'
+		vim.fn.jobstart({
+			'wezterm',
+			'cli',
+			'split-pane',
+			direction,
+			'--percent',
+			tostring(size),
+			'--',
+			'bash',
+			'-c',
+			'trap "exit 0" INT TERM; stty -echo 2>/dev/null; while IFS= read -r cmd; do eval "$cmd"; done',
+		}, {
+			stdout_buffered = true,
+			on_stdout = function(_, d)
+				local pane_id = vim.trim(table.concat(d or {}, ''))
+				if pane_id ~= '' then
+					M._wezterm_preview_pane = pane_id
+					-- Send first imgcat
+					vim.defer_fn(function()
+						local text = 'clear && wezterm imgcat "' .. filepath .. '"\n'
+						vim.fn.jobstart({
+							'wezterm',
+							'cli',
+							'send-text',
+							'--pane-id',
+							pane_id,
+							'--no-paste',
+							text,
+						}, { on_exit = function() end })
+					end, 200)
+				end
+			end,
+			on_exit = function()
+				local focus_dir = position == 'bottom' and 'Up' or 'Left'
+				vim.fn.jobstart({ 'wezterm', 'cli', 'activate-pane-direction', focus_dir }, {
+					on_exit = function() end,
+				})
+			end,
+		})
+	end
 end
 
 --- Encontra o socket ativo do WezTerm.
 --- @return string|nil
 function M._find_wezterm_socket()
 	local env_socket = os.getenv('WEZTERM_UNIX_SOCKET')
-	if env_socket then
+	if env_socket and vim.uv.fs_stat(env_socket) then
 		local pid = tonumber(env_socket:match('gui%-sock%-(%d+)'))
 		if pid and vim.uv.kill(pid, 0) == 0 then
 			return env_socket
