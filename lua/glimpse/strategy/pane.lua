@@ -19,7 +19,7 @@ function M.show(filepath, opts)
 	elseif sixel.supported() and detect.in_tmux() then
 		sixel.show_pane(filepath, { width = size, height = 30 })
 	else
-		vim.notify('[glimpse] Terminal não suportado.', vim.log.levels.WARN)
+		vim.notify('[glimpse] unsupported terminal', vim.log.levels.WARN)
 	end
 end
 

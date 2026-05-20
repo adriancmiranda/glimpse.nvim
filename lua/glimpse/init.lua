@@ -96,7 +96,7 @@ local config = {
 	cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
 	cache_max_age_days = 7,
 	max_file_size = 50 * 1024 * 1024,
-	loading_text = '  ⏳ Carregando...',
+	loading_text = '  ⏳ Loading...',
 	formats = {
 		'.png',
 		'.jpg',
@@ -168,13 +168,22 @@ end
 --- Exibe imagem (escolhe estratégia automaticamente).
 ---@param filepath string Caminho absoluto do arquivo de imagem
 function M.show(filepath)
+	if util.is_archive(filepath) then
+		local safe, reason = safety.check(filepath, { max_size = 0 })
+		if not safe then
+			vim.notify('[glimpse] ' .. reason .. ': ' .. filepath, vim.log.levels.WARN)
+			return
+		end
+		M._show_archive(filepath)
+		return
+	end
 	local safe, reason = safety.check(filepath, { max_size = config.max_file_size })
 	if not safe then
 		vim.notify('[glimpse] ' .. reason .. ': ' .. filepath, vim.log.levels.WARN)
 		return
 	end
 	if not util.is_image(filepath) then
-		vim.notify('[glimpse] Não é uma imagem: ' .. filepath, vim.log.levels.WARN)
+		vim.notify('[glimpse] not previewable: ' .. filepath, vim.log.levels.WARN)
 		return
 	end
 	if M._should_use_inline() then
@@ -185,8 +194,16 @@ function M.show(filepath)
 end
 
 --- Exibe imagem reutilizando janela existente (para navegação em exploradores).
----@param filepath string Caminho absoluto do arquivo de imagem
+---@param filepath string Caminho absoluto do arquivo
 function M.preview(filepath)
+	if util.is_archive(filepath) then
+		local safe, _ = safety.check(filepath, { max_size = 0 })
+		if not safe then
+			return
+		end
+		M._show_archive(filepath)
+		return
+	end
 	local safe, _ = safety.check(filepath, { max_size = config.max_file_size })
 	if not safe then
 		return
@@ -199,6 +216,64 @@ function M.preview(filepath)
 	else
 		pane.show(filepath, { position = config.pane_position, size = config.pane_size })
 	end
+end
+
+--- Exibe conteudo de um archive num buffer flutuante.
+---@param filepath string
+---@private
+function M._show_archive(filepath)
+	local archive = require('glimpse.archive')
+	local entries, err = archive.list(filepath)
+	if not entries then
+		vim.notify('[glimpse] ' .. (err or 'failed to read archive'), vim.log.levels.WARN)
+		return
+	end
+	local lines, highlights = archive.format(entries)
+
+	-- Header
+	local header = string.format('  %s (%d entries)', vim.fn.fnamemodify(filepath, ':t'), #entries)
+	table.insert(lines, 1, header)
+	table.insert(lines, 2, string.rep('─', #header + 4))
+
+	-- Cria buffer flutuante
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].buftype = 'nofile'
+	vim.bo[buf].filetype = 'glimpse_archive'
+
+	-- Aplica highlights (offset +2 pelo header)
+	local ns = vim.api.nvim_create_namespace('glimpse_archive')
+	for _, hl in ipairs(highlights) do
+		local row = hl[1] + 2
+		local col_end = hl[3]
+		if col_end < 0 then
+			col_end = #(lines[row + 1] or '')
+		end
+		vim.api.nvim_buf_set_extmark(buf, ns, row, hl[2], {
+			end_col = col_end,
+			hl_group = hl[4],
+		})
+	end
+
+	-- Abre float
+	local width = math.min(80, vim.o.columns - 4)
+	local height = math.min(#lines, vim.o.lines - 4)
+	vim.api.nvim_open_win(buf, true, {
+		relative = 'editor',
+		width = width,
+		height = height,
+		col = math.floor((vim.o.columns - width) / 2),
+		row = math.floor((vim.o.lines - height) / 2),
+		style = 'minimal',
+		border = 'rounded',
+		title = ' Archive ',
+		title_pos = 'center',
+	})
+
+	-- Keymap para fechar
+	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })
+	vim.keymap.set('n', '<Esc>', '<cmd>close<CR>', { buffer = buf, silent = true })
 end
 
 --- Fecha preview ativo.

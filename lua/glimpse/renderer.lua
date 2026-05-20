@@ -131,7 +131,7 @@ function M.render(buf, filepath, opts, on_done)
 	placement.job_id = kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
 		placement.job_id = nil
 		if err or not id then
-			vim.notify('[glimpse] ' .. (err or 'falha'), vim.log.levels.WARN)
+			vim.notify('[glimpse] ' .. (err or 'render failed'), vim.log.levels.WARN)
 			return
 		end
 		-- Descarta se o placement mudou (race condition)

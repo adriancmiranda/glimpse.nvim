@@ -49,7 +49,7 @@ function M.extract(filepath, opts)
 	}
 	local result = vim.fn.system(cmd)
 	if vim.v.shell_error ~= 0 then
-		vim.notify('[glimpse] ffmpeg falhou: ' .. result, vim.log.levels.DEBUG)
+		vim.notify('[glimpse] ffmpeg failed: ' .. result, vim.log.levels.DEBUG)
 		return nil
 	end
 
