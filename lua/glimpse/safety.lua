@@ -28,8 +28,8 @@ function M.check(filepath, opts)
 		return false, 'not a regular file'
 	end
 
-	-- Verifica tamanho
-	if lstat.size > max_size then
+	-- Verifica tamanho (0 = sem limite)
+	if max_size > 0 and lstat.size > max_size then
 		local size_mb = string.format('%.1fMB', lstat.size / 1048576)
 		local limit_mb = string.format('%.0fMB', max_size / 1048576)
 		return false, 'file too large (' .. size_mb .. ', max ' .. limit_mb .. ')'

@@ -37,11 +37,28 @@ function M.is_video(filepath)
 	return false
 end
 
---- Verifica se o arquivo é previewable (imagem ou vídeo).
+--- Verifica se o arquivo é um archive suportado.
+--- @param filepath string
+--- @return boolean
+function M.is_archive(filepath)
+	local ext = filepath:match('^.+(%..+)$')
+	if not ext then
+		return false
+	end
+	local archive_formats = { '.zip', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.txz', '.jar', '.war', '.apk' }
+	for _, fmt in ipairs(archive_formats) do
+		if filepath:lower():match(fmt:gsub('%.', '%%.') .. '$') then
+			return true
+		end
+	end
+	return false
+end
+
+--- Verifica se o arquivo é previewable (imagem, vídeo ou archive).
 --- @param filepath string
 --- @return boolean
 function M.is_previewable(filepath)
-	return M.is_image(filepath) or M.is_video(filepath)
+	return M.is_image(filepath) or M.is_video(filepath) or M.is_archive(filepath)
 end
 
 return M

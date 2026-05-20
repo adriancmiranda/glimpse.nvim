@@ -1,6 +1,6 @@
 # glimpse.nvim
 
-> Inline image and video preview for Neovim via Kitty Graphics Protocol, with Sixel and external pane fallbacks.
+> Fast file previewer for Neovim - images, videos, and archives - via Kitty Graphics Protocol, with Sixel and external pane fallbacks.
 
 https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 
@@ -8,6 +8,7 @@ https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 
 - 🖼️ Inline rendering via **Kitty Graphics Protocol** (Kitty, Ghostty)
 - 🎬 **Video preview** via ffmpeg thumbnail extraction (cached)
+- 📦 **Archive preview** - list contents of zip/tar without extraction
 - 🪟 External pane via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
@@ -98,6 +99,11 @@ magick --version
                               -- string: 'open' (macOS), 'xdg-open' (Linux)
                               -- function: fun(filepath) for custom logic
                               -- nil: opens as buffer in Neovim
+    archive_formats = {       -- supported archive extensions (preview only, no extraction)
+      '.zip', '.tar', '.tar.gz', '.tgz',
+      '.tar.bz2', '.tar.xz', '.txz',
+      '.jar', '.war', '.apk',
+    },
     integrations = {
       oil = true,             -- keymaps in Oil
       neotree = {             -- Neo-tree integration
@@ -174,6 +180,7 @@ It never makes network requests or sends data externally.
 - **Symlinks** are rejected (prevents reading unintended targets)
 - **Large files** above `max_file_size` are skipped (default: 50MB)
 - **SVG files** are processed with restricted XML parsing (no entity expansion, no external resources)
+- **Archive preview** never extracts files, only reads metadata
 - **Shell commands** use list arguments (no shell interpolation)
 
 ### External tools used
