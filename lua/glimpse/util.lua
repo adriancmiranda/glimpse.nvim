@@ -71,6 +71,7 @@ function M.is_previewable(filepath)
 		or M.is_archive(filepath)
 		or M.is_sqlite(filepath)
 		or M.is_font(filepath)
+		or M.is_key(filepath)
 end
 
 --- Verifica se o arquivo é uma fonte.
@@ -79,6 +80,18 @@ end
 function M.is_font(filepath)
 	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
 	return ext == 'ttf' or ext == 'otf' or ext == 'woff' or ext == 'woff2'
+end
+
+--- Verifica se o arquivo é uma chave GPG ou SSH.
+--- @param filepath string
+--- @return boolean
+function M.is_key(filepath)
+	local name = filepath:match('([^/]+)$') or ''
+	if name:match('^id_') or name:match('%.pub$') or name:match('%.pem$') then
+		return true
+	end
+	local ext = (name:match('%.([^.]+)$') or ''):lower()
+	return ext == 'gpg' or ext == 'asc' or ext == 'key' or ext == 'pgp'
 end
 
 return M
