@@ -178,7 +178,7 @@ function M.show(filepath)
 		local archive = require('glimpse.archive')
 		local entries = archive.list(filepath)
 		if entries then
-			local lines = archive.format(entries)
+			local lines, highlights = archive.format(entries)
 			local buf = vim.api.nvim_get_current_buf()
 			vim.bo[buf].modifiable = true
 			vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -186,6 +186,20 @@ function M.show(filepath)
 			vim.bo[buf].modified = false
 			vim.bo[buf].buftype = 'nofile'
 			vim.bo[buf].filetype = 'glimpse_archive'
+			-- Aplica highlights
+			local ns = vim.api.nvim_create_namespace('glimpse_archive')
+			vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+			for _, hl in ipairs(highlights) do
+				local row = hl[1]
+				local col_end = hl[3]
+				if col_end < 0 then
+					col_end = #(lines[row + 1] or '')
+				end
+				vim.api.nvim_buf_set_extmark(buf, ns, row, hl[2], {
+					end_col = col_end,
+					hl_group = hl[4],
+				})
+			end
 		end
 		return
 	end
