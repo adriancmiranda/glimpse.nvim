@@ -1,5 +1,43 @@
 local M = {}
 
+--- Tenta converter uma string para UTF-8 valido usando heuristica de encoding.
+--- Tenta na ordem: UTF-8 (ja valido), CP1252, Latin-1.
+--- @param str string
+--- @return string
+local function ensure_utf8(str)
+	if not str:match('[\128-\255]') then
+		return str
+	end
+	-- Verifica se ja e UTF-8 valido
+	local i = 1
+	while i <= #str do
+		local b = str:byte(i)
+		if b < 0x80 then
+			i = i + 1
+		elseif b >= 0xC2 and b <= 0xDF and i + 1 <= #str and str:byte(i + 1) >= 0x80 and str:byte(i + 1) <= 0xBF then
+			i = i + 2
+		elseif b >= 0xE0 and b <= 0xEF and i + 2 <= #str and str:byte(i + 1) >= 0x80 and str:byte(i + 2) >= 0x80 then
+			i = i + 3
+		else
+			break
+		end
+	end
+	if i > #str then
+		return str
+	end
+	-- Tenta CP1252
+	local cp1252 = vim.iconv(str, 'CP1252', 'UTF-8')
+	if cp1252 and #cp1252 > 0 and not cp1252:match('\239\191\189') then
+		return cp1252
+	end
+	-- Fallback: Latin-1
+	local latin1 = vim.iconv(str, 'ISO-8859-1', 'UTF-8')
+	if latin1 and #latin1 > 0 then
+		return latin1
+	end
+	return str
+end
+
 --- @class ArchiveEntry
 --- @field path string
 --- @field size number|nil
@@ -60,7 +98,7 @@ function M.list_zip(filepath)
 					entry_type = 'symlink'
 				end
 				table.insert(entries, {
-					path = path,
+					path = ensure_utf8(path),
 					size = tonumber(size),
 					date = date .. ' ' .. time,
 					type = entry_type,
@@ -95,7 +133,7 @@ function M.list_tar(filepath)
 				entry_type = 'symlink'
 			end
 			table.insert(entries, {
-				path = path,
+				path = ensure_utf8(path),
 				size = tonumber(size),
 				date = date .. ' ' .. time,
 				type = entry_type,
@@ -146,7 +184,7 @@ function M.format(entries)
 	end
 
 	if suspicious_count > 0 then
-		table.insert(lines, string.format('  ⚠ %d suspicious path(s) detected', suspicious_count))
+		table.insert(lines, string.format('⚠ %d suspicious path(s) detected', suspicious_count))
 		table.insert(highlights, { #lines - 1, 0, -1, 'DiagnosticWarn' })
 		table.insert(lines, '')
 	end
@@ -156,11 +194,23 @@ function M.format(entries)
 	local max_size_width = 0
 	local prepared = {}
 	for _, entry in ipairs(entries) do
-		local icon = ' '
-		if entry.type == 'directory' then
-			icon = ' '
-		elseif entry.type == 'symlink' then
-			icon = ' '
+		local icon
+		local ok, devicons = pcall(require, 'nvim-web-devicons')
+		if ok then
+			local ext = entry.path:match('%.([^./]+)$')
+			if entry.type == 'directory' then
+				icon = devicons.get_icon(entry.path, nil, { default = true }) or ''
+			else
+				icon = devicons.get_icon(entry.path, ext, { default = true }) or ''
+			end
+		else
+			if entry.type == 'directory' then
+				icon = '\u{f4d3}'
+			elseif entry.type == 'symlink' then
+				icon = '\u{f0c1}'
+			else
+				icon = '\u{f4a5}'
+			end
 		end
 
 		local size_str = ''
@@ -247,7 +297,7 @@ function M.summary(entries, filepath)
 
 	-- Warnings
 	if suspicious_count > 0 then
-		table.insert(lines, string.format('  ⚠ %d suspicious path(s) detected', suspicious_count))
+		table.insert(lines, string.format('⚠ %d suspicious path(s) detected', suspicious_count))
 		table.insert(highlights, { #lines - 1, 0, -1, 'DiagnosticWarn' })
 		table.insert(lines, '')
 	end
