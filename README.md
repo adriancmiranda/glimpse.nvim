@@ -65,7 +65,8 @@ magick --version
   ft = { 'oil', 'neo-tree' },
   event = {
     'BufReadPost *.png', 'BufReadPost *.jpg', 'BufReadPost *.jpeg',
-    'BufReadPost *.gif', 'BufReadPost *.webp', 'BufReadPost *.svg',
+    'BufReadPost *.gif', 'BufReadPost *.bmp', 'BufReadPost *.webp',
+    'BufReadPost *.avif', 'BufReadPost *.svg', 'BufReadPost *.pdf',
     'BufReadPost *.ttf', 'BufReadPost *.otf',
     'BufReadPost *.zip', 'BufReadPost *.tar', 'BufReadPost *.tgz',
     'BufReadPost *.jar', 'BufReadPost *.war', 'BufReadPost *.apk',

@@ -143,6 +143,9 @@ function M.render(buf, filepath, opts, on_done)
 			kitty.delete(id)
 			return
 		end
+		if not w_px or not h_px then
+			return
+		end
 		placement.image_id = id
 		local grid_cols = math.min(cols, math.ceil(w_px / require('glimpse').get_config().cell_size.width))
 		local grid_rows = math.min(rows, math.ceil(h_px / require('glimpse').get_config().cell_size.height))
@@ -235,6 +238,9 @@ function M.rerender(buf)
 		end
 		vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
 		-- Aplica nova
+		if not w_px or not h_px then
+			return
+		end
 		placement.image_id = id
 		local grid_cols = math.min(cols, math.ceil(w_px / require('glimpse').get_config().cell_size.width))
 		local grid_rows = math.min(rows, math.ceil(h_px / require('glimpse').get_config().cell_size.height))
