@@ -87,21 +87,17 @@ M.setup({opts?})                                                       *M.setup*
 
 
 M.show({filepath})                                                      *M.show*
-     Exibe imagem (escolhe estratégia automaticamente).
-
-    Parameters: ~
-        {filepath}  (string)  Caminho absoluto do arquivo de imagem
-
-
-M.preview({filepath})                                                *M.preview*
-     Exibe imagem reutilizando janela existente (para navegação em exploradores).
+     Exibe arquivo (escolhe previewer automaticamente).
 
     Parameters: ~
         {filepath}  (string)  Caminho absoluto do arquivo
 
 
-M.close()                                                              *M.close*
-     Fecha preview ativo.
+M.preview({filepath})                                                *M.preview*
+     Preview rapido (reutiliza janela existente ou abre float).
+
+    Parameters: ~
+        {filepath}  (string)  Caminho absoluto do arquivo
 
 
 M.get_config()                                                    *M.get_config*
