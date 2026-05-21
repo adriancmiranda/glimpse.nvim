@@ -12,6 +12,7 @@
 | Dependency | Usage |
 |------------|-------|
 | ffmpeg | Video thumbnail extraction |
+| ghostscript | PDF rendering via ImageMagick |
 | tmux >= 3.4 | Escape sequence passthrough (Kitty Graphics via tmux) |
 | `kitten` | Included with Kitty |
 | `wezterm` CLI | External pane in WezTerm |
