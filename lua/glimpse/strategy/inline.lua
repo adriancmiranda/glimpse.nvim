@@ -45,7 +45,7 @@ function M.setup_autocmds()
 	local group = vim.api.nvim_create_augroup('ImagePreviewInline', { clear = true })
 	local util = require('glimpse.util')
 
-	-- Intercepta abertura de arquivos de imagem e fonte
+	-- Intercepta abertura de arquivos de imagem, fonte e archive
 	vim.api.nvim_create_autocmd('BufReadPost', {
 		group = group,
 		callback = function(info)
@@ -54,6 +54,19 @@ function M.setup_autocmds()
 				renderer.render(info.buf, filepath, { listed = true })
 			elseif util.is_font(filepath) then
 				require('glimpse')._show_font_render(filepath)
+			elseif util.is_archive(filepath) then
+				-- Renderiza listagem no proprio buffer (nao abre float)
+				local archive = require('glimpse.archive')
+				local entries = archive.list(filepath)
+				if entries then
+					local lines = archive.format(entries)
+					vim.bo[info.buf].modifiable = true
+					vim.api.nvim_buf_set_lines(info.buf, 0, -1, false, lines)
+					vim.bo[info.buf].modifiable = false
+					vim.bo[info.buf].modified = false
+					vim.bo[info.buf].buftype = 'nofile'
+					vim.bo[info.buf].filetype = 'glimpse_archive'
+				end
 			end
 		end,
 	})
