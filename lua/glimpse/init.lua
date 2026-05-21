@@ -59,7 +59,7 @@
 
 ---@class GlimpseIntegrationsConfig
 ---@field oil? boolean Keymaps no Oil.nvim (default: true)
----@field neotree? boolean Keymaps no NeoTree (default: false)
+---@field neotree? boolean|{enable?:boolean, auto_preview?:boolean} NeoTree integration config
 ---@field telescope? boolean Preview no Telescope (default: true)
 
 local detect = require('glimpse.detect')
