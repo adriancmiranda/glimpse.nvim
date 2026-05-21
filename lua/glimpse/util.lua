@@ -66,7 +66,19 @@ end
 --- @param filepath string
 --- @return boolean
 function M.is_previewable(filepath)
-	return M.is_image(filepath) or M.is_video(filepath) or M.is_archive(filepath) or M.is_sqlite(filepath)
+	return M.is_image(filepath)
+		or M.is_video(filepath)
+		or M.is_archive(filepath)
+		or M.is_sqlite(filepath)
+		or M.is_font(filepath)
+end
+
+--- Verifica se o arquivo é uma fonte.
+--- @param filepath string
+--- @return boolean
+function M.is_font(filepath)
+	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
+	return ext == 'ttf' or ext == 'otf' or ext == 'woff' or ext == 'woff2'
 end
 
 return M

@@ -186,6 +186,10 @@ function M.show(filepath)
 		M._show_sqlite(filepath)
 		return
 	end
+	if util.is_font(filepath) then
+		M._show_font_render(filepath)
+		return
+	end
 	local safe, reason = safety.check(filepath, { max_size = config.max_file_size })
 	if not safe then
 		vim.notify('[glimpse] ' .. reason .. ': ' .. filepath, vim.log.levels.WARN)
@@ -219,6 +223,10 @@ function M.preview(filepath)
 			return
 		end
 		M._show_sqlite(filepath)
+		return
+	end
+	if util.is_font(filepath) then
+		M._show_font_metadata(filepath)
 		return
 	end
 	local safe, _ = safety.check(filepath, { max_size = config.max_file_size })
@@ -347,6 +355,116 @@ function M._show_sqlite(filepath)
 	})
 
 	-- Keymap para fechar
+	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })
+	vim.keymap.set('n', '<Esc>', '<cmd>close<CR>', { buffer = buf, silent = true })
+end
+
+--- Renderiza uma fonte como imagem inline.
+---@param filepath string
+---@private
+function M._show_font_render(filepath)
+	local font = require('glimpse.font')
+	local info, err = font.query(filepath)
+	if not info then
+		vim.notify('[glimpse] ' .. (err or 'failed to read font'), vim.log.levels.WARN)
+		return
+	end
+
+	if vim.fn.executable('magick') == 0 then
+		-- Fallback para metadados se magick nao disponivel
+		M._show_font_metadata(filepath)
+		return
+	end
+
+	local cache_dir = config.cache_dir
+	vim.fn.mkdir(cache_dir, 'p')
+	local hash = vim.fn.sha256(filepath):sub(1, 12)
+	local tmp = cache_dir .. '/font_' .. hash .. '.png'
+	local sample = table.concat({
+		info.family .. ' - ' .. (info.style or 'Regular'),
+		'',
+		'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+		'abcdefghijklmnopqrstuvwxyz',
+		'0123456789 !@#$%&*()+-=[]{}',
+		'',
+		'The quick brown fox jumps over the lazy dog',
+	}, '\\n')
+	vim.fn.system({
+		'magick',
+		'-background',
+		'#1a1b26',
+		'-fill',
+		'#c0caf5',
+		'-font',
+		filepath,
+		'-pointsize',
+		'42',
+		'label:' .. sample,
+		tmp,
+	})
+	if vim.v.shell_error == 0 and vim.uv.fs_stat(tmp) then
+		if M._should_use_inline() then
+			inline.show(tmp)
+		else
+			pane.show(tmp, { position = config.pane_position, size = config.pane_size })
+		end
+		return
+	end
+
+	-- Fallback
+	M._show_font_metadata(filepath)
+end
+
+--- Exibe metadados de uma fonte num buffer flutuante.
+---@param filepath string
+---@private
+function M._show_font_metadata(filepath)
+	local font = require('glimpse.font')
+	local info, err = font.query(filepath)
+	if not info then
+		vim.notify('[glimpse] ' .. (err or 'failed to read font'), vim.log.levels.WARN)
+		return
+	end
+
+	local lines, highlights = font.format(info)
+
+	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
+	table.insert(lines, 1, header)
+	table.insert(lines, 2, string.rep('─', #header + 4))
+
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].buftype = 'nofile'
+	vim.bo[buf].filetype = 'glimpse_font'
+
+	local ns = vim.api.nvim_create_namespace('glimpse_font')
+	for _, hl in ipairs(highlights) do
+		local row = hl[1] + 2
+		local col_end = hl[3]
+		if col_end < 0 then
+			col_end = #(lines[row + 1] or '')
+		end
+		vim.api.nvim_buf_set_extmark(buf, ns, row, hl[2], {
+			end_col = col_end,
+			hl_group = hl[4],
+		})
+	end
+
+	local width = math.min(60, vim.o.columns - 4)
+	local height = math.min(#lines, vim.o.lines - 4)
+	vim.api.nvim_open_win(buf, true, {
+		relative = 'editor',
+		width = width,
+		height = height,
+		col = math.floor((vim.o.columns - width) / 2),
+		row = math.floor((vim.o.lines - height) / 2),
+		style = 'minimal',
+		border = 'rounded',
+		title = ' Font ',
+		title_pos = 'center',
+	})
+
 	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })
 	vim.keymap.set('n', '<Esc>', '<cmd>close<CR>', { buffer = buf, silent = true })
 end
