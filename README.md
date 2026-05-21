@@ -62,7 +62,12 @@ magick --version
 ```lua
 {
   'adriancmiranda/glimpse.nvim',
-  ft = 'oil',
+  ft = { 'oil', 'neo-tree' },
+  event = {
+    'BufReadPost *.png', 'BufReadPost *.jpg', 'BufReadPost *.jpeg',
+    'BufReadPost *.gif', 'BufReadPost *.webp', 'BufReadPost *.svg',
+    'BufReadPost *.ttf', 'BufReadPost *.otf',
+  },
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
     pane_position = 'right',  -- 'right' | 'bottom'
