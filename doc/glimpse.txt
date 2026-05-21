@@ -157,4 +157,10 @@ M.is_previewable()                                            *M.is_previewable*
      @return boolean
 
 
+M.is_font()                                                          *M.is_font*
+     Verifica se o arquivo é uma fonte.
+     @param filepath string
+     @return boolean
+
+
 vim:tw=78:ts=8:noet:ft=help:norl:
