@@ -9,6 +9,7 @@ https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 - 🖼️ Inline rendering via **Kitty Graphics Protocol** (Kitty, Ghostty)
 - 🎬 **Video preview** via ffmpeg thumbnail extraction (cached)
 - 📦 **Archive preview** - list contents of zip/tar without extraction
+- 🗄️ **SQLite preview** - show tables and columns without modifying the database
 - 🪟 External pane via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
@@ -191,6 +192,7 @@ It never makes network requests or sends data externally.
 | ffmpeg | Video thumbnail extraction | Video preview |
 | zipinfo | Archive listing (read-only) | Archive preview |
 | tar | Archive listing (read-only) | tar/tgz preview |
+| sqlite3 | Schema listing (read-only) | SQLite preview |
 
 No files are extracted, modified, or uploaded. All processing is local and read-only.
 
