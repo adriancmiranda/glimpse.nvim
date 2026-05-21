@@ -53,20 +53,9 @@ function M.setup_autocmds()
 			if util.is_image(filepath) then
 				renderer.render(info.buf, filepath, { listed = true })
 			elseif util.is_font(filepath) then
-				require('glimpse')._show_font_render(filepath)
+				require('glimpse.previewer.font').show(filepath)
 			elseif util.is_archive(filepath) then
-				-- Renderiza listagem no proprio buffer (nao abre float)
-				local archive = require('glimpse.archive')
-				local entries = archive.list(filepath)
-				if entries then
-					local lines = archive.format(entries)
-					vim.bo[info.buf].modifiable = true
-					vim.api.nvim_buf_set_lines(info.buf, 0, -1, false, lines)
-					vim.bo[info.buf].modifiable = false
-					vim.bo[info.buf].modified = false
-					vim.bo[info.buf].buftype = 'nofile'
-					vim.bo[info.buf].filetype = 'glimpse_archive'
-				end
+				require('glimpse.previewer.archive').show(filepath)
 			end
 		end,
 	})
