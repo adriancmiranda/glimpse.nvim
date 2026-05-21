@@ -67,6 +67,8 @@ magick --version
     'BufReadPost *.png', 'BufReadPost *.jpg', 'BufReadPost *.jpeg',
     'BufReadPost *.gif', 'BufReadPost *.webp', 'BufReadPost *.svg',
     'BufReadPost *.ttf', 'BufReadPost *.otf',
+    'BufReadPost *.zip', 'BufReadPost *.tar', 'BufReadPost *.tgz',
+    'BufReadPost *.jar', 'BufReadPost *.war', 'BufReadPost *.apk',
   },
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
