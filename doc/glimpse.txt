@@ -145,8 +145,14 @@ M.is_archive()                                                    *M.is_archive*
      @return boolean
 
 
+M.is_sqlite()                                                      *M.is_sqlite*
+     Verifica se o arquivo é um banco SQLite.
+     @param filepath string
+     @return boolean
+
+
 M.is_previewable()                                            *M.is_previewable*
-     Verifica se o arquivo é previewable (imagem, vídeo ou archive).
+     Verifica se o arquivo é previewable (imagem, vídeo, archive ou sqlite).
      @param filepath string
      @return boolean
 
