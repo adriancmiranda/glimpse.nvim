@@ -176,6 +176,9 @@ local function resolve_previewer(filepath)
 	if util.is_sqlite(filepath) then
 		return require('glimpse.previewer.sqlite'), { max_size = 0 }
 	end
+	if util.is_key(filepath) then
+		return require('glimpse.previewer.key'), { max_size = config.max_file_size }
+	end
 	if util.is_font(filepath) then
 		return require('glimpse.previewer.font'), { max_size = config.max_file_size }
 	end
