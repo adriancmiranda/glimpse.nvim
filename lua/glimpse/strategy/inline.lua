@@ -45,13 +45,15 @@ function M.setup_autocmds()
 	local group = vim.api.nvim_create_augroup('ImagePreviewInline', { clear = true })
 	local util = require('glimpse.util')
 
-	-- Intercepta abertura de arquivos de imagem
+	-- Intercepta abertura de arquivos de imagem e fonte
 	vim.api.nvim_create_autocmd('BufReadPost', {
 		group = group,
 		callback = function(info)
 			local filepath = vim.api.nvim_buf_get_name(info.buf)
 			if util.is_image(filepath) then
 				renderer.render(info.buf, filepath, { listed = true })
+			elseif util.is_font(filepath) then
+				require('glimpse')._show_font_render(filepath)
 			end
 		end,
 	})

@@ -73,6 +73,10 @@ function M.setup()
 						end
 						return
 					end
+					if util.is_font(fpath) then
+						require('glimpse').show(fpath)
+						return
+					end
 				end
 				oil.select()
 			end, { buffer = info.buf, silent = true, desc = 'Abrir arquivo ou imagem/vídeo' })
