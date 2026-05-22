@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 MD060 MD025 -->
+
 # Contributing to glimpse.nvim
 
 ## Development environment
@@ -11,6 +13,7 @@
 
 | Dependency | Usage |
 |------------|-------|
+| openssl | Certificate metadata extraction |
 | ffmpeg | Video thumbnail extraction |
 | ghostscript | PDF rendering via ImageMagick |
 | tmux >= 3.4 | Escape sequence passthrough (Kitty Graphics via tmux) |
@@ -40,18 +43,25 @@ lua/glimpse/
 ├── sixel.lua             -- Sixel protocol (fallback)
 ├── thumbnail.lua         -- Video thumbnail extraction (ffmpeg, async)
 ├── magickwand.lua        -- ImageMagick interface for conversion
-├── util.lua              -- Image and video format detection
+├── util.lua              -- Image, video and certificate format detection
+├── archive.lua           -- Archive listing and suspicious path detection
+├── font.lua              -- Font metadata extraction and rendering
+├── sqlite.lua            -- SQLite schema preview
+├── safety.lua            -- File validation and safety checks
+├── previewer/
+│   ├── archive.lua       -- Archive previewer
+│   ├── cert.lua          -- X.509 certificate previewer
+│   ├── font.lua          -- Font previewer
+│   ├── image.lua         -- Inline image previewer
+│   ├── key.lua           -- GPG/SSH key previewer
+│   └── sqlite.lua        -- SQLite previewer
 ├── strategy/
 │   ├── inline.lua        -- Inline rendering + autocmds
 │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
 └── integrations/
     ├── oil.lua           -- Oil.nvim integration (preview, open, prefetch)
-    ├── lir.lua           -- lir.nvim integration (preview, open, prefetch)
-    └── neotree.lua       -- Neo-tree integration (auto-preview, cleanup)
-
-lua/telescope/
-└── _extensions/
-    └── glimpse.lua       -- Telescope extension (custom previewer)
+    ├── neotree.lua       -- Neo-tree integration (auto-preview, cleanup)
+    └── telescope.lua     -- Telescope integration (scoped picker preview)
 ```
 
 ## Image protocols

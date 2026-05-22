@@ -1,8 +1,11 @@
+<!-- markdownlint-disable MD013 MD034 MD060 MD025 -->
+
 # glimpse.nvim
 
-> Fast multi-format file previewer with inline Kitty graphics support, external pane previews, and integrations for file explorers and pickers.
+> Fast multi-format file previewer with inline Kitty graphics support,
+> external pane previews, and integrations for file explorers and pickers.
 
-https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
+<https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb>
 
 ## Features
 
@@ -13,9 +16,10 @@ https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 - 🪟 External pane via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
-- 🔭 **Telescope** integration (auto-injects `buffer_previewer_maker` for images and videos)
+- 🔭 **Telescope** integration (scoped media previews for `:Telescope find_files`)
 - 🌳 **Neo-tree** integration
-- 🔐 **Certificate preview** - show subject, issuer, validity and fingerprint for `.crt`/`.pem`
+- 🔐 **Certificate preview** - show subject, issuer, validity, and
+  fingerprint for `.crt`/`.pem`
 - ⚡ Image conversion cache + background prefetch
 - 🔄 Auto re-render on window resize or tab switch
 - 📐 Contain resize (images always fully visible)
@@ -289,13 +293,24 @@ lua/
 │   ├── thumbnail.lua         -- Video thumbnail extraction (ffmpeg, async)
 │   ├── magickwand.lua        -- FFI bindings for libMagickWand
 │   ├── util.lua              -- Image, video and certificate format detection
+│   ├── archive.lua           -- Archive listing and suspicious path detection
+│   ├── font.lua              -- Font metadata extraction and rendering
+│   ├── sqlite.lua            -- SQLite schema preview
+│   ├── safety.lua            -- File validation and safety checks
+│   ├── previewer/
+│   │   ├── archive.lua       -- Archive previewer
+│   │   ├── cert.lua          -- X.509 certificate previewer
+│   │   ├── font.lua          -- Font previewer
+│   │   ├── image.lua         -- Inline image previewer
+│   │   ├── key.lua           -- GPG/SSH key previewer
+│   │   └── sqlite.lua        -- SQLite previewer
 │   ├── strategy/
 │   │   ├── inline.lua        -- Inline rendering + autocmds
 │   │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
 │   └── integrations/
 │       ├── oil.lua           -- Oil.nvim integration
 │       ├── neotree.lua       -- Neo-tree integration (auto-preview)
-│       └── telescope.lua     -- Telescope integration (buffer_previewer_maker)
+│       └── telescope.lua     -- Telescope integration (scoped picker preview)
 ```
 
 ## Credits
