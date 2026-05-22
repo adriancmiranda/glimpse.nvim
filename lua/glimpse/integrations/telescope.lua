@@ -15,6 +15,10 @@ M.buffer_previewer_maker = function(filepath, bufnr, opts)
 		require('telescope.previewers').buffer_previewer_maker(filepath, bufnr, opts)
 		return
 	end
+	-- Captura winid agora: o Telescope passa opts.winid (self.state.winid) que é mais
+	-- confiável do que bufwinid() chamado no interior do schedule_wrap, pois o buffer
+	-- pode não ter janela associada naquele momento.
+	local winid = (opts.winid and opts.winid ~= -1) and opts.winid or vim.fn.bufwinid(bufnr)
 	-- Debounce: cancela conversão anterior se o usuário navegar rápido
 	if _timer then
 		_timer:stop()
@@ -37,14 +41,16 @@ M.buffer_previewer_maker = function(filepath, bufnr, opts)
 			if not vim.api.nvim_buf_is_valid(bufnr) then
 				return
 			end
+			-- Resolve winid final: prefere o capturado em cima, cai de volta para bufwinid
+			local win = (winid and winid ~= -1) and winid or vim.fn.bufwinid(bufnr)
 			if is_img then
-				require('glimpse.renderer').render(bufnr, filepath, { winid = vim.fn.bufwinid(bufnr) })
+				require('glimpse.renderer').render(bufnr, filepath, { winid = win })
 			else
 				require('glimpse.thumbnail').extract_async(filepath, function(thumb)
 					if not thumb or not vim.api.nvim_buf_is_valid(bufnr) then
 						return
 					end
-					require('glimpse.renderer').render(bufnr, thumb, { winid = vim.fn.bufwinid(bufnr) })
+					require('glimpse.renderer').render(bufnr, thumb, { winid = win })
 				end)
 			end
 		end)
