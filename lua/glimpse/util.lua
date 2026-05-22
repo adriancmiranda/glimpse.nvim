@@ -93,6 +93,31 @@ function M.is_cert(filepath)
 	return false
 end
 
+--- Verifica se o arquivo PEM é uma chave privada.
+--- @param filepath string
+--- @return boolean
+local function is_pem_key(filepath)
+	local content = vim.fn.readfile(filepath, '', 20)
+	if not content or #content == 0 then
+		return false
+	end
+
+	for _, line in ipairs(content) do
+		if
+			line:find('BEGIN PRIVATE KEY', 1, true)
+			or line:find('BEGIN RSA PRIVATE KEY', 1, true)
+			or line:find('BEGIN EC PRIVATE KEY', 1, true)
+			or line:find('BEGIN ENCRYPTED PRIVATE KEY', 1, true)
+			or line:find('BEGIN OPENSSH PRIVATE KEY', 1, true)
+			or line:find('BEGIN PGP PRIVATE KEY BLOCK', 1, true)
+		then
+			return true
+		end
+	end
+
+	return false
+end
+
 --- Verifica se o arquivo é previewable (imagem, vídeo, certificado, archive ou sqlite).
 --- @param filepath string
 --- @return boolean
@@ -123,7 +148,7 @@ function M.is_key(filepath)
 		return true
 	end
 	if name:match('%.pem$') then
-		return not M.is_cert(filepath)
+		return is_pem_key(filepath)
 	end
 	local ext = (name:match('%.([^.]+)$') or ''):lower()
 	return ext == 'gpg' or ext == 'asc' or ext == 'key' or ext == 'pgp'

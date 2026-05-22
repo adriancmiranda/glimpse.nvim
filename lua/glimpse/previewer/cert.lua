@@ -67,63 +67,67 @@ local function _parse_output(output)
 		signature_algorithm = nil,
 		is_ca = false,
 	}
+	local in_validity = false
 	local in_subject_public_key = false
 	local in_basic_constraints = false
 
-	for line in output:gmatch('[^\n]+') do
-		local subject = line:match('^%s*Subject:%s*(.+)$')
-		if subject then
+	local function append(line)
+		table.insert(lines, line)
+	end
+
+	for raw_line in output:gmatch('[^\n]+') do
+		local line = vim.trim(raw_line)
+
+		if line == 'Validity' then
+			in_validity = true
+			in_subject_public_key = false
+			in_basic_constraints = false
+		elseif line:match('^Subject:%s*(.+)$') then
+			local subject = line:match('^Subject:%s*(.+)$')
 			meta.subject = vim.trim(subject)
-			table.insert(lines, 'Subject: ' .. subject)
-		else
-			local issuer = line:match('^%s*Issuer:%s*(.+)$')
-			if issuer then
-				meta.issuer = vim.trim(issuer)
-				table.insert(lines, 'Issuer: ' .. issuer)
-			else
-				local not_before = line:match('^%s*Not Before:%s*(.+)$')
-				if not_before then
-					meta.not_before = not_before
-					table.insert(lines, 'Valid From: ' .. not_before)
-				else
-					local not_after = line:match('^%s*Not After :%s*(.+)$')
-					if not_after then
-						meta.not_after = not_after
-						table.insert(lines, 'Valid Until: ' .. not_after)
-					else
-						local fingerprint = line:match('^%s*SHA256 Fingerprint%s*=%s*(.+)$')
-						if fingerprint then
-							table.insert(lines, 'SHA256 Fingerprint: ' .. fingerprint)
-						else
-							local signature_algorithm = line:match('^%s*Signature Algorithm:%s*(.+)$')
-							if signature_algorithm and not meta.signature_algorithm then
-								meta.signature_algorithm = signature_algorithm
-								table.insert(lines, 'Signature Algorithm: ' .. signature_algorithm)
-							elseif line:match('^%s*X509v3 Basic Constraints:') then
-								in_basic_constraints = true
-							elseif in_basic_constraints then
-								if line:match('CA:%s*TRUE') then
-									meta.is_ca = true
-									table.insert(lines, 'Basic Constraints: CA:TRUE')
-									in_basic_constraints = false
-								elseif line:match('^%s*%S') then
-									in_basic_constraints = false
-								end
-							end
-							if line:match('^%s*X509v3 Subject Alternative Name:') then
-								table.insert(lines, '')
-								table.insert(lines, 'Subject Alternative Name:')
-							elseif line:match('^%s*Subject Public Key Info:') then
-								in_subject_public_key = true
-							elseif in_subject_public_key then
-								local algorithm = line:match('^%s*Public Key Algorithm:%s*(.+)$')
-								if algorithm then
-									table.insert(lines, 'Public Key Algorithm: ' .. algorithm)
-								end
-							end
-						end
-					end
-				end
+			append('Subject: ' .. meta.subject)
+		elseif line:match('^Issuer:%s*(.+)$') then
+			local issuer = line:match('^Issuer:%s*(.+)$')
+			meta.issuer = vim.trim(issuer)
+			append('Issuer: ' .. meta.issuer)
+		elseif in_validity and line:match('^Not Before:%s*(.+)$') then
+			meta.not_before = line:match('^Not Before:%s*(.+)$')
+			append('Valid From: ' .. meta.not_before)
+		elseif in_validity and line:match('^Not After%s*:?(.+)$') then
+			local not_after = line:match('^Not After%s*:?(.+)$')
+			meta.not_after = vim.trim(not_after)
+			in_validity = false
+			append('Valid Until: ' .. meta.not_after)
+		elseif line:match('^SHA256 Fingerprint%s*=%s*(.+)$') then
+			local fingerprint = line:match('^SHA256 Fingerprint%s*=%s*(.+)$')
+			append('SHA256 Fingerprint: ' .. vim.trim(fingerprint))
+		elseif line:match('^Signature Algorithm:%s*(.+)$') then
+			local signature_algorithm = line:match('^Signature Algorithm:%s*(.+)$')
+			if not meta.signature_algorithm then
+				meta.signature_algorithm = vim.trim(signature_algorithm)
+				append('Signature Algorithm: ' .. meta.signature_algorithm)
+			end
+		elseif line:match('^X509v3 Basic Constraints:') then
+			in_basic_constraints = true
+		elseif in_basic_constraints then
+			if line:match('CA:%s*TRUE') then
+				meta.is_ca = true
+				append('Basic Constraints: CA:TRUE')
+			end
+			if line == '' or line:match('^%S') then
+				in_basic_constraints = false
+			end
+		elseif line:match('^X509v3 Subject Alternative Name:') then
+			append('')
+			append('Subject Alternative Name:')
+		elseif line:match('^Subject Public Key Info:') then
+			in_subject_public_key = true
+		elseif in_subject_public_key then
+			local algorithm = line:match('^Public Key Algorithm:%s*(.+)$')
+			if algorithm then
+				append('Public Key Algorithm: ' .. vim.trim(algorithm))
+			elseif line:match('^X509v3 ') or line == '' then
+				in_subject_public_key = false
 			end
 		end
 	end
@@ -174,9 +178,9 @@ function M.show(filepath)
 		table.insert(lines, 1 + #warnings, '')
 	end
 
-	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
+	local header = string.format('󰌾 %s', vim.fn.fnamemodify(filepath, ':t'))
 	table.insert(lines, 1, header)
-	table.insert(lines, 2, string.rep('─', #header + 4))
+	table.insert(lines, 2, string.rep('─', vim.fn.strdisplaywidth(header) + 4))
 
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
