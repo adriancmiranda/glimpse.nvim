@@ -120,7 +120,7 @@ magick --version
         enable = false,       -- enable auto-preview in Neo-tree
         auto_preview = true,  -- preview on cursor move (set false to disable)
       },
-      telescope = true,       -- auto-injects buffer_previewer_maker for images and videos
+      telescope = true,       -- enables image/video previews in :Telescope find_files
     },
   },
 }
@@ -145,16 +145,48 @@ Enable with `integrations = { neotree = { enable = true } }` in setup.
 
 ### Telescope
 
-Enable with `integrations = { telescope = true }` in setup — no extra configuration needed.
+Enable with `integrations = { telescope = true }` in setup. With lazy.nvim,
+glimpse applies its previewer when telescope.nvim loads. By default, only
+`:Telescope find_files` receives media previews.
 
-glimpse automatically injects `buffer_previewer_maker` into Telescope when it loads,
-adding image and video preview to all pickers (`:Telescope find_files`, `live_grep`, etc.).
+```lua
+require('glimpse').setup({
+  integrations = {
+    telescope = true,
+  },
+})
+```
+
+To choose the Telescope pickers that receive media previews:
+
+```lua
+require('glimpse').setup({
+  integrations = {
+    telescope = {
+      enable = true,
+      pickers = { 'find_files', 'git_files' },
+    },
+  },
+})
+```
+
+If you prefer configuring Telescope manually, use the exported previewer:
+
+```lua
+require('telescope').setup({
+  pickers = {
+    find_files = {
+      previewer = require('glimpse.integrations.telescope').previewer(),
+    },
+  },
+})
+```
 
 - **Images** are rendered inline via Kitty Graphics Protocol with a 100ms debounce
 - **Videos** extract a thumbnail via ffmpeg before rendering
 - **All other files** fall back to Telescope's default previewer
 
-Switching between files is instant thanks to automatic placement cleanup and conversion cache.
+Switching between files is fast after thumbnails and conversions are cached.
 
 ### API
 
