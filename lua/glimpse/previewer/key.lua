@@ -1,6 +1,24 @@
 --- Previewer para chaves GPG e SSH.
 local M = {}
 
+local function _render_output(output, prefix)
+	local lines = {}
+	for line in output:gmatch('[^\n]+') do
+		table.insert(lines, (prefix or '') .. line)
+	end
+	return lines
+end
+
+local function _render_packets(output)
+	local lines = { '⚠ encrypted GPG file; showing packet metadata only', '' }
+	for line in output:gmatch('[^\n]+') do
+		if line:match('^gpg:%s+encrypted with') or not line:match('^gpg:') then
+			table.insert(lines, '  ' .. line)
+		end
+	end
+	return lines
+end
+
 --- Extrai informacoes de uma chave SSH.
 --- @param filepath string
 --- @return string[]|nil lines
@@ -42,15 +60,21 @@ local function query_gpg(filepath)
 	if vim.fn.executable('gpg') == 0 then
 		return nil, 'gpg not found'
 	end
-	local output = vim.fn.system({ 'gpg', '--show-keys', '--keyid-format', 'long', filepath })
+	local output = vim.fn.system({ 'gpg', '--batch', '--no-tty', '--show-keys', '--keyid-format', 'long', filepath })
+	if output and output:match('%S') then
+		return _render_output(output, '  ')
+	end
+
+	local packets = vim.fn.system({ 'gpg', '--batch', '--no-tty', '--list-packets', filepath })
+	if packets and packets:match('%S') then
+		return _render_packets(packets)
+	end
+
 	if vim.v.shell_error ~= 0 then
 		return nil, 'gpg failed'
 	end
-	local lines = {}
-	for line in output:gmatch('[^\n]+') do
-		table.insert(lines, '  ' .. line)
-	end
-	return lines
+
+	return nil, 'empty gpg output'
 end
 
 --- Detecta se e SSH ou GPG e retorna info.
