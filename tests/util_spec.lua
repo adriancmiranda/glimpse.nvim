@@ -1,6 +1,9 @@
 local util = require('glimpse.util')
 
 describe('util', function()
+	local cert_dir = vim.fn.tempname()
+	vim.fn.mkdir(cert_dir, 'p')
+
 	describe('is_image', function()
 		it('returns true for supported extensions', function()
 			assert.is_true(util.is_image('/path/to/photo.png'))
@@ -81,9 +84,80 @@ describe('util', function()
 			assert.is_true(util.is_previewable('/path/to/video.mkv'))
 		end)
 
+		it('returns true for certificates', function()
+			local cert = cert_dir .. '/cert.pem'
+			vim.fn.writefile({
+				'-----BEGIN CERTIFICATE-----',
+				'MIIBezCCASWgAwIBAgIUT3',
+				'-----END CERTIFICATE-----',
+			}, cert)
+			assert.is_true(util.is_previewable(cert))
+		end)
+
 		it('returns false for non-media files', function()
 			assert.is_false(util.is_previewable('/path/to/file.lua'))
 			assert.is_false(util.is_previewable('/path/to/file.txt'))
+		end)
+	end)
+
+	describe('is_cert', function()
+		it('returns true for crt files', function()
+			assert.is_true(util.is_cert('/path/to/cert.crt'))
+		end)
+
+		it('returns true for pem certificate files', function()
+			local cert = cert_dir .. '/cert.pem'
+			vim.fn.writefile({
+				'-----BEGIN CERTIFICATE-----',
+				'MIIBezCCASWgAwIBAgIUT3',
+				'-----END CERTIFICATE-----',
+			}, cert)
+			assert.is_true(util.is_cert(cert))
+		end)
+
+		it('returns true for pem bundle files with certificate headers after comments', function()
+			local cert = cert_dir .. '/bundle.pem'
+			vim.fn.writefile({
+				'# Issuer: CN=Example Root CA',
+				'# Subject: CN=Example Root CA',
+				'# Label: "Example Root CA"',
+				'-----BEGIN CERTIFICATE-----',
+				'MIIBezCCASWgAwIBAgIUT3',
+				'-----END CERTIFICATE-----',
+			}, cert)
+			assert.is_true(util.is_cert(cert))
+		end)
+
+		it('returns false for pem key files', function()
+			local key = cert_dir .. '/key.pem'
+			vim.fn.writefile({
+				'-----BEGIN RSA PRIVATE KEY-----',
+				'MIIEpAIBAAKCAQE',
+				'-----END RSA PRIVATE KEY-----',
+			}, key)
+			assert.is_false(util.is_cert(key))
+		end)
+	end)
+
+	describe('is_key', function()
+		it('returns true for pem key files', function()
+			local key = cert_dir .. '/key.pem'
+			vim.fn.writefile({
+				'-----BEGIN RSA PRIVATE KEY-----',
+				'MIIEpAIBAAKCAQE',
+				'-----END RSA PRIVATE KEY-----',
+			}, key)
+			assert.is_true(util.is_key(key))
+		end)
+
+		it('returns false for pem certificate files', function()
+			local cert = cert_dir .. '/cert.pem'
+			vim.fn.writefile({
+				'-----BEGIN CERTIFICATE-----',
+				'MIIBezCCASWgAwIBAgIUT3',
+				'-----END CERTIFICATE-----',
+			}, cert)
+			assert.is_false(util.is_key(cert))
 		end)
 	end)
 end)

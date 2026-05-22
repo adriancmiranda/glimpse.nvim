@@ -1,6 +1,6 @@
 # glimpse.nvim
 
-> Fast file previewer for Neovim - images, videos, and archives - via Kitty Graphics Protocol, with Sixel and external pane fallbacks.
+> Fast multi-format file previewer with inline Kitty graphics support, external pane previews, and integrations for file explorers and pickers.
 
 https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 
@@ -15,6 +15,7 @@ https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
 - 🔭 **Telescope** integration (auto-injects `buffer_previewer_maker` for images and videos)
 - 🌳 **Neo-tree** integration
+- 🔐 **Certificate preview** - show subject, issuer, validity and fingerprint for `.crt`/`.pem`
 - ⚡ Image conversion cache + background prefetch
 - 🔄 Auto re-render on window resize or tab switch
 - 📐 Contain resize (images always fully visible)
@@ -24,6 +25,7 @@ https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 - Neovim >= 0.10
 - [ImageMagick](https://imagemagick.org/) (`magick` CLI) - conversion and resizing
 - [ffmpeg](https://ffmpeg.org/) (optional) - video thumbnail extraction
+- [OpenSSL](https://www.openssl.org/) (`openssl` CLI) - certificate metadata extraction
 - Terminal with support for at least one protocol:
   - **Kitty Graphics** (recommended): Kitty, Ghostty
   - **Terminal CLI**: WezTerm, iTerm2
@@ -68,6 +70,7 @@ magick --version
     'BufReadPost *.gif', 'BufReadPost *.bmp', 'BufReadPost *.webp',
     'BufReadPost *.avif', 'BufReadPost *.svg', 'BufReadPost *.pdf',
     'BufReadPost *.ttf', 'BufReadPost *.otf',
+    'BufReadPost *.crt', 'BufReadPost *.pem',
     'BufReadPost *.zip', 'BufReadPost *.tar', 'BufReadPost *.tgz',
     'BufReadPost *.jar', 'BufReadPost *.war', 'BufReadPost *.apk',
     'BufReadPost *.db', 'BufReadPost *.sqlite', 'BufReadPost *.sqlite3',
@@ -184,6 +187,7 @@ require('telescope').setup({
 
 - **Images** are rendered inline via Kitty Graphics Protocol with a 100ms debounce
 - **Videos** extract a thumbnail via ffmpeg before rendering
+- **Certificates** are parsed with `openssl x509 -noout -text` to show subject, issuer, validity and fingerprint
 - **All other files** fall back to Telescope's default previewer
 
 Switching between files is fast after thumbnails and conversions are cached.
@@ -198,7 +202,8 @@ img.preview(filepath)        -- show reusing existing window
 img.close()                  -- close active preview
 img.is_image(filepath)       -- check if supported image
 img.is_video(filepath)       -- check if supported video
-img.is_previewable(filepath) -- check if image or video
+img.is_previewable(filepath) -- check if supported previewable file
+img.is_cert(filepath)        -- check if supported certificate
 img.get_terminal()           -- return detected terminal
 ```
 
@@ -221,6 +226,7 @@ It never makes network requests or sends data externally.
 |------|---------|------|
 | magick (ImageMagick) | Image resize/conversion | Image preview |
 | ffmpeg | Video thumbnail extraction | Video preview |
+| openssl | X.509 certificate metadata extraction | Certificate preview |
 | zipinfo | Archive listing (read-only) | Archive preview |
 | tar | Archive listing (read-only) | tar/tgz preview |
 | sqlite3 | Schema listing (read-only) | SQLite preview |
@@ -266,6 +272,8 @@ tmux set-environment WEZTERM_UNIX_SOCKET ~/.local/share/wezterm/gui-sock-<PID>
 
 **Images:** PNG, JPG, JPEG, GIF, BMP, WebP, AVIF, SVG, PDF, PICT
 
+**Certificates:** CRT, PEM (X.509 certificates)
+
 **Videos:** MP4, MKV, AVI, MOV, WebM, FLV, WMV, M4V (requires ffmpeg)
 
 ## Architecture
@@ -280,7 +288,7 @@ lua/
 │   ├── sixel.lua             -- Sixel protocol (fallback)
 │   ├── thumbnail.lua         -- Video thumbnail extraction (ffmpeg, async)
 │   ├── magickwand.lua        -- FFI bindings for libMagickWand
-│   ├── util.lua              -- Image and video format detection
+│   ├── util.lua              -- Image, video and certificate format detection
 │   ├── strategy/
 │   │   ├── inline.lua        -- Inline rendering + autocmds
 │   │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)

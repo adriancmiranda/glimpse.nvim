@@ -147,8 +147,14 @@ M.is_sqlite()                                                      *M.is_sqlite*
      @return boolean
 
 
+M.is_cert()                                                          *M.is_cert*
+     Verifica se o arquivo é um certificado X.509.
+     @param filepath string
+     @return boolean
+
+
 M.is_previewable()                                            *M.is_previewable*
-     Verifica se o arquivo é previewable (imagem, vídeo, archive ou sqlite).
+     Verifica se o arquivo é previewable (imagem, vídeo, certificado, archive ou sqlite).
      @param filepath string
      @return boolean
 
