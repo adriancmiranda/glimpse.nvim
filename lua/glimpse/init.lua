@@ -145,6 +145,9 @@ function M.setup(opts)
 	elseif neotree == true then
 		require('glimpse.integrations.neotree').setup()
 	end
+	if config.integrations.telescope then
+		require('glimpse.integrations.telescope').setup()
+	end
 	-- Limpa cache antigo em background
 	if config.cache_max_age_days and config.cache_max_age_days > 0 then
 		vim.defer_fn(function()

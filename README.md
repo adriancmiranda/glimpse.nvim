@@ -13,7 +13,7 @@ https://github.com/user-attachments/assets/686e39aa-1fa9-4a79-8a07-70ce5d4062bb
 - 🪟 External pane via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
-- 🔭 **Telescope** integration (custom previewer for images and videos)
+- 🔭 **Telescope** integration (auto-injects `buffer_previewer_maker` for images and videos)
 - 🌳 **Neo-tree** integration
 - ⚡ Image conversion cache + background prefetch
 - 🔄 Auto re-render on window resize or tab switch
@@ -120,7 +120,7 @@ magick --version
         enable = false,       -- enable auto-preview in Neo-tree
         auto_preview = true,  -- preview on cursor move (set false to disable)
       },
-      telescope = true,       -- loads via require('telescope').load_extension('glimpse')
+      telescope = true,       -- auto-injects buffer_previewer_maker for images and videos
     },
   },
 }
@@ -145,26 +145,16 @@ Enable with `integrations = { neotree = { enable = true } }` in setup.
 
 ### Telescope
 
-The recommended approach is to use `buffer_previewer_maker` in Telescope defaults:
+Enable with `integrations = { telescope = true }` in setup — no extra configuration needed.
 
-```lua
--- In Telescope setup (defaults):
-defaults = {
-  buffer_previewer_maker = function(filepath, bufnr, opts)
-    opts = opts or {}
-    if require('glimpse.util').is_image(filepath) then
-      require('glimpse.renderer').render(bufnr, filepath, { winid = vim.fn.bufwinid(bufnr) })
-      return
-    end
-    require('telescope.previewers').buffer_previewer_maker(filepath, bufnr, opts)
-  end,
-}
-```
+glimpse automatically injects `buffer_previewer_maker` into Telescope when it loads,
+adding image and video preview to all pickers (`:Telescope find_files`, `live_grep`, etc.).
 
-> **NOTE**: Do NOT add `'glimpse'` to Telescope's `extensions_list`.
-> This forces Telescope to load on startup, increasing init time by ~1300ms.
+- **Images** are rendered inline via Kitty Graphics Protocol with a 100ms debounce
+- **Videos** extract a thumbnail via ffmpeg before rendering
+- **All other files** fall back to Telescope's default previewer
 
-The previewer renders images inline in the preview pane and falls back to the default previewer for non-image files. Switching between files is instant thanks to automatic placement cleanup and conversion cache.
+Switching between files is instant thanks to automatic placement cleanup and conversion cache.
 
 ### API
 
@@ -264,10 +254,8 @@ lua/
 │   │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
 │   └── integrations/
 │       ├── oil.lua           -- Oil.nvim integration
-│       └── neotree.lua       -- Neo-tree integration (auto-preview)
-└── telescope/
-    └── _extensions/
-        └── glimpse.lua       -- Telescope extension (custom previewer)
+│       ├── neotree.lua       -- Neo-tree integration (auto-preview)
+│       └── telescope.lua     -- Telescope integration (buffer_previewer_maker)
 ```
 
 ## Credits
