@@ -179,6 +179,9 @@ local function resolve_previewer(filepath)
 	if util.is_sqlite(filepath) then
 		return require('glimpse.previewer.sqlite'), { max_size = 0 }
 	end
+	if util.is_cert(filepath) then
+		return require('glimpse.previewer.cert'), { max_size = config.max_file_size }
+	end
 	if util.is_key(filepath) then
 		return require('glimpse.previewer.key'), { max_size = config.max_file_size }
 	end
@@ -242,10 +245,15 @@ M.is_image = util.is_image
 ---@return boolean
 M.is_video = util.is_video
 
---- Verifica se o arquivo é previewable (imagem ou vídeo).
+--- Verifica se o arquivo é previewable (imagem, vídeo, certificado, etc.).
 ---@param filepath string Caminho do arquivo
 ---@return boolean
 M.is_previewable = util.is_previewable
+
+--- Verifica se o arquivo é um certificado X.509.
+---@param filepath string Caminho do arquivo
+---@return boolean
+M.is_cert = util.is_cert
 
 --- Retorna o terminal detectado.
 ---@return string|nil terminal 'wezterm'|'kitty'|'ghostty'|'iterm'|nil
