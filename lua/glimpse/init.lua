@@ -60,7 +60,7 @@
 ---@class GlimpseIntegrationsConfig
 ---@field oil? boolean Keymaps no Oil.nvim (default: true)
 ---@field neotree? boolean|{enable?:boolean, auto_preview?:boolean} NeoTree integration config
----@field telescope? boolean Preview no Telescope (default: true)
+---@field telescope? boolean|{enable?:boolean, pickers?:string|string[]|table} Preview no Telescope (default: true)
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
@@ -144,6 +144,9 @@ function M.setup(opts)
 		require('glimpse.integrations.neotree').setup()
 	elseif neotree == true then
 		require('glimpse.integrations.neotree').setup()
+	end
+	if config.integrations.telescope then
+		require('glimpse.integrations.telescope').setup(config.integrations.telescope)
 	end
 	-- Limpa cache antigo em background
 	if config.cache_max_age_days and config.cache_max_age_days > 0 then
