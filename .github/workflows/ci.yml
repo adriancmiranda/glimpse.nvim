@@ -25,6 +25,8 @@ jobs:
           sudo luarocks install luacheck
       - name: Lint
         run: luacheck lua/ tests/
+      - name: Lint markdown
+        run: make lint
 
   test:
     runs-on: ubuntu-latest
