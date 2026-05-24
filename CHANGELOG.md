@@ -6,6 +6,10 @@
 
 ## [unreleased]
 
+### 🐛 Bug Fixes
+
+- Reflow floating previews on resize
+
 ### ⚙️ Miscellaneous Tasks
 
 - Harden changelog workflow retry
