@@ -16,7 +16,16 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Sync with remote branch
+        run: |
+          git fetch origin ${{ github.ref_name }}
+          git switch -C ${{ github.ref_name }} origin/${{ github.ref_name }}
+
       - name: Install lemmy-help
         run: |
           curl -fsSL https://github.com/numToStr/lemmy-help/releases/latest/download/lemmy-help-x86_64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin
@@ -31,4 +40,22 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add doc/
           git diff --cached --quiet || git commit -m "docs: auto-generate vimdoc"
-          git push
+          for attempt in 1 2 3; do
+            echo "Push attempt ${attempt}/3"
+            if git push origin HEAD:${{ github.ref_name }}; then
+              echo "Push succeeded on attempt ${attempt}/3"
+              exit 0
+            fi
+
+            echo "Push failed on attempt ${attempt}/3, resyncing with origin/${{ github.ref_name }}"
+            git fetch origin ${{ github.ref_name }}
+            git switch -C ${{ github.ref_name }} origin/${{ github.ref_name }}
+
+            echo "Regenerating vimdoc after sync"
+            mkdir -p doc
+            lemmy-help lua/glimpse/init.lua lua/glimpse/detect.lua lua/glimpse/util.lua > doc/glimpse.txt
+            git add doc/
+            git diff --cached --quiet || git commit -m "docs: auto-generate vimdoc"
+          done
+
+          git push origin HEAD:${{ github.ref_name }}
