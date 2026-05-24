@@ -39,7 +39,26 @@
   - **Terminal CLI**: WezTerm, iTerm2
   - **Sixel**: xterm, foot, mlterm, contour
 
+> [!NOTE]
+> `magick` is required for inline image rendering and font rendering. Font preview still has a textual fallback if rendering is unavailable.
+
+### Feature Dependencies
+
+| Feature | Dependency | Required |
+|---|---|---|
+| Inline image preview | `magick` | Yes |
+| Font rendering | `magick` | Yes, with textual fallback if unavailable |
+| Video preview | `ffmpeg` | No |
+| Archive preview | `zipinfo`, `tar` | Yes when the archive type is used |
+| SQLite preview | `sqlite3` | Yes when the SQLite preview is used |
+| Certificate preview | `openssl` | Yes when the certificate preview is used |
+| Binary preview | `file`, `xxd` | Yes when the binary preview is used |
+| SSH/GPG key preview | `ssh-keygen`, `gpg` | Yes when the key preview is used |
+
 ## Installing dependencies
+
+> [!NOTE]
+> Binary preview depends on `file` and `xxd`. They are usually available on Unix-like systems, but if your OS does not ship them by default, install them separately.
 
 ### macOS (Homebrew)
 
@@ -63,6 +82,8 @@ sudo pacman -S imagemagick ffmpeg
 
 ```bash
 magick --version
+file --version
+xxd -h
 ```
 
 ## Usage
@@ -220,6 +241,9 @@ img.get_terminal()           -- return detected terminal
 glimpse.nvim runs **only local commands** on files you explicitly select.
 It never makes network requests or sends data externally.
 
+> [!IMPORTANT]
+> The plugin only uses local tools on files you explicitly select. When a tool is missing, the affected previewer fails safely instead of breaking the rest of the plugin.
+
 ### File validation
 
 - **Symlinks** are rejected (prevents reading unintended targets)
@@ -241,9 +265,8 @@ It never makes network requests or sends data externally.
 
 No files are extracted, modified, or uploaded. All processing is local and read-only.
 
-For additional protection, consider configuring ImageMagick's
-[policy.xml](https://imagemagick.org/script/security-policy.php)
-to limit resource usage.
+> [!WARNING]
+> For additional protection, consider configuring ImageMagick's [`policy.xml`](https://imagemagick.org/script/security-policy.php) to limit resource usage.
 
 ## Supported terminals
 
