@@ -1,15 +1,15 @@
-PLENARY_PATH ?= $(HOME)/.local/share/nvim/lazy/plenary.nvim
+PLENARY_PATH ?= $(firstword $(wildcard $(HOME)/.local/share/nvim/packages/plenary.nvim) $(wildcard $(HOME)/.local/share/nvim/packages/*/plenary.nvim) $(wildcard $(HOME)/.local/share/nvim/lazy/plenary.nvim))
 MARKDOWNLINT_FILES ?= README.md CONTRIBUTING.md
 MARKDOWNLINT_VERSION ?= 0.48.0
 
 .PHONY: test bench setup-hooks docs lint lint-fix lint-changelog changelog changelog-check
 
 test:
-	@nvim --headless -u tests/minimal_init.lua \
+	@env -u NVIM_LISTEN_ADDRESS PLENARY_PATH="$(PLENARY_PATH)" nvim --headless -u tests/minimal_init.lua \
 		-c "PlenaryBustedDirectory tests/ {minimal_init = 'tests/minimal_init.lua'}"
 
 bench:
-	@nvim -l tests/bench.lua
+	@env -u NVIM_LISTEN_ADDRESS nvim -l tests/bench.lua
 
 setup-hooks:
 	git config core.hooksPath .githooks
