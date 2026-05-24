@@ -1,4 +1,5 @@
 --- Previewer para binários (file + hexdump).
+--- Requer `file(1)` e `xxd(1)` no PATH; se faltar algum deles, falha de forma segura.
 local M = {}
 
 local MAX_HEXDUMP_BYTES = 256
@@ -71,6 +72,10 @@ local function _inspect(filepath)
 	return info
 end
 
+local function _missing_tools()
+	return vim.fn.executable('file') == 0 or vim.fn.executable('xxd') == 0
+end
+
 local function _is_extensionless(filepath)
 	local basename = vim.fn.fnamemodify(filepath, ':t')
 	local stripped = basename:gsub('^%.', '')
@@ -139,13 +144,12 @@ function M.should_preview(filepath)
 end
 
 function M.can_preview(filepath)
-	if not M.should_preview(filepath) then
+	if _missing_tools() then
 		return false
 	end
 
 	local info, err = _inspect(filepath)
 	if not info then
-		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)
 		return false
 	end
 
@@ -153,6 +157,11 @@ function M.can_preview(filepath)
 end
 
 function M.show(filepath)
+	if vim.fn.executable('file') == 0 then
+		vim.notify('[glimpse] file not found', vim.log.levels.WARN)
+		return false
+	end
+
 	local info, err = _inspect(filepath)
 	if not info then
 		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)

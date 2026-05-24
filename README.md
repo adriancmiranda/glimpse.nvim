@@ -15,6 +15,7 @@
 - 🗄️ **SQLite preview** - show tables and columns without modifying the database
 - 💾 **Binary preview** - detect binaries with `file` and show a short `xxd` hexdump
 - 🪟 External pane via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
+- 🎨 **Font rendering** via ImageMagick, with a textual fallback when rendering is unavailable
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
 - 🔭 **Telescope** integration (scoped media previews for `:Telescope find_files`)
@@ -28,9 +29,11 @@
 ## Requirements
 
 - Neovim >= 0.10
-- [ImageMagick](https://imagemagick.org/) (`magick` CLI) - conversion and resizing
+- [ImageMagick](https://imagemagick.org/) (`magick` CLI) - inline image conversion and font rendering
 - [ffmpeg](https://ffmpeg.org/) (optional) - video thumbnail extraction
 - [OpenSSL](https://www.openssl.org/) (`openssl` CLI) - certificate metadata extraction
+- [file](https://man7.org/linux/man-pages/man1/file.1.html) (`file` CLI) - binary type detection
+- [xxd](https://vimhelp.org/xxd.txt.html) (`xxd` CLI) - binary hexdump rendering
 - Terminal with support for at least one protocol:
   - **Kitty Graphics** (recommended): Kitty, Ghostty
   - **Terminal CLI**: WezTerm, iTerm2
