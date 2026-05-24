@@ -218,6 +218,9 @@ function M.show(filepath)
 		vim.notify('[glimpse] ' .. reason .. ': ' .. filepath, vim.log.levels.WARN)
 		return
 	end
+	if util.is_image(filepath) then
+		require('glimpse.dir').follow(filepath)
+	end
 	previewer.show(filepath)
 end
 
@@ -231,6 +234,9 @@ function M.preview(filepath)
 	local safe, _ = safety.check(filepath, safety_opts)
 	if not safe then
 		return
+	end
+	if util.is_image(filepath) then
+		require('glimpse.dir').follow(filepath)
 	end
 	previewer.preview(filepath)
 end
