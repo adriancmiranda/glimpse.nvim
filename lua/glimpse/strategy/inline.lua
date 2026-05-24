@@ -2,6 +2,7 @@
 --- Renderização inline via Kitty Graphics Protocol (implementação própria).
 
 local renderer = require('glimpse.renderer')
+local dir = require('glimpse.dir')
 
 local M = {}
 
@@ -13,6 +14,7 @@ function M.preview(filepath)
 		if win ~= oil_win and vim.bo[vim.api.nvim_win_get_buf(win)].filetype == 'image' then
 			local buf = vim.api.nvim_win_get_buf(win)
 			renderer.render(buf, filepath)
+			dir.follow(filepath)
 			return
 		end
 	end
@@ -22,6 +24,7 @@ function M.preview(filepath)
 	vim.api.nvim_win_set_buf(0, buf)
 	renderer.render(buf, filepath)
 	vim.api.nvim_set_current_win(oil_win)
+	dir.follow(filepath)
 end
 
 --- Exibe imagem no buffer atual.
@@ -51,6 +54,7 @@ function M.setup_autocmds()
 		callback = function(info)
 			local filepath = vim.api.nvim_buf_get_name(info.buf)
 			if util.is_image(filepath) then
+				dir.follow(filepath)
 				renderer.render(info.buf, filepath, { listed = true })
 			elseif util.is_font(filepath) then
 				require('glimpse.previewer.font').show(filepath)

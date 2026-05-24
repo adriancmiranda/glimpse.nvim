@@ -166,6 +166,8 @@ xxd -h
 | `;` | Open image in tab or video with external player |
 | `q` | Close image buffer and residual empty window |
 
+When an image is opened, the current window follows that file's directory, so `Oil.nvim` opens in the same folder.
+
 ### Keymaps (Neo-tree)
 
 Enable with `integrations = { neotree = { enable = true } }` in setup.
