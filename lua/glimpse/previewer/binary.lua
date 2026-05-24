@@ -148,7 +148,7 @@ function M.can_preview(filepath)
 		return false
 	end
 
-	local info, err = _inspect(filepath)
+	local info = _inspect(filepath)
 	if not info then
 		return false
 	end
