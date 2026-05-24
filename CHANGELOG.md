@@ -6,6 +6,13 @@
 
 ## [unreleased]
 
+### ⚙️ Miscellaneous Tasks
+
+- Harden docs workflow retry
+
+
+## [1.14.2](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.14.1..v1.14.2) - 2026-05-24
+
 ### 🐛 Bug Fixes
 
 - Follow image directory after open
