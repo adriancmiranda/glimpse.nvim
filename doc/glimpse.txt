@@ -86,6 +86,16 @@ M.setup({opts?})                                                       *M.setup*
         {opts?}  (GlimpseConfig)  Opções de configuração (merge com defaults)
 
 
+M.can_preview({filepath})                                        *M.can_preview*
+     Indica se o arquivo possui um previewer conhecido.
+
+    Parameters: ~
+        {filepath}  (string)  Caminho absoluto do arquivo
+
+    Returns: ~
+        (boolean)
+
+
 M.show({filepath})                                                      *M.show*
      Exibe arquivo (escolhe previewer automaticamente).
 
