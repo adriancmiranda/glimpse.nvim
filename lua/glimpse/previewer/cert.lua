@@ -1,5 +1,6 @@
 --- Previewer para certificados X.509 (.pem, .crt).
 local M = {}
+local float = require('glimpse.float')
 
 local MONTHS = {
 	Jan = 1,
@@ -200,18 +201,10 @@ function M.show(filepath)
 		end
 	end
 
-	local width = math.min(90, vim.o.columns - 4)
-	local height = math.min(#lines, vim.o.lines - 4)
-	vim.api.nvim_open_win(buf, true, {
-		relative = 'editor',
-		width = width,
-		height = height,
-		col = math.floor((vim.o.columns - width) / 2),
-		row = math.floor((vim.o.lines - height) / 2),
-		style = 'minimal',
-		border = 'rounded',
+	float.open(buf, {
 		title = ' Certificate ',
-		title_pos = 'center',
+		max_width = 90,
+		max_height = #lines,
 	})
 
 	local config = require('glimpse').get_config()

@@ -1,5 +1,6 @@
 --- Previewer para fontes (.ttf, .otf, .woff, .woff2).
 local M = {}
+local float = require('glimpse.float')
 
 local font_mod = require('glimpse.font')
 
@@ -92,18 +93,10 @@ function M.preview(filepath)
 		})
 	end
 
-	local width = math.min(60, vim.o.columns - 4)
-	local height = math.min(#lines, vim.o.lines - 4)
-	vim.api.nvim_open_win(buf, true, {
-		relative = 'editor',
-		width = width,
-		height = height,
-		col = math.floor((vim.o.columns - width) / 2),
-		row = math.floor((vim.o.lines - height) / 2),
-		style = 'minimal',
-		border = 'rounded',
+	float.open(buf, {
 		title = ' Font ',
-		title_pos = 'center',
+		max_width = 60,
+		max_height = #lines,
 	})
 
 	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })

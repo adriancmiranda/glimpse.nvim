@@ -1,5 +1,6 @@
 --- Previewer para chaves GPG e SSH.
 local M = {}
+local float = require('glimpse.float')
 
 local function _render_output(output, prefix)
 	local lines = {}
@@ -129,18 +130,10 @@ function M.show(filepath)
 		end
 	end
 
-	local width = math.min(70, vim.o.columns - 4)
-	local height = math.min(#lines, vim.o.lines - 4)
-	vim.api.nvim_open_win(buf, true, {
-		relative = 'editor',
-		width = width,
-		height = height,
-		col = math.floor((vim.o.columns - width) / 2),
-		row = math.floor((vim.o.lines - height) / 2),
-		style = 'minimal',
-		border = 'rounded',
+	float.open(buf, {
 		title = ' Key Info ',
-		title_pos = 'center',
+		max_width = 70,
+		max_height = #lines,
 	})
 
 	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })
