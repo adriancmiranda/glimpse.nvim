@@ -13,6 +13,7 @@
 - 🎬 **Video preview** via ffmpeg thumbnail extraction (cached)
 - 📦 **Archive preview** - list contents of zip/tar without extraction
 - 🗄️ **SQLite preview** - show tables and columns without modifying the database
+- 💾 **Binary preview** - detect binaries with `file` and show a short `xxd` hexdump
 - 🪟 External pane via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
