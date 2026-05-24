@@ -1,0 +1,218 @@
+--- Previewer para binários (file + hexdump).
+--- Requer `file(1)` e `xxd(1)` no PATH; se faltar algum deles, falha de forma segura.
+local M = {}
+
+local MAX_HEXDUMP_BYTES = 256
+local KNOWN_BINARY_EXTENSIONS = {
+	bin = true,
+	class = true,
+	dll = true,
+	elf = true,
+	exe = true,
+	o = true,
+	so = true,
+	wasm = true,
+}
+
+local inspect_cache = {}
+
+local function _run(args)
+	if vim.system then
+		local result = vim.system(args, { text = true }):wait()
+		local stdout = vim.trim(result.stdout or '')
+		local stderr = vim.trim(result.stderr or '')
+		if result.code ~= 0 then
+			return nil, stderr ~= '' and stderr or stdout
+		end
+		return stdout, nil
+	end
+
+	local output = vim.fn.system(args)
+	if vim.v.shell_error ~= 0 then
+		return nil, vim.trim(output)
+	end
+	return vim.trim(output), nil
+end
+
+local function _cache_key(filepath, stat)
+	if not stat then
+		return filepath .. ':missing'
+	end
+	local mtime = stat.mtime or {}
+	return table.concat({ filepath, stat.size or 0, mtime.sec or 0, mtime.nsec or 0 }, ':')
+end
+
+local function _is_text(desc)
+	local lower = (desc or ''):lower()
+	return lower:find('text', 1, true) ~= nil or lower:find('empty', 1, true) ~= nil
+end
+
+local function _inspect(filepath)
+	local stat = vim.uv.fs_stat(filepath)
+	if not stat then
+		return nil, 'file not found'
+	end
+
+	local key = _cache_key(filepath, stat)
+	local cached = inspect_cache[key]
+	if cached then
+		return cached
+	end
+
+	local desc, err = _run({ 'file', '-b', filepath })
+	if not desc then
+		return nil, err or 'cannot inspect file type'
+	end
+
+	local info = {
+		desc = desc,
+		is_binary = not _is_text(desc),
+	}
+	inspect_cache[key] = info
+	return info
+end
+
+local function _missing_tools()
+	return vim.fn.executable('file') == 0 or vim.fn.executable('xxd') == 0
+end
+
+local function _is_extensionless(filepath)
+	local basename = vim.fn.fnamemodify(filepath, ':t')
+	local stripped = basename:gsub('^%.', '')
+	return not stripped:find('%.', 1, true)
+end
+
+local function _extension(filepath)
+	return vim.fn.fnamemodify(filepath, ':e'):lower()
+end
+
+local function _buf_lines(filepath, desc, dump)
+	local lines = {
+		string.format('󰇄 %s', vim.fn.fnamemodify(filepath, ':t')),
+		string.rep('─', math.min(vim.o.columns - 4, 80)),
+		'file: ' .. desc,
+		'',
+	}
+
+	for line in dump:gmatch('[^\n]+') do
+		table.insert(lines, line)
+	end
+
+	return lines
+end
+
+function M.is_binary(filepath)
+	if not filepath or filepath == '' then
+		return false
+	end
+
+	local info, err = _inspect(filepath)
+	if not info then
+		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)
+		return false
+	end
+
+	return info.is_binary
+end
+
+function M.is_extensionless(filepath)
+	if not filepath or filepath == '' then
+		return false
+	end
+	return _is_extensionless(filepath)
+end
+
+function M.should_preview(filepath)
+	if not filepath or filepath == '' then
+		return false
+	end
+
+	if M.is_extensionless(filepath) then
+		return true
+	end
+
+	if KNOWN_BINARY_EXTENSIONS[_extension(filepath)] then
+		return true
+	end
+
+	local ok, ft = pcall(vim.filetype.match, { filename = filepath })
+	if not ok then
+		return false
+	end
+
+	return ft == nil or ft == ''
+end
+
+function M.can_preview(filepath)
+	if _missing_tools() then
+		return false
+	end
+
+	local info = _inspect(filepath)
+	if not info then
+		return false
+	end
+
+	return info.is_binary
+end
+
+function M.show(filepath)
+	if vim.fn.executable('file') == 0 then
+		vim.notify('[glimpse] file not found', vim.log.levels.WARN)
+		return false
+	end
+
+	local info, err = _inspect(filepath)
+	if not info then
+		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)
+		return false
+	end
+
+	if not info.is_binary then
+		return false
+	end
+
+	if vim.fn.executable('xxd') == 0 then
+		vim.notify('[glimpse] xxd not found', vim.log.levels.WARN)
+		return false
+	end
+
+	local dump, dump_err = _run({ 'xxd', '-l', tostring(MAX_HEXDUMP_BYTES), filepath })
+	if not dump then
+		vim.notify('[glimpse] ' .. (dump_err or 'cannot build hexdump'), vim.log.levels.WARN)
+		return false
+	end
+
+	local lines = _buf_lines(filepath, info.desc, dump)
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].buftype = 'nofile'
+	vim.bo[buf].bufhidden = 'wipe'
+	vim.bo[buf].swapfile = false
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].filetype = 'glimpse_binary'
+
+	local width = math.max(40, math.min(100, vim.o.columns - 4))
+	local height = math.max(8, math.min(math.max(#lines, 8), vim.o.lines - 4))
+	local win = vim.api.nvim_open_win(buf, true, {
+		relative = 'editor',
+		row = math.floor((vim.o.lines - height) / 2),
+		col = math.floor((vim.o.columns - width) / 2),
+		width = width,
+		height = height,
+		style = 'minimal',
+		border = 'rounded',
+		title = ' Binary Preview ',
+		title_pos = 'center',
+	})
+
+	vim.wo[win].wrap = false
+	local config = require('glimpse').get_config()
+	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })
+	vim.keymap.set('n', '<Esc>', '<cmd>close<CR>', { buffer = buf, silent = true })
+	return true
+end
+
+M.preview = M.show
+
+return M

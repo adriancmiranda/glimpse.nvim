@@ -65,6 +65,7 @@
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
 local util = require('glimpse.util')
+local binary = require('glimpse.previewer.binary')
 local inline = require('glimpse.strategy.inline')
 
 ---@class Glimpse
@@ -191,7 +192,17 @@ local function resolve_previewer(filepath)
 	if util.is_image(filepath) then
 		return require('glimpse.previewer.image'), { max_size = config.max_file_size }
 	end
+	if binary.can_preview(filepath) then
+		return binary, { max_size = 0 }
+	end
 	return nil
+end
+
+--- Indica se o arquivo possui um previewer conhecido.
+---@param filepath string Caminho absoluto do arquivo
+---@return boolean
+function M.can_preview(filepath)
+	return resolve_previewer(filepath) ~= nil
 end
 
 --- Exibe arquivo (escolhe previewer automaticamente).

@@ -13,7 +13,9 @@
 - 🎬 **Video preview** via ffmpeg thumbnail extraction (cached)
 - 📦 **Archive preview** - list contents of zip/tar without extraction
 - 🗄️ **SQLite preview** - show tables and columns without modifying the database
+- 💾 **Binary preview** - detect binaries with `file` and show a short `xxd` hexdump
 - 🪟 External pane via **WezTerm CLI**, **kitten icat**, **iTerm imgcat**
+- 🎨 **Font rendering** via ImageMagick, with a textual fallback when rendering is unavailable
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
 - 🔭 **Telescope** integration (scoped media previews for `:Telescope find_files`)
@@ -27,15 +29,36 @@
 ## Requirements
 
 - Neovim >= 0.10
-- [ImageMagick](https://imagemagick.org/) (`magick` CLI) - conversion and resizing
+- [ImageMagick](https://imagemagick.org/) (`magick` CLI) - inline image conversion and font rendering
 - [ffmpeg](https://ffmpeg.org/) (optional) - video thumbnail extraction
 - [OpenSSL](https://www.openssl.org/) (`openssl` CLI) - certificate metadata extraction
+- [file](https://man7.org/linux/man-pages/man1/file.1.html) (`file` CLI) - binary type detection
+- [xxd](https://vimhelp.org/xxd.txt.html) (`xxd` CLI) - binary hexdump rendering
 - Terminal with support for at least one protocol:
   - **Kitty Graphics** (recommended): Kitty, Ghostty
   - **Terminal CLI**: WezTerm, iTerm2
   - **Sixel**: xterm, foot, mlterm, contour
 
+> [!NOTE]
+> `magick` is required for inline image rendering and font rendering. Font preview still has a textual fallback if rendering is unavailable.
+
+### Feature Dependencies
+
+| Feature | Dependency | Required |
+|---|---|---|
+| Inline image preview | `magick` | Yes |
+| Font rendering | `magick` | Yes, with textual fallback if unavailable |
+| Video preview | `ffmpeg` | No |
+| Archive preview | `zipinfo`, `tar` | Yes when the archive type is used |
+| SQLite preview | `sqlite3` | Yes when the SQLite preview is used |
+| Certificate preview | `openssl` | Yes when the certificate preview is used |
+| Binary preview | `file`, `xxd` | Yes when the binary preview is used |
+| SSH/GPG key preview | `ssh-keygen`, `gpg` | Yes when the key preview is used |
+
 ## Installing dependencies
+
+> [!NOTE]
+> Binary preview depends on `file` and `xxd`. They are usually available on Unix-like systems, but if your OS does not ship them by default, install them separately.
 
 ### macOS (Homebrew)
 
@@ -59,6 +82,8 @@ sudo pacman -S imagemagick ffmpeg
 
 ```bash
 magick --version
+file --version
+xxd -h
 ```
 
 ## Usage
@@ -216,6 +241,9 @@ img.get_terminal()           -- return detected terminal
 glimpse.nvim runs **only local commands** on files you explicitly select.
 It never makes network requests or sends data externally.
 
+> [!IMPORTANT]
+> The plugin only uses local tools on files you explicitly select. When a tool is missing, the affected previewer fails safely instead of breaking the rest of the plugin.
+
 ### File validation
 
 - **Symlinks** are rejected (prevents reading unintended targets)
@@ -237,9 +265,8 @@ It never makes network requests or sends data externally.
 
 No files are extracted, modified, or uploaded. All processing is local and read-only.
 
-For additional protection, consider configuring ImageMagick's
-[policy.xml](https://imagemagick.org/script/security-policy.php)
-to limit resource usage.
+> [!WARNING]
+> For additional protection, consider configuring ImageMagick's [`policy.xml`](https://imagemagick.org/script/security-policy.php) to limit resource usage.
 
 ## Supported terminals
 
@@ -300,6 +327,7 @@ lua/
 │   ├── previewer/
 │   │   ├── archive.lua       -- Archive previewer
 │   │   ├── cert.lua          -- X.509 certificate previewer
+│   │   ├── binary.lua        -- Binary previewer (file + hexdump)
 │   │   ├── font.lua          -- Font previewer
 │   │   ├── image.lua         -- Inline image previewer
 │   │   ├── key.lua           -- GPG/SSH key previewer
