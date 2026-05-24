@@ -8,6 +8,13 @@
 
 ### 🐛 Bug Fixes
 
+- Follow image directory after open
+
+
+## [1.14.1](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.14.0..v1.14.1) - 2026-05-24
+
+### 🐛 Bug Fixes
+
 - Reflow floating previews on resize
 
 ### ⚙️ Miscellaneous Tasks
