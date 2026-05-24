@@ -13,6 +13,8 @@ local KNOWN_BINARY_EXTENSIONS = {
 	wasm = true,
 }
 
+local inspect_cache = {}
+
 local function _run(args)
 	if vim.system then
 		local result = vim.system(args, { text = true }):wait()
@@ -31,9 +33,42 @@ local function _run(args)
 	return vim.trim(output), nil
 end
 
+local function _cache_key(filepath, stat)
+	if not stat then
+		return filepath .. ':missing'
+	end
+	local mtime = stat.mtime or {}
+	return table.concat({ filepath, stat.size or 0, mtime.sec or 0, mtime.nsec or 0 }, ':')
+end
+
 local function _is_text(desc)
 	local lower = (desc or ''):lower()
 	return lower:find('text', 1, true) ~= nil or lower:find('empty', 1, true) ~= nil
+end
+
+local function _inspect(filepath)
+	local stat = vim.uv.fs_stat(filepath)
+	if not stat then
+		return nil, 'file not found'
+	end
+
+	local key = _cache_key(filepath, stat)
+	local cached = inspect_cache[key]
+	if cached then
+		return cached
+	end
+
+	local desc, err = _run({ 'file', '-b', filepath })
+	if not desc then
+		return nil, err or 'cannot inspect file type'
+	end
+
+	local info = {
+		desc = desc,
+		is_binary = not _is_text(desc),
+	}
+	inspect_cache[key] = info
+	return info
 end
 
 local function _is_extensionless(filepath)
@@ -66,13 +101,13 @@ function M.is_binary(filepath)
 		return false
 	end
 
-	local desc, err = _run({ 'file', '-b', filepath })
-	if not desc then
+	local info, err = _inspect(filepath)
+	if not info then
 		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)
 		return false
 	end
 
-	return not _is_text(desc)
+	return info.is_binary
 end
 
 function M.is_extensionless(filepath)
@@ -104,22 +139,32 @@ function M.should_preview(filepath)
 end
 
 function M.can_preview(filepath)
-	return M.should_preview(filepath) and M.is_binary(filepath)
+	if not M.should_preview(filepath) then
+		return false
+	end
+
+	local info, err = _inspect(filepath)
+	if not info then
+		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)
+		return false
+	end
+
+	return info.is_binary
 end
 
 function M.show(filepath)
-	if not M.is_binary(filepath) then
+	local info, err = _inspect(filepath)
+	if not info then
+		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)
+		return false
+	end
+
+	if not info.is_binary then
 		return false
 	end
 
 	if vim.fn.executable('xxd') == 0 then
 		vim.notify('[glimpse] xxd not found', vim.log.levels.WARN)
-		return false
-	end
-
-	local desc, desc_err = _run({ 'file', '-b', filepath })
-	if not desc then
-		vim.notify('[glimpse] ' .. (desc_err or 'cannot inspect file type'), vim.log.levels.WARN)
 		return false
 	end
 
@@ -129,7 +174,7 @@ function M.show(filepath)
 		return false
 	end
 
-	local lines = _buf_lines(filepath, desc, dump)
+	local lines = _buf_lines(filepath, info.desc, dump)
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	vim.bo[buf].buftype = 'nofile'

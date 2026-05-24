@@ -198,6 +198,21 @@ local function resolve_previewer(filepath)
 	return nil
 end
 
+--- Resolve o previewer adequado para um arquivo.
+---@param filepath string Caminho absoluto do arquivo
+---@return table|nil previewer
+---@return table|nil safety_opts
+function M.resolve_previewer(filepath)
+	return resolve_previewer(filepath)
+end
+
+--- Indica se o arquivo possui um previewer conhecido.
+---@param filepath string Caminho absoluto do arquivo
+---@return boolean
+function M.can_preview(filepath)
+	return resolve_previewer(filepath) ~= nil
+end
+
 --- Exibe arquivo (escolhe previewer automaticamente).
 ---@param filepath string Caminho absoluto do arquivo
 function M.show(filepath)
