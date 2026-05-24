@@ -6,10 +6,31 @@
 
 ## [unreleased]
 
+### ⚙️ Miscellaneous Tasks
+
+- Harden changelog workflow retry
+
+
+## [1.14.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.13.1..v1.14.0) - 2026-05-24
+
+### 🚀 Features
+
+- Add binary previewer
+- Improve binary preview integration
+- Improve previewer fallbacks
+
+### 🐛 Bug Fixes
+
+- Satisfy luacheck
+- Harden test plenary discovery
+
 ### 📚 Documentation
 
 - Add git-cliff changelog workflow
 - Prune changelog boilerplate
+- Update binary previewer tree
+- Mention binary preview in README
+- Clarify dependency guidance
 
 
 ## [1.13.1](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.13.0..v1.13.1) - 2026-05-22
