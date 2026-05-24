@@ -34,6 +34,11 @@ jobs:
             exit 1
           fi
 
+      - name: Sync with remote main
+        run: |
+          git fetch origin main
+          git switch --detach origin/main
+
       - name: Fetch tags
         run: git fetch origin --tags
 
