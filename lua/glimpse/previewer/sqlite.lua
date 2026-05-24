@@ -1,5 +1,6 @@
 --- Previewer para bancos SQLite.
 local M = {}
+local float = require('glimpse.float')
 
 local sqlite = require('glimpse.sqlite')
 
@@ -37,18 +38,10 @@ function M.show(filepath)
 		})
 	end
 
-	local width = math.min(80, vim.o.columns - 4)
-	local height = math.min(#lines, vim.o.lines - 4)
-	vim.api.nvim_open_win(buf, true, {
-		relative = 'editor',
-		width = width,
-		height = height,
-		col = math.floor((vim.o.columns - width) / 2),
-		row = math.floor((vim.o.lines - height) / 2),
-		style = 'minimal',
-		border = 'rounded',
+	float.open(buf, {
 		title = ' SQLite ',
-		title_pos = 'center',
+		max_width = 80,
+		max_height = #lines,
 	})
 
 	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })

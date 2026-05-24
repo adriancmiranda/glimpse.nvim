@@ -1,6 +1,7 @@
 --- Previewer para binários (file + hexdump).
 --- Requer `file(1)` e `xxd(1)` no PATH; se faltar algum deles, falha de forma segura.
 local M = {}
+local float = require('glimpse.float')
 
 local MAX_HEXDUMP_BYTES = 256
 local KNOWN_BINARY_EXTENSIONS = {
@@ -192,18 +193,12 @@ function M.show(filepath)
 	vim.bo[buf].modifiable = false
 	vim.bo[buf].filetype = 'glimpse_binary'
 
-	local width = math.max(40, math.min(100, vim.o.columns - 4))
-	local height = math.max(8, math.min(math.max(#lines, 8), vim.o.lines - 4))
-	local win = vim.api.nvim_open_win(buf, true, {
-		relative = 'editor',
-		row = math.floor((vim.o.lines - height) / 2),
-		col = math.floor((vim.o.columns - width) / 2),
-		width = width,
-		height = height,
-		style = 'minimal',
-		border = 'rounded',
+	local win = float.open(buf, {
 		title = ' Binary Preview ',
-		title_pos = 'center',
+		max_width = 100,
+		max_height = math.max(#lines, 8),
+		min_width = 40,
+		min_height = 8,
 	})
 
 	vim.wo[win].wrap = false
