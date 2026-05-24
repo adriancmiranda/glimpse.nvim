@@ -13,6 +13,7 @@
 - Serialize release writers without canceling
 - Add manual release tag workflow
 - Sync release tag workflow with main
+- Add workflow icons
 
 
 ## [1.14.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.13.1..v1.14.0) - 2026-05-24
