@@ -6,6 +6,10 @@ on:
     paths:
       - 'lua/**/*.lua'
 
+concurrency:
+  group: release-write-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: changelog-${{ github.ref }}
+  group: release-write-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
