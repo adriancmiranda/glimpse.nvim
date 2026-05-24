@@ -9,6 +9,7 @@
 ### 📚 Documentation
 
 - Add git-cliff changelog workflow
+- Prune changelog boilerplate
 
 
 ## [1.13.1](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.13.0..v1.13.1) - 2026-05-22
@@ -45,10 +46,6 @@
 
 - *(telescope)* Usar opts.winid do telescope ao invés de bufwinid no schedule_wrap
 
-### 📚 Documentation
-
-- Auto-generate vimdoc
-
 
 ## [1.11.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.10.2..v1.11.0) - 2026-05-21
 
@@ -59,11 +56,6 @@
 ### 🚜 Refactor
 
 - Extract previewers into previewer/ directory
-
-### 📚 Documentation
-
-- Auto-generate vimdoc
-- Auto-generate vimdoc
 
 
 ## [1.10.2](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.10.1..v1.10.2) - 2026-05-21
@@ -82,7 +74,6 @@
 
 ### 📚 Documentation
 
-- Auto-generate vimdoc
 - Add sqlite extensions to setup example
 
 
@@ -103,7 +94,6 @@
 
 - Update lazy.nvim setup example with event-based loading
 - Remove font extensions from setup example (not yet merged)
-- Auto-generate vimdoc
 
 
 ## [1.8.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.7.0..v1.8.0) - 2026-05-21
@@ -111,10 +101,6 @@
 ### 🚀 Features
 
 - *(sqlite)* Preview database schema (tables and columns)
-
-### 📚 Documentation
-
-- Auto-generate vimdoc
 
 
 ## [1.7.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.6.0..v1.7.0) - 2026-05-20
@@ -126,7 +112,6 @@
 ### 📚 Documentation
 
 - Expand Security section into Security & Privacy
-- Auto-generate vimdoc
 
 
 ## [1.6.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.5.0..v1.6.0) - 2026-05-20
@@ -134,10 +119,6 @@
 ### 🚀 Features
 
 - *(security)* Add SVG safety flags to magick calls
-
-### 📚 Documentation
-
-- Auto-generate vimdoc
 
 
 ## [1.5.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.4.0..v1.5.0) - 2026-05-20
@@ -169,7 +150,6 @@
 
 ### 📚 Documentation
 
-- Auto-generate vimdoc
 - Add cache_max_age_days option to README
 
 
@@ -215,7 +195,6 @@
 ### 📚 Documentation
 
 - Translate README to English
-- Translate README to English
 - Translate issue templates to English
 - Translate Neo-tree section to English, update config example
 
@@ -235,8 +214,6 @@
 
 - Update CONTRIBUTING with video, wezterm socket, telescope info
 - Fix Portuguese accents in CONTRIBUTING
-- Show lazy.nvim setup in README
-- Show lazy.nvim setup in README
 
 
 ## [1.0.2](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.0.1..v1.0.2) - 2026-05-19
@@ -263,6 +240,5 @@
 
 ### 📚 Documentation
 
-- Auto-generate vimdoc
 - Add WezTerm + tmux troubleshooting to README
 
