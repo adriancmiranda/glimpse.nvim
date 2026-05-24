@@ -6,6 +6,9 @@ on:
     paths:
       - 'lua/**/*.lua'
 
+concurrency:
+  group: release-write-${{ github.ref }}
+
 permissions:
   contents: write
 
