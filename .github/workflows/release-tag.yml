@@ -1,0 +1,66 @@
+name: Release tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to create, for example v1.14.1'
+        required: true
+      message:
+        description: 'Annotated tag message'
+        required: false
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.tag_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate ref
+        run: |
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "This workflow must be dispatched from main."
+            exit 1
+          fi
+
+      - name: Sync with remote main
+        run: |
+          git fetch origin main
+          git switch --detach origin/main
+
+      - name: Fetch tags
+        run: git fetch origin --tags
+
+      - name: Check tag existence
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          if [ -n "$(git ls-remote --tags origin "refs/tags/${TAG_NAME}")" ]; then
+            echo "Tag ${TAG_NAME} already exists on origin."
+            exit 1
+          fi
+
+      - name: Create and push tag
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+          TAG_MESSAGE: ${{ inputs.message }}
+        run: |
+          if [ -z "${TAG_MESSAGE}" ]; then
+            TAG_MESSAGE="glimpse.nvim ${TAG_NAME}"
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG_NAME}" -m "${TAG_MESSAGE}" HEAD
+          git push origin "refs/tags/${TAG_NAME}"
