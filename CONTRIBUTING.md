@@ -51,6 +51,7 @@ lua/glimpse/
 ├── previewer/
 │   ├── archive.lua       -- Archive previewer
 │   ├── cert.lua          -- X.509 certificate previewer
+│   ├── binary.lua        -- Binary previewer (file + hexdump)
 │   ├── font.lua          -- Font previewer
 │   ├── image.lua         -- Inline image previewer
 │   ├── key.lua           -- GPG/SSH key previewer
