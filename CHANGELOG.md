@@ -6,6 +6,15 @@
 
 ## [unreleased]
 
+### 🚀 Features
+
+- Expose preview introspection
+
+### 📚 Documentation
+
+- Revert generated vimdoc
+- Sync api references
+
 ### ⚙️ Miscellaneous Tasks
 
 - Harden docs workflow retry
