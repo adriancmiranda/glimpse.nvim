@@ -96,17 +96,6 @@ M.can_preview({filepath})                                        *M.can_preview*
         (boolean)
 
 
-M.get_preview_kind({filepath})                            *M.get_preview_kind*
-     Retorna o tipo de preview que seria usado para o arquivo.
-     Útil para integrações que querem decidir a UI sem invocar preview.
-
-    Parameters: ~
-        {filepath}  (string)  Caminho absoluto do arquivo
-
-    Returns: ~
-        (string)  Kind do preview, como `image`, `archive` ou `binary`
-
-
 M.show({filepath})                                                      *M.show*
      Exibe arquivo (escolhe previewer automaticamente).
 
@@ -175,7 +164,7 @@ M.is_cert()                                                          *M.is_cert*
 
 
 M.is_previewable()                                            *M.is_previewable*
-     Verifica se o arquivo é previewable (imagem, vídeo, certificado, archive, sqlite, fonte ou chave).
+     Verifica se o arquivo é previewable (imagem, vídeo, certificado, archive ou sqlite).
      @param filepath string
      @return boolean
 
