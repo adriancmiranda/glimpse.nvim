@@ -96,6 +96,16 @@ M.can_preview({filepath})                                        *M.can_preview*
         (boolean)
 
 
+M.get_preview_kind({filepath})                              *M.get_preview_kind*
+     Retorna o tipo de preview que seria usado para o arquivo.
+
+    Parameters: ~
+        {filepath}  (string)  Caminho absoluto do arquivo
+
+    Returns: ~
+        (string|nil)  kind
+
+
 M.show({filepath})                                                      *M.show*
      Exibe arquivo (escolhe previewer automaticamente).
 
