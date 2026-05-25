@@ -7,7 +7,7 @@ describe('detect', function()
 	before_each(function()
 		orig_getenv = os.getenv
 		detect._reset()
-		-- Mock TMUX como nil por padrao para isolar testes do ambiente real
+		-- Mock TMUX as nil by default to isolate tests from the real environment
 		local real_getenv = orig_getenv
 		os.getenv = function(var)
 			if var == 'TMUX' then

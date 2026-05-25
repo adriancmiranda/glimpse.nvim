@@ -1,14 +1,14 @@
 local M = {}
 
---- Tenta converter uma string para UTF-8 valido usando heuristica de encoding.
---- Tenta na ordem: UTF-8 (ja valido), CP1252, Latin-1.
+--- Try to convert a string to valid UTF-8 using an encoding heuristic.
+--- Tries, in order: UTF-8 (already valid), CP1252, Latin-1.
 --- @param str string
 --- @return string
 local function ensure_utf8(str)
 	if not str:match('[\128-\255]') then
 		return str
 	end
-	-- Verifica se ja e UTF-8 valido
+	-- Check whether it is already valid UTF-8
 	local i = 1
 	while i <= #str do
 		local b = str:byte(i)
@@ -45,7 +45,7 @@ end
 --- @field type 'file'|'directory'|'symlink'
 --- @field suspicious boolean
 
---- Detecta paths suspeitos (traversal, absolutos, symlinks).
+--- Detect suspicious paths (traversal, absolute paths, symlinks).
 --- @param path string
 --- @return boolean
 local function is_suspicious(path)
@@ -58,7 +58,7 @@ local function is_suspicious(path)
 	return false
 end
 
---- Parseia output de `zipinfo` com detalhes.
+--- Parse `zipinfo` output with details.
 --- @param filepath string
 --- @return ArchiveEntry[]|nil entries
 --- @return string|nil err
@@ -70,13 +70,13 @@ function M.list_zip(filepath)
 	if vim.v.shell_error ~= 0 then
 		return nil, 'zipinfo failed'
 	end
-	-- O zipinfo do macOS usa '+' como escape para bytes nao-ASCII (Latin-1).
-	-- Remove o '+' e converte o byte seguinte de Latin-1 para UTF-8.
+	-- macOS zipinfo uses '+' as an escape for non-ASCII bytes (Latin-1).
+	-- Remove '+' and convert the following byte from Latin-1 to UTF-8.
 	if vim.fn.has('mac') == 1 then
 		output = output:gsub('%+(.)', function(byte)
 			local b = byte:byte()
 			if b >= 0x80 then
-				-- Converte Latin-1 byte para UTF-8 (2 bytes)
+				-- Convert a Latin-1 byte to UTF-8 (2 bytes)
 				if b < 0xC0 then
 					return string.char(0xC2, b)
 				else
@@ -110,7 +110,7 @@ function M.list_zip(filepath)
 	return entries
 end
 
---- Parseia output de `tar tf`.
+--- Parse `tar tf` output.
 --- @param filepath string
 --- @return ArchiveEntry[]|nil entries
 --- @return string|nil err
@@ -144,7 +144,7 @@ function M.list_tar(filepath)
 	return entries
 end
 
---- Lista conteudo de um archive (detecta formato pela extensao).
+--- List archive contents (detect format by extension).
 --- @param filepath string
 --- @return ArchiveEntry[]|nil entries
 --- @return string|nil err
@@ -168,7 +168,7 @@ function M.list(filepath)
 	return nil, 'unsupported format: ' .. ext
 end
 
---- Formata entries para exibicao em buffer.
+--- Format entries for display in a buffer.
 --- @param entries ArchiveEntry[]
 --- @return string[] lines
 --- @return table[] highlights {line, col_start, col_end, hl_group}
@@ -189,7 +189,7 @@ function M.format(entries)
 		table.insert(lines, '')
 	end
 
-	-- Primeira passada: calcula larguras
+	-- First pass: compute widths
 	local max_path_width = 0
 	local max_size_width = 0
 	local prepared = {}
@@ -235,7 +235,7 @@ function M.format(entries)
 		table.insert(prepared, { entry = entry, display = display, width = w, size = size_str })
 	end
 
-	-- Segunda passada: gera linhas alinhadas
+	-- Second pass: generate aligned lines
 	for _, p in ipairs(prepared) do
 		local pad = string.rep(' ', max_path_width - p.width)
 		local size_pad = string.rep(' ', max_size_width - #p.size)
@@ -252,7 +252,7 @@ function M.format(entries)
 	return lines, highlights
 end
 
---- Gera um resumo do archive para preview rapido.
+--- Build an archive summary for quick preview.
 --- @param entries ArchiveEntry[]
 --- @param filepath string
 --- @return string[] lines
@@ -261,7 +261,7 @@ function M.summary(entries, filepath)
 	local lines = {}
 	local highlights = {}
 
-	-- Contadores
+	-- Counters
 	local total_size = 0
 	local file_count = 0
 	local dir_count = 0
@@ -302,7 +302,7 @@ function M.summary(entries, filepath)
 		table.insert(lines, '')
 	end
 
-	-- Info geral
+	-- General info
 	local size_str
 	if total_size >= 1048576 then
 		size_str = string.format('%.1f MB', total_size / 1048576)
@@ -322,7 +322,7 @@ function M.summary(entries, filepath)
 		table.insert(lines, string.format('  Newest: %s', newest))
 	end
 
-	-- Stat do arquivo no disco
+	-- File stats on disk
 	local stat = vim.uv.fs_stat(filepath)
 	if stat then
 		local disk_size
@@ -337,7 +337,7 @@ function M.summary(entries, filepath)
 		table.insert(lines, string.format('  Modified: %s', os.date('%Y-%m-%d %H:%M', stat.mtime.sec)))
 	end
 
-	-- Top extensoes
+	-- Top extensions
 	local sorted_ext = {}
 	for ext, count in pairs(extensions) do
 		table.insert(sorted_ext, { ext = ext, count = count })
@@ -354,7 +354,7 @@ function M.summary(entries, filepath)
 		end
 	end
 
-	-- Top 5 maiores arquivos
+	-- Top 5 largest files
 	local by_size = {}
 	for _, entry in ipairs(entries) do
 		if entry.type == 'file' and entry.size and entry.size > 0 then

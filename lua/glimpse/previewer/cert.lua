@@ -1,4 +1,4 @@
---- Previewer para certificados X.509 (.pem, .crt).
+--- Previewer for X.509 certificates (.pem, .crt).
 local M = {}
 local float = require('glimpse.float')
 
@@ -157,7 +157,7 @@ local function _parse_output(output)
 	return lines, warnings
 end
 
---- Exibe info do certificado num float.
+--- Display certificate info in a floating window.
 --- @param filepath string
 function M.show(filepath)
 	local output, err = _run_openssl(filepath)

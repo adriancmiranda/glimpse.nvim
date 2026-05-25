@@ -1,5 +1,5 @@
---- Previewer para binários (file + hexdump).
---- Requer `file(1)` e `xxd(1)` no PATH; se faltar algum deles, falha de forma segura.
+--- Previewer for binaries (file + hexdump).
+--- Requires `file(1)` and `xxd(1)` on PATH; if either is missing, it fails safely.
 local M = {}
 local float = require('glimpse.float')
 

@@ -1,10 +1,10 @@
---- Previewer para bancos SQLite.
+--- Previewer for SQLite databases.
 local M = {}
 local float = require('glimpse.float')
 
 local sqlite = require('glimpse.sqlite')
 
---- Exibe schema num float.
+--- Display the schema in a floating window.
 --- @param filepath string
 function M.show(filepath)
 	local config = require('glimpse').get_config()
@@ -48,7 +48,7 @@ function M.show(filepath)
 	vim.keymap.set('n', '<Esc>', '<cmd>close<CR>', { buffer = buf, silent = true })
 end
 
---- Preview (mesmo que show para sqlite).
+--- Preview (same as show for SQLite).
 --- @param filepath string
 M.preview = M.show
 

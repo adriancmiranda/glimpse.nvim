@@ -1,6 +1,6 @@
 local M = {}
 
---- Remove arquivos do cache com mtime mais antigo que max_age_days.
+--- Remove cache files whose mtime is older than max_age_days.
 --- @param cache_dir string
 --- @param max_age_days number
 function M.cleanup(cache_dir, max_age_days)

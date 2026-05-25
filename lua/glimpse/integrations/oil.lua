@@ -33,9 +33,9 @@ function M.setup()
 				else
 					require('glimpse').preview(fpath)
 				end
-			end, { buffer = info.buf, silent = true, desc = 'Pré-visualização de imagem/vídeo' })
+			end, { buffer = info.buf, silent = true, desc = 'Image/video preview' })
 
-			-- Abre imagem em nova aba ou vídeo com player externo
+			-- Open image in a new tab or video with an external player
 			vim.keymap.set('n', keys.open, function()
 				local oil = require('oil')
 				local entry = oil.get_cursor_entry()
@@ -79,9 +79,9 @@ function M.setup()
 					end
 				end
 				oil.select()
-			end, { buffer = info.buf, silent = true, desc = 'Abrir arquivo ou imagem/vídeo' })
+			end, { buffer = info.buf, silent = true, desc = 'Open file or image/video' })
 
-			-- Pre-fetch
+			-- Prefetch
 			local prefetch_timer = nil
 			vim.api.nvim_create_autocmd('CursorMoved', {
 				buffer = info.buf,
@@ -113,7 +113,7 @@ function M.setup()
 		end,
 	})
 
-	-- Cleanup WezTerm pane when leaving Oil or exiting Neovim
+	-- Clean up the WezTerm pane when leaving Oil or exiting Neovim
 	vim.api.nvim_create_autocmd({ 'BufLeave' }, {
 		group = group,
 		pattern = 'oil://*',

@@ -1,5 +1,5 @@
---- FFI bindings para libMagickWand - decodificação e resize de imagens em memória.
---- Elimina o overhead de spawnar o processo `magick` CLI (~700ms -> ~0ms).
+--- FFI bindings for libMagickWand - in-memory image decoding and resize.
+--- Removes the overhead of spawning the `magick` CLI process (~700ms -> ~0ms).
 
 local ffi = require('ffi')
 
@@ -26,7 +26,7 @@ local M = {}
 local lib = nil
 local initialized = false
 
---- Carrega a biblioteca MagickWand.
+--- Load the MagickWand library.
 --- @return boolean success
 local function ensure_loaded()
 	if lib then
@@ -59,35 +59,35 @@ local function ensure_loaded()
 	return false
 end
 
---- Converte e redimensiona uma imagem em memória.
---- @param filepath string Caminho do arquivo de imagem
---- @param max_width number Largura máxima em pixels
---- @param max_height number Altura máxima em pixels
---- @return string|nil png_data Dados PNG em binário, nil se falhou
---- @return number|nil width Largura real
---- @return number|nil height Altura real
---- @return string|nil err Mensagem de erro
+--- Convert and resize an image in memory.
+---@param filepath string Image file path
+---@param max_width number Maximum width in pixels
+---@param max_height number Maximum height in pixels
+---@return string|nil png_data PNG binary data, nil on failure
+---@return number|nil width Actual width
+---@return number|nil height Actual height
+---@return string|nil err Error message
 function M.convert(filepath, max_width, max_height)
 	if not ensure_loaded() then
-		return nil, nil, nil, 'libMagickWand não encontrada'
+		return nil, nil, nil, 'libMagickWand not found'
 	end
 
 	local wand = lib.NewMagickWand()
 	if wand == nil then
-		return nil, nil, nil, 'Falha ao criar MagickWand'
+		return nil, nil, nil, 'Failed to create MagickWand'
 	end
 
-	-- Lê a imagem
+	-- Read the image
 	if lib.MagickReadImage(wand, filepath) == 0 then
 		lib.DestroyMagickWand(wand)
-		return nil, nil, nil, 'Falha ao ler imagem: ' .. filepath
+		return nil, nil, nil, 'Failed to read image: ' .. filepath
 	end
 
-	-- Obtém dimensões originais
+	-- Get original dimensions
 	local orig_w = tonumber(lib.MagickGetImageWidth(wand))
 	local orig_h = tonumber(lib.MagickGetImageHeight(wand))
 
-	-- Calcula resize mantendo proporção (contain, só reduz)
+	-- Compute a proportional resize (contain, only downscale)
 	local w, h = orig_w, orig_h
 	if w > max_width or h > max_height then
 		local ratio = math.min(max_width / w, max_height / h)
@@ -97,14 +97,14 @@ function M.convert(filepath, max_width, max_height)
 		lib.MagickResizeImage(wand, w, h, 22)
 	end
 
-	-- Exporta como PNG em memória
+	-- Export as PNG in memory
 	lib.MagickSetImageFormat(wand, 'PNG')
 	local size = ffi.new('unsigned long[1]')
 	local blob = lib.MagickGetImageBlob(wand, size)
 
 	if blob == nil or size[0] == 0 then
 		lib.DestroyMagickWand(wand)
-		return nil, nil, nil, 'Falha ao exportar PNG'
+		return nil, nil, nil, 'Failed to export PNG'
 	end
 
 	local png_data = ffi.string(blob, size[0])
@@ -114,7 +114,7 @@ function M.convert(filepath, max_width, max_height)
 	return png_data, w, h, nil
 end
 
---- Verifica se a biblioteca está disponível.
+--- Check whether the library is available.
 --- @return boolean
 function M.available()
 	return ensure_loaded()

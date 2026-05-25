@@ -5,7 +5,7 @@ local M = {}
 --- @field sql string
 --- @field columns string[]
 
---- Lista tabelas e schema de um arquivo SQLite.
+--- List tables and schema from an SQLite file.
 --- @param filepath string
 --- @return SqliteTable[]|nil tables
 --- @return string|nil err
@@ -14,7 +14,7 @@ function M.list(filepath)
 		return nil, 'sqlite3 not found'
 	end
 
-	-- Lista tabelas
+	-- List tables
 	local output = vim.fn.system({ 'sqlite3', filepath, '.tables' })
 	if vim.v.shell_error ~= 0 then
 		return nil, 'sqlite3 failed: ' .. (output or '')
@@ -29,7 +29,7 @@ function M.list(filepath)
 		return nil, 'no tables found'
 	end
 
-	-- Obtem colunas de cada tabela via PRAGMA
+	-- Get each table's columns via PRAGMA
 	local tables = {}
 	for _, name in ipairs(table_names) do
 		local info = vim.fn.system({ 'sqlite3', filepath, 'PRAGMA table_info(' .. name .. ');' })
@@ -52,7 +52,7 @@ function M.list(filepath)
 	return tables
 end
 
---- Formata tabelas para exibicao em buffer.
+--- Format tables for display in a buffer.
 --- @param tables SqliteTable[]
 --- @return string[] lines
 --- @return table[] highlights {line, col_start, col_end, hl_group}

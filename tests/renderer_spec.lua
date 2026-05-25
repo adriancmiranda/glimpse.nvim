@@ -7,7 +7,7 @@ local function normalize(path)
 end
 
 describe('renderer', function()
-	it('mantém o caminho completo do arquivo no buffer renderizado', function()
+	it('keeps the full file path in the rendered buffer', function()
 		local original_kitty = package.loaded['glimpse.kitty']
 		local original_renderer = package.loaded['glimpse.renderer']
 		local original_buf = vim.api.nvim_get_current_buf()

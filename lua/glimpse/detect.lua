@@ -20,15 +20,15 @@ local supports_inline = {
 local _cached_terminal = nil
 local _detected = false
 
---- Reseta o cache de detecção (usado em testes).
+--- Reset the detection cache (used in tests).
 ---@private
 function M._reset()
 	_cached_terminal = nil
 	_detected = false
 end
 
---- Detecta o terminal emulador atual (inclusive dentro do tmux).
---- Resultado é cacheado para evitar chamadas repetidas a vim.fn.system.
+--- Detect the current terminal emulator (including inside tmux).
+--- The result is cached to avoid repeated vim.fn.system calls.
 --- @return string|nil terminal 'wezterm' | 'kitty' | 'ghostty' | 'iterm' | nil
 function M.get_terminal()
 	if _detected then
@@ -49,14 +49,14 @@ function M.get_terminal()
 	return _cached_terminal
 end
 
---- Verifica se o terminal suporta renderização inline (Kitty Graphics Protocol).
+--- Check whether the terminal supports inline rendering (Kitty Graphics Protocol).
 --- @return boolean
 function M.supports_inline()
 	local term = M.get_terminal()
 	return supports_inline[term] or false
 end
 
---- Verifica se estamos dentro do tmux.
+--- Check whether we are inside tmux.
 --- @return boolean
 function M.in_tmux()
 	return os.getenv('TMUX') ~= nil
