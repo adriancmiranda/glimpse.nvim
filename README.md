@@ -228,14 +228,22 @@ Switching between files is fast after thumbnails and conversions are cached.
 ```lua
 local img = require('glimpse')
 
+img.can_preview(filepath)    -- check whether Glimpse knows how to preview it
+img.get_preview_kind(filepath) -- return the preview kind that would be used
 img.show(filepath)           -- show image or video thumbnail
 img.preview(filepath)        -- show reusing existing window
 img.close()                  -- close active preview
 img.is_image(filepath)       -- check if supported image
 img.is_video(filepath)       -- check if supported video
+img.is_archive(filepath)     -- check if supported archive
+img.is_sqlite(filepath)      -- check if supported SQLite database
 img.is_previewable(filepath) -- check if supported previewable file
 img.is_cert(filepath)        -- check if supported certificate
+img.is_font(filepath)        -- check if supported font
+img.is_key(filepath)         -- check if supported GPG/SSH key
 img.get_terminal()           -- return detected terminal
+img.supports_inline()        -- check whether inline rendering is supported
+img.in_tmux()                -- check whether Neovim runs inside tmux
 ```
 
 ## Security & Privacy
@@ -314,7 +322,7 @@ tmux set-environment WEZTERM_UNIX_SOCKET ~/.local/share/wezterm/gui-sock-<PID>
 ```bash
 lua/
 ├── glimpse/
-│   ├── init.lua              -- Public API: setup(), show(), preview(), close()
+│   ├── init.lua              -- Public API: setup(), show(), preview(), close(), helpers
 │   ├── detect.lua            -- Terminal detection via tmux client_termname
 │   ├── kitty.lua             -- Kitty Graphics Protocol (transmit, delete, prefetch)
 │   ├── renderer.lua          -- Placement management and extmarks
