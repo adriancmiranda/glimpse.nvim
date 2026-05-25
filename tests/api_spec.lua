@@ -1,0 +1,23 @@
+local glimpse = require('glimpse')
+
+describe('public api', function()
+	it('exposes file-type helpers and preview kind resolution', function()
+		assert.is_true(glimpse.is_archive('/path/to/file.zip'))
+		assert.is_true(glimpse.is_sqlite('/path/to/file.db'))
+		assert.is_true(glimpse.is_font('/path/to/font.ttf'))
+		assert.is_true(glimpse.is_key('/path/to/key.pub'))
+
+		assert.are.equal('image', glimpse.get_preview_kind('/path/to/photo.png'))
+		assert.are.equal('archive', glimpse.get_preview_kind('/path/to/file.zip'))
+		assert.are.equal('sqlite', glimpse.get_preview_kind('/path/to/file.db'))
+		assert.are.equal('font', glimpse.get_preview_kind('/path/to/font.ttf'))
+		assert.are.equal('key', glimpse.get_preview_kind('/path/to/key.pub'))
+		assert.are.equal('binary', glimpse.get_preview_kind(vim.v.progpath))
+		assert.is_nil(glimpse.get_preview_kind('/path/to/file.txt'))
+	end)
+
+	it('exposes terminal capability helpers', function()
+		assert.is_boolean(glimpse.supports_inline())
+		assert.is_boolean(glimpse.in_tmux())
+	end)
+end)

@@ -36,7 +36,7 @@ set -ga update-environment WEZTERM_UNIX_SOCKET
 
 ```bash
 lua/glimpse/
-├── init.lua              -- Public API: setup(), show(), preview(), close()
+├── init.lua              -- Public API: setup(), show(), preview(), close(), helpers
 ├── detect.lua            -- Terminal detection via tmux client_termname
 ├── kitty.lua             -- Kitty Graphics Protocol (transmit, delete, prefetch)
 ├── renderer.lua          -- Placement management and extmarks

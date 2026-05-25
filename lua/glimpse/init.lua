@@ -173,27 +173,28 @@ end
 --- @param filepath string
 --- @return table|nil previewer
 --- @return table|nil safety_opts
+--- @return string|nil kind
 local function resolve_previewer(filepath)
 	if util.is_archive(filepath) then
-		return require('glimpse.previewer.archive'), { max_size = 0 }
+		return require('glimpse.previewer.archive'), { max_size = 0 }, 'archive'
 	end
 	if util.is_sqlite(filepath) then
-		return require('glimpse.previewer.sqlite'), { max_size = 0 }
+		return require('glimpse.previewer.sqlite'), { max_size = 0 }, 'sqlite'
 	end
 	if util.is_cert(filepath) then
-		return require('glimpse.previewer.cert'), { max_size = config.max_file_size }
+		return require('glimpse.previewer.cert'), { max_size = config.max_file_size }, 'cert'
 	end
 	if util.is_key(filepath) then
-		return require('glimpse.previewer.key'), { max_size = config.max_file_size }
+		return require('glimpse.previewer.key'), { max_size = config.max_file_size }, 'key'
 	end
 	if util.is_font(filepath) then
-		return require('glimpse.previewer.font'), { max_size = config.max_file_size }
+		return require('glimpse.previewer.font'), { max_size = config.max_file_size }, 'font'
 	end
 	if util.is_image(filepath) then
-		return require('glimpse.previewer.image'), { max_size = config.max_file_size }
+		return require('glimpse.previewer.image'), { max_size = config.max_file_size }, 'image'
 	end
 	if binary.can_preview(filepath) then
-		return binary, { max_size = 0 }
+		return binary, { max_size = 0 }, 'binary'
 	end
 	return nil
 end
@@ -203,6 +204,14 @@ end
 ---@return boolean
 function M.can_preview(filepath)
 	return resolve_previewer(filepath) ~= nil
+end
+
+--- Retorna o tipo de preview que seria usado para o arquivo.
+---@param filepath string Caminho absoluto do arquivo
+---@return string|nil kind
+function M.get_preview_kind(filepath)
+	local _, _, kind = resolve_previewer(filepath)
+	return kind
 end
 
 --- Exibe arquivo (escolhe previewer automaticamente).
@@ -261,6 +270,8 @@ M.is_image = util.is_image
 ---@param filepath string Caminho do arquivo
 ---@return boolean
 M.is_video = util.is_video
+M.is_archive = util.is_archive
+M.is_sqlite = util.is_sqlite
 
 --- Verifica se o arquivo é previewable (imagem, vídeo, certificado, etc.).
 ---@param filepath string Caminho do arquivo
@@ -271,10 +282,14 @@ M.is_previewable = util.is_previewable
 ---@param filepath string Caminho do arquivo
 ---@return boolean
 M.is_cert = util.is_cert
+M.is_font = util.is_font
+M.is_key = util.is_key
 
 --- Retorna o terminal detectado.
 ---@return string|nil terminal 'wezterm'|'kitty'|'ghostty'|'iterm'|nil
 M.get_terminal = detect.get_terminal
+M.supports_inline = detect.supports_inline
+M.in_tmux = detect.in_tmux
 
 --- Retorna a configuração atual.
 ---@return GlimpseConfig
