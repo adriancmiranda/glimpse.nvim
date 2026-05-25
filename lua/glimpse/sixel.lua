@@ -1,14 +1,14 @@
---- Implementação do protocolo Sixel para renderização de imagens.
+--- Sixel protocol implementation for image rendering.
 --- @see spec https://en.wikipedia.org/wiki/Sixel
---- Usado como fallback para terminais sem suporte a Kitty Graphics.
---- Requer ImageMagick com suporte a sixel output.
+--- Used as a fallback for terminals without Kitty Graphics support.
+--- Requires ImageMagick with sixel output support.
 
 local M = {}
 
---- Verifica se o terminal suporta Sixel.
+--- Check whether the terminal supports Sixel.
 --- @return boolean
 function M.supported()
-	-- Verifica via TERM ou DA1 response (simplificado: checa terminais conhecidos)
+	-- Check via TERM or DA1 response (simplified: known terminals only)
 	local term = os.getenv('TERM') or ''
 	local term_program = os.getenv('TERM_PROGRAM') or ''
 	local sixel_terms = {
@@ -26,7 +26,7 @@ function M.supported()
 	return false
 end
 
---- Gera comando para exibir imagem via Sixel num painel tmux.
+--- Build a command to display an image via Sixel in a tmux pane.
 --- @param filepath string
 --- @param opts? { width?: number, height?: number }
 --- @return string
@@ -42,7 +42,7 @@ function M.get_tmux_cmd(filepath, opts)
 	)
 end
 
---- Exibe imagem via Sixel num painel tmux.
+--- Display an image via Sixel in a tmux pane.
 --- @param filepath string
 --- @param opts? { width?: number, height?: number }
 function M.show_pane(filepath, opts)

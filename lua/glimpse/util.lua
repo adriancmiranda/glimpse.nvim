@@ -1,6 +1,6 @@
 local M = {}
 
---- Verifica se o arquivo é uma imagem suportada.
+--- Check whether the file is a supported image.
 --- @param filepath string
 --- @return boolean
 function M.is_image(filepath)
@@ -17,7 +17,7 @@ function M.is_image(filepath)
 	return false
 end
 
---- Verifica se o arquivo é um vídeo suportado.
+--- Check whether the file is a supported video.
 --- @param filepath string
 --- @return boolean
 function M.is_video(filepath)
@@ -37,7 +37,7 @@ function M.is_video(filepath)
 	return false
 end
 
---- Verifica se o arquivo é um archive suportado.
+--- Check whether the file is a supported archive.
 --- @param filepath string
 --- @return boolean
 function M.is_archive(filepath)
@@ -54,7 +54,7 @@ function M.is_archive(filepath)
 	return false
 end
 
---- Verifica se o arquivo é um banco SQLite.
+--- Check whether the file is an SQLite database.
 --- @param filepath string
 --- @return boolean
 function M.is_sqlite(filepath)
@@ -62,7 +62,7 @@ function M.is_sqlite(filepath)
 	return ext == 'db' or ext == 'sqlite' or ext == 'sqlite3'
 end
 
---- Verifica se o arquivo é um certificado X.509.
+--- Check whether the file is an X.509 certificate.
 --- @param filepath string
 --- @return boolean
 function M.is_cert(filepath)
@@ -93,7 +93,7 @@ function M.is_cert(filepath)
 	return false
 end
 
---- Verifica se o arquivo PEM é uma chave privada.
+--- Check whether the PEM file is a private key.
 --- @param filepath string
 --- @return boolean
 local function is_pem_key(filepath)
@@ -118,7 +118,7 @@ local function is_pem_key(filepath)
 	return false
 end
 
---- Verifica se o arquivo é previewable (imagem, vídeo, certificado, archive ou sqlite).
+--- Check whether the file is previewable (image, video, certificate, archive, or SQLite).
 --- @param filepath string
 --- @return boolean
 function M.is_previewable(filepath)
@@ -131,7 +131,7 @@ function M.is_previewable(filepath)
 		or M.is_key(filepath)
 end
 
---- Verifica se o arquivo é uma fonte.
+--- Check whether the file is a font.
 --- @param filepath string
 --- @return boolean
 function M.is_font(filepath)
@@ -139,7 +139,7 @@ function M.is_font(filepath)
 	return ext == 'ttf' or ext == 'otf' or ext == 'woff' or ext == 'woff2'
 end
 
---- Verifica se o arquivo é uma chave GPG ou SSH.
+--- Check whether the file is a GPG or SSH key.
 --- @param filepath string
 --- @return boolean
 function M.is_key(filepath)

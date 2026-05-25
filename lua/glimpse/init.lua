@@ -1,21 +1,21 @@
 ---@brief [[
---- glimpse.nvim - Visualização de imagens inline no Neovim.
+--- glimpse.nvim - Inline image preview for Neovim.
 ---
---- Renderiza imagens diretamente no terminal via Kitty Graphics Protocol,
---- com fallback para Sixel e painéis externos (WezTerm, iTerm, tmux).
+--- Renders images directly in the terminal via Kitty Graphics Protocol,
+--- with fallback to Sixel and external panes (WezTerm, iTerm, tmux).
 ---
---- Uso básico:
+--- Basic usage:
 --- >lua
 ---   require('glimpse').setup()
 --- <
 ---
---- Keymaps padrão (Oil.nvim):
----   `<leader>p` - Preview da imagem ao lado
----   `;`         - Abre imagem em nova aba
----   `q`         - Fecha buffer de imagem
+--- Default keymaps (Oil.nvim):
+---   `<leader>p` - Preview image side by side
+---   `;`         - Open image in a new tab
+---   `q`         - Close image buffer
 ---
---- Terminais suportados:
----   Kitty, Ghostty (inline), WezTerm (painel), iTerm2 (painel),
+--- Supported terminals:
+---   Kitty, Ghostty (inline), WezTerm (pane), iTerm2 (pane),
 ---   xterm/foot/mlterm (Sixel via tmux)
 ---@brief ]]
 
@@ -24,43 +24,43 @@
 --- @see credits https://github.com/folke/snacks.nvim (snacks.image)
 --- @see source https://www.reddit.com/r/neovim/comments/1e1txpz/some_fun_with_oilnvim_and_wezterm_for_image/
 
---- Configuração do glimpse.nvim.
+--- glimpse.nvim configuration.
 ---@class GlimpseConfig
----@field strategy? 'auto'|'inline'|'pane' Método de renderização (default: 'auto')
----@field pane_position? 'right'|'bottom' Posição do painel externo (default: 'right')
----@field pane_size? number Tamanho do painel em percentual (default: 40)
----@field inline? GlimpseInlineConfig Opções para renderização inline
----@field keys? GlimpseKeysConfig Keymaps configuráveis
----@field debounce? GlimpseDebounceConfig Tempos de debounce em ms
----@field cell_size? GlimpseCellSizeConfig Pixels estimados por célula do terminal
----@field cache_dir? string Diretório para cache de imagens convertidas
----@field cache_max_age_days? number Dias para manter arquivos no cache (default: 7)
----@field max_file_size? number Tamanho maximo em bytes para processar (default: 50MB)
----@field loading_text? string Texto exibido durante carregamento
----@field formats? string[] Extensões de imagem suportadas
----@field integrations? GlimpseIntegrationsConfig Integrações com plugins
+---@field strategy? 'auto'|'inline'|'pane' Rendering method (default: 'auto')
+---@field pane_position? 'right'|'bottom' External pane position (default: 'right')
+---@field pane_size? number External pane size in percent (default: 40)
+---@field inline? GlimpseInlineConfig Inline rendering options
+---@field keys? GlimpseKeysConfig Configurable keymaps
+---@field debounce? GlimpseDebounceConfig Debounce timings in ms
+---@field cell_size? GlimpseCellSizeConfig Estimated terminal cell pixel size
+---@field cache_dir? string Cache directory for converted images
+---@field cache_max_age_days? number Days to keep cached files (default: 7)
+---@field max_file_size? number Maximum bytes to process (default: 50MB)
+---@field loading_text? string Text shown while loading
+---@field formats? string[] Supported image extensions
+---@field integrations? GlimpseIntegrationsConfig Plugin integrations
 
 ---@class GlimpseInlineConfig
----@field rerender_on_tab? boolean Re-renderiza ao voltar para aba com imagem (default: true)
----@field close_with_q? boolean Mapeia tecla para fechar buffer de imagem (default: true)
+---@field rerender_on_tab? boolean Re-render when returning to an image tab (default: true)
+---@field close_with_q? boolean Map a key to close the image buffer (default: true)
 
 ---@class GlimpseKeysConfig
----@field preview? string Keymap para preview no Oil (default: '<leader>p')
----@field open? string Keymap para abrir em aba no Oil (default: ';')
----@field close? string Keymap para fechar buffer de imagem (default: 'q')
+---@field preview? string Keymap for preview in Oil (default: '<leader>p')
+---@field open? string Keymap for opening in a tab in Oil (default: ';')
+---@field close? string Keymap for closing the image buffer (default: 'q')
 
 ---@class GlimpseDebounceConfig
----@field prefetch? number ms antes de pré-converter ao mover cursor (default: 200)
----@field resize? number ms antes de re-renderizar ao redimensionar (default: 100)
+---@field prefetch? number ms before pre-converting on cursor move (default: 200)
+---@field resize? number ms before re-rendering on resize (default: 100)
 
 ---@class GlimpseCellSizeConfig
----@field width? number Pixels estimados por coluna (default: 20)
----@field height? number Pixels estimados por linha (default: 40)
+---@field width? number Estimated pixels per column (default: 20)
+---@field height? number Estimated pixels per row (default: 40)
 
 ---@class GlimpseIntegrationsConfig
----@field oil? boolean Keymaps no Oil.nvim (default: true)
+---@field oil? boolean Keymaps in Oil.nvim (default: true)
 ---@field neotree? boolean|{enable?:boolean, auto_preview?:boolean} NeoTree integration config
----@field telescope? boolean|{enable?:boolean, pickers?:string|string[]|table} Preview no Telescope (default: true)
+---@field telescope? boolean|{enable?:boolean, pickers?:string|string[]|table} Preview in Telescope (default: true)
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
@@ -130,8 +130,8 @@ local config = {
 	video_open = nil,
 }
 
---- Configura o plugin.
----@param opts? GlimpseConfig Opções de configuração (merge com defaults)
+--- Configure the plugin.
+---@param opts? GlimpseConfig Configuration options (merged with defaults)
 function M.setup(opts)
 	config = vim.tbl_deep_extend('force', config, opts or {})
 	if M._should_use_inline() and config.inline.rerender_on_tab then
@@ -149,7 +149,7 @@ function M.setup(opts)
 	if config.integrations.telescope then
 		require('glimpse.integrations.telescope').setup(config.integrations.telescope)
 	end
-	-- Limpa cache antigo em background
+	-- Clean up old cache entries in the background
 	if config.cache_max_age_days and config.cache_max_age_days > 0 then
 		vim.defer_fn(function()
 			require('glimpse.cache').cleanup(config.cache_dir, config.cache_max_age_days)
@@ -168,8 +168,8 @@ function M._should_use_inline()
 	return detect.supports_inline()
 end
 
---- Exibe imagem (escolhe estratégia automaticamente).
---- Resolve o previewer adequado para o tipo de arquivo.
+--- Show an image (selects the strategy automatically).
+--- Resolve the appropriate previewer for the file type.
 --- @param filepath string
 --- @return table|nil previewer
 --- @return table|nil safety_opts
@@ -199,23 +199,23 @@ local function resolve_previewer(filepath)
 	return nil
 end
 
---- Indica se o arquivo possui um previewer conhecido.
----@param filepath string Caminho absoluto do arquivo
+--- Return whether the file has a known previewer.
+---@param filepath string Absolute file path
 ---@return boolean
 function M.can_preview(filepath)
 	return resolve_previewer(filepath) ~= nil
 end
 
---- Retorna o tipo de preview que seria usado para o arquivo.
----@param filepath string Caminho absoluto do arquivo
+--- Return the preview kind that would be used for the file.
+---@param filepath string Absolute file path
 ---@return string|nil kind
 function M.get_preview_kind(filepath)
 	local _, _, kind = resolve_previewer(filepath)
 	return kind
 end
 
---- Exibe arquivo (escolhe previewer automaticamente).
----@param filepath string Caminho absoluto do arquivo
+--- Show a file (selects the previewer automatically).
+---@param filepath string Absolute file path
 function M.show(filepath)
 	local previewer, safety_opts = resolve_previewer(filepath)
 	if not previewer then
@@ -233,8 +233,8 @@ function M.show(filepath)
 	previewer.show(filepath)
 end
 
---- Preview rapido (reutiliza janela existente ou abre float).
----@param filepath string Caminho absoluto do arquivo
+--- Quick preview (reuses an existing window or opens a float).
+---@param filepath string Absolute file path
 function M.preview(filepath)
 	local previewer, safety_opts = resolve_previewer(filepath)
 	if not previewer then
@@ -250,10 +250,10 @@ function M.preview(filepath)
 	previewer.preview(filepath)
 end
 
---- Exibe conteudo de um archive num buffer flutuante.
+--- Show archive contents in a floating buffer.
 ---@param filepath string
 ---@private
---- Fecha preview ativo.
+--- Close the active preview.
 function M.close()
 	local buf = vim.api.nvim_get_current_buf()
 	if vim.bo[buf].filetype == 'image' then
@@ -261,37 +261,37 @@ function M.close()
 	end
 end
 
---- Verifica se o arquivo é uma imagem suportada.
----@param filepath string Caminho do arquivo
+--- Check whether the file is a supported image.
+---@param filepath string File path
 ---@return boolean
 M.is_image = util.is_image
 
---- Verifica se o arquivo é um vídeo suportado.
----@param filepath string Caminho do arquivo
+--- Check whether the file is a supported video.
+---@param filepath string File path
 ---@return boolean
 M.is_video = util.is_video
 M.is_archive = util.is_archive
 M.is_sqlite = util.is_sqlite
 
---- Verifica se o arquivo é previewable (imagem, vídeo, certificado, etc.).
----@param filepath string Caminho do arquivo
+--- Check whether the file is previewable (image, video, certificate, etc.).
+---@param filepath string File path
 ---@return boolean
 M.is_previewable = util.is_previewable
 
---- Verifica se o arquivo é um certificado X.509.
----@param filepath string Caminho do arquivo
+--- Check whether the file is an X.509 certificate.
+---@param filepath string File path
 ---@return boolean
 M.is_cert = util.is_cert
 M.is_font = util.is_font
 M.is_key = util.is_key
 
---- Retorna o terminal detectado.
+--- Return the detected terminal.
 ---@return string|nil terminal 'wezterm'|'kitty'|'ghostty'|'iterm'|nil
 M.get_terminal = detect.get_terminal
 M.supports_inline = detect.supports_inline
 M.in_tmux = detect.in_tmux
 
---- Retorna a configuração atual.
+--- Return the current configuration.
 ---@return GlimpseConfig
 function M.get_config()
 	return config

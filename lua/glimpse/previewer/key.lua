@@ -1,4 +1,4 @@
---- Previewer para chaves GPG e SSH.
+--- Previewer for GPG and SSH keys.
 local M = {}
 local float = require('glimpse.float')
 
@@ -20,7 +20,7 @@ local function _render_packets(output)
 	return lines
 end
 
---- Extrai informacoes de uma chave SSH.
+--- Extract information from an SSH key.
 --- @param filepath string
 --- @return string[]|nil lines
 --- @return string|nil err
@@ -53,7 +53,7 @@ local function query_ssh(filepath)
 	return lines
 end
 
---- Extrai informacoes de uma chave GPG.
+--- Extract information from a GPG key.
 --- @param filepath string
 --- @return string[]|nil lines
 --- @return string|nil err
@@ -78,12 +78,12 @@ local function query_gpg(filepath)
 	return nil, 'empty gpg output'
 end
 
---- Detecta se e SSH ou GPG e retorna info.
+--- Detect whether it is SSH or GPG and return info.
 --- @param filepath string
 --- @return string[]|nil lines
 --- @return string|nil err
 local function query(filepath)
-	-- Tenta SSH primeiro (mais rapido)
+	-- Try SSH first (faster)
 	local content = vim.fn.readfile(filepath, '', 3)
 	if not content or #content == 0 then
 		return nil, 'empty file'
@@ -95,11 +95,11 @@ local function query(filepath)
 		end
 		return query_ssh(filepath)
 	end
-	-- Tenta GPG
+	-- Try GPG
 	return query_gpg(filepath)
 end
 
---- Exibe info da chave num float.
+--- Display key info in a floating window.
 --- @param filepath string
 function M.show(filepath)
 	local config = require('glimpse').get_config()
@@ -119,7 +119,7 @@ function M.show(filepath)
 	vim.bo[buf].buftype = 'nofile'
 	vim.bo[buf].filetype = 'glimpse_key'
 
-	-- Highlight no warning se existir
+	-- Highlight warnings if present
 	local ns = vim.api.nvim_create_namespace('glimpse_key')
 	for i, line in ipairs(lines) do
 		if line:match('^⚠') then

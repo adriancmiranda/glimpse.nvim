@@ -90,7 +90,7 @@ function M.setup()
 				end,
 			})
 
-			-- Cleanup preview when Neo-tree buffer is closed
+			-- Clean up the preview when the Neo-tree buffer is closed
 			vim.api.nvim_create_autocmd('BufWipeout', {
 				buffer = info.buf,
 				group = group,
@@ -101,7 +101,7 @@ function M.setup()
 		end,
 	})
 
-	-- Cleanup preview when Neo-tree window is closed
+	-- Clean up the preview when the Neo-tree window is closed
 	vim.api.nvim_create_autocmd('WinClosed', {
 		group = group,
 		callback = function(ev)

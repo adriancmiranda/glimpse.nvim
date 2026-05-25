@@ -21,7 +21,7 @@ describe('archive', function()
 
 	describe('list_zip', function()
 		it('returns entries for a valid zip', function()
-			-- Cria um zip de teste
+			-- Create a test zip
 			vim.fn.writefile({ 'hello' }, test_dir .. '/hello.txt')
 			vim.fn.system({ 'zip', '-j', test_zip, test_dir .. '/hello.txt' })
 			if vim.v.shell_error ~= 0 then

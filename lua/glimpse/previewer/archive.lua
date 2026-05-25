@@ -1,10 +1,10 @@
---- Previewer para archives (zip, tar, etc).
+--- Previewer for archives (zip, tar, etc.).
 local M = {}
 local float = require('glimpse.float')
 
 local archive = require('glimpse.archive')
 
---- Renderiza listagem completa no buffer atual.
+--- Render the full listing in the current buffer.
 --- @param filepath string
 function M.show(filepath)
 	local entries, err = archive.list(filepath)
@@ -20,7 +20,7 @@ function M.show(filepath)
 	vim.bo[buf].modified = false
 	vim.bo[buf].buftype = 'nofile'
 	vim.bo[buf].filetype = 'glimpse_archive'
-	-- Aplica highlights
+	-- Apply highlights
 	local ns = vim.api.nvim_create_namespace('glimpse_archive')
 	vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
 	for _, hl in ipairs(highlights) do
@@ -36,7 +36,7 @@ function M.show(filepath)
 	end
 end
 
---- Preview com resumo num float.
+--- Preview a summary in a floating window.
 --- @param filepath string
 function M.preview(filepath)
 	local config = require('glimpse').get_config()
@@ -52,14 +52,14 @@ function M.preview(filepath)
 	table.insert(lines, 1, header)
 	table.insert(lines, 2, string.rep('─', #header + 4))
 
-	-- Cria buffer flutuante
+	-- Create a floating buffer
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	vim.bo[buf].modifiable = false
 	vim.bo[buf].buftype = 'nofile'
 	vim.bo[buf].filetype = 'glimpse_archive'
 
-	-- Aplica highlights (offset +2 pelo header)
+	-- Apply highlights (offset +2 for the header)
 	local ns = vim.api.nvim_create_namespace('glimpse_archive_preview')
 	for _, hl in ipairs(highlights) do
 		local row = hl[1] + 2
@@ -79,7 +79,7 @@ function M.preview(filepath)
 		max_height = #lines,
 	})
 
-	-- Keymap para fechar
+	-- Keymap to close
 	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })
 	vim.keymap.set('n', '<Esc>', '<cmd>close<CR>', { buffer = buf, silent = true })
 end

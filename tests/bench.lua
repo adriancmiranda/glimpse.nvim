@@ -30,7 +30,7 @@ package.loaded['glimpse'] = {
 }
 
 local detect = require('glimpse.detect')
--- Em modo -l, vim.fn.system pode não funcionar. Testamos apenas se não estiver no tmux.
+-- In -l mode, vim.fn.system may not work. We only test it when not in tmux.
 local can_detect = os.getenv('TERM_PROGRAM') ~= 'tmux'
 if can_detect then
 	bench('detect.get_terminal', 10000, function()

@@ -1,7 +1,7 @@
---- Previewer para imagens.
+--- Previewer for images.
 local M = {}
 
---- Exibe imagem inline ou em painel externo.
+--- Show an image inline or in an external pane.
 --- @param filepath string
 function M.show(filepath)
 	local glimpse = require('glimpse')
@@ -13,7 +13,7 @@ function M.show(filepath)
 	end
 end
 
---- Preview de imagem (reutiliza janela existente).
+--- Image preview (reuses an existing window).
 --- @param filepath string
 function M.preview(filepath)
 	local glimpse = require('glimpse')

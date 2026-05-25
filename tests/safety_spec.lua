@@ -32,7 +32,7 @@ describe('safety', function()
 
 		it('rejects files larger than max_size', function()
 			local file = test_dir .. '/big.png'
-			-- Cria arquivo de 2KB
+			-- Create a 2KB file
 			local data = string.rep('x', 2048)
 			vim.fn.writefile({ data }, file)
 			local safe, reason = safety.check(file, { max_size = 1024 })

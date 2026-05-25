@@ -8,7 +8,7 @@ local M = {}
 --- @field width string
 --- @field file string
 
---- Extrai metadados de uma fonte usando fc-query.
+--- Extract font metadata using fc-query.
 --- @param filepath string
 --- @return FontInfo|nil info
 --- @return string|nil err
@@ -44,7 +44,7 @@ function M.query(filepath)
 	return info
 end
 
---- Formata info da fonte para exibicao.
+--- Format font info for display.
 --- @param info FontInfo
 --- @return string[] lines
 --- @return table[] highlights

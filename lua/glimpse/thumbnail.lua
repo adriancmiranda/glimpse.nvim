@@ -1,6 +1,6 @@
 local M = {}
 
---- Gera o caminho do thumbnail baseado no filepath e mtime.
+--- Build the thumbnail path from the filepath and mtime.
 --- @param filepath string
 --- @param cache_dir string
 --- @return string|nil thumb_path
@@ -16,8 +16,8 @@ local function resolve_thumb_path(filepath, cache_dir)
 	return thumb_path, cached
 end
 
---- Extrai thumbnail de um vídeo usando ffmpeg (síncrono).
---- @param filepath string Caminho absoluto do vídeo
+--- Extract a video thumbnail using ffmpeg (synchronous).
+---@param filepath string Absolute video path
 --- @param opts? { cache_dir?: string }
 --- @return string|nil thumbnail_path Caminho do thumbnail ou nil se falhar
 function M.extract(filepath, opts)
@@ -56,9 +56,9 @@ function M.extract(filepath, opts)
 	return thumb_path
 end
 
---- Extrai thumbnail de um vídeo usando ffmpeg (assíncrono).
---- @param filepath string Caminho absoluto do vídeo
---- @param callback fun(thumb_path: string|nil) Chamado com o caminho ou nil
+--- Extract a video thumbnail using ffmpeg (asynchronous).
+---@param filepath string Absolute video path
+---@param callback fun(thumb_path: string|nil) Called with the path or nil
 --- @param opts? { cache_dir?: string }
 function M.extract_async(filepath, callback, opts)
 	opts = opts or {}

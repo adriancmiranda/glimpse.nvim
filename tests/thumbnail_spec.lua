@@ -18,7 +18,7 @@ describe('thumbnail', function()
 		end)
 
 		it('returns a png path for a valid video', function()
-			-- Criar um vídeo de teste mínimo com ffmpeg
+			-- Create a minimal test video with ffmpeg
 			local test_video = test_cache .. '/test_input.mp4'
 			vim.fn.system({
 				'ffmpeg',

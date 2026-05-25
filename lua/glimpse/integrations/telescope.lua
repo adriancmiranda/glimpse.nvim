@@ -1,4 +1,4 @@
---- Integração com Telescope para previews de imagens e vídeos.
+--- Telescope integration for image and video previews.
 
 local M = {}
 
@@ -29,8 +29,8 @@ local function _fallback_buffer_previewer(filepath, bufnr, opts)
 	require('telescope.previewers').buffer_previewer_maker(filepath, bufnr, opts)
 end
 
---- Substituto de buffer_previewer_maker do Telescope com suporte a imagens e vídeos.
---- Arquivos que não são mídia usam o previewer padrão do Telescope.
+--- Telescope's buffer_previewer_maker replacement with image and video support.
+--- Non-media files use Telescope's default previewer.
 ---@param filepath string
 ---@param bufnr integer
 ---@param opts? table
@@ -84,7 +84,7 @@ function M.buffer_previewer_maker(filepath, bufnr, opts)
 	)
 end
 
---- Cria um previewer do Telescope com suporte a imagens e vídeos.
+--- Create a Telescope previewer with image and video support.
 ---@param opts? table
 ---@return table
 function M.previewer(opts)
@@ -132,8 +132,8 @@ local function _apply_to_pickers(config)
 	telescope_config.set_pickers(picker_opts)
 end
 
---- Configura a integração com Telescope.
---- Por padrão, aplica o previewer apenas ao picker `find_files`.
+--- Configure the Telescope integration.
+--- By default, applies the previewer only to the `find_files` picker.
 ---@param opts? boolean|{ enable?: boolean, pickers?: string|string[]|table, previewer?: table, previewer_opts?: table }
 function M.setup(opts)
 	if opts == false then

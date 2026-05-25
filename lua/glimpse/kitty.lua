@@ -1,4 +1,4 @@
---- Implementação do Kitty Graphics Protocol para transmissão de imagens.
+--- Kitty Graphics Protocol implementation for image transmission.
 --- @see spec https://sw.kovidgoyal.net/kitty/graphics-protocol/
 
 local M = {}
@@ -11,7 +11,7 @@ local function get_config()
 	return require('glimpse').get_config()
 end
 
---- Gera uma chave de cache que inclui mtime para invalidacao automatica.
+--- Build a cache key that includes mtime for automatic invalidation.
 --- @param filepath string
 --- @param suffix string
 --- @return string
@@ -27,7 +27,7 @@ local function get_cache_dir()
 	return dir
 end
 
---- Retorna argumentos extras de seguranca para SVGs.
+--- Return extra safety arguments for SVGs.
 --- @param filepath string
 --- @return string[] args
 local function svg_safety_args(filepath)
@@ -38,7 +38,7 @@ local function svg_safety_args(filepath)
 	return {}
 end
 
---- Lê dimensões de um PNG diretamente do header (sem spawnar processo).
+--- Read PNG dimensions directly from the header (without spawning a process).
 --- @param filepath string
 --- @return number|nil w, number|nil h
 local function png_dimensions(filepath)
@@ -68,7 +68,7 @@ local function next_id()
 	return M._pane_offset + image_id_counter
 end
 
---- Codifica string em base64.
+--- Encode a string as base64.
 --- @param str string
 --- @return string
 local function base64(str)
@@ -78,7 +78,7 @@ local function base64(str)
 	return vim.fn.system('printf "%s" ' .. vim.fn.shellescape(str) .. ' | base64'):gsub('%s+', '')
 end
 
---- Envia um comando do protocolo Kitty Graphics ao terminal.
+--- Send a Kitty Graphics Protocol command to the terminal.
 --- @param params table<string, string|number>
 --- @param payload? string
 local function send(params, payload)
@@ -95,27 +95,27 @@ local function send(params, payload)
 		cmd = cmd .. ';' .. params.data
 	end
 	cmd = cmd .. '\027\\'
-	-- Dentro do tmux, envolve em passthrough
+	-- Wrap in tmux passthrough when running inside tmux
 	if os.getenv('TMUX') then
 		cmd = '\027Ptmux;' .. cmd:gsub('\027', '\027\027') .. '\027\\'
 	end
 	io.stdout:write(cmd)
 end
 
---- Deleta uma imagem do terminal pelo ID.
+--- Delete an image from the terminal by ID.
 --- @param id number
 function M.delete(id)
 	send({ a = 'd', d = 'i', i = id, q = 2 })
 end
 
---- Deleta todas as imagens do terminal.
+--- Delete all images from the terminal.
 function M.delete_all()
 	send({ a = 'd', q = 2 })
 end
 
---- Transmite uma imagem ao terminal via file path (síncrono).
---- O terminal lê o arquivo diretamente do disco.
---- @param filepath string Caminho do arquivo PNG
+--- Transmit an image to the terminal via file path (synchronous).
+--- The terminal reads the file directly from disk.
+---@param filepath string PNG file path
 --- @param opts? { width?: number }
 --- @return number|nil id, string|nil err, number|nil w_px, number|nil h_px
 function M.transmit(filepath, opts)
@@ -148,11 +148,11 @@ function M.transmit(filepath, opts)
 	return id, nil, w_px, h_px
 end
 
---- Transmite uma imagem ao terminal de forma assíncrona.
+--- Transmit an image to the terminal asynchronously.
 --- @param filepath string
 --- @param opts? { width?: number, height?: number }
 --- @param callback fun(id: number|nil, err: string|nil, w_px: number|nil, h_px: number|nil)
---- @return number|nil job_id ID do job externo (nil se resolvido via cache/FFI)
+---@return number|nil job_id External job ID (nil if resolved via cache/FFI)
 function M.transmit_async(filepath, opts, callback)
 	opts = opts or {}
 	local width_px = (opts.width or 80) * get_config().cell_size.width
@@ -160,7 +160,7 @@ function M.transmit_async(filepath, opts, callback)
 	local cache_key = make_cache_key(filepath, width_px .. 'x' .. height_px)
 	local id = next_id()
 
-	-- Cache hit: dimensões já conhecidas, arquivo já convertido
+	-- Cache hit: dimensions are already known, file is already converted
 	if dims_cache[cache_key] and convert_cache[cache_key] then
 		local dims = dims_cache[cache_key]
 		send({ a = 'T', t = 'f', i = id, f = 100, U = 1, q = 2, data = base64(convert_cache[cache_key]) })
@@ -168,7 +168,7 @@ function M.transmit_async(filepath, opts, callback)
 		return
 	end
 
-	-- PNG pequeno que já cabe: usa direto
+	-- Small PNG that already fits: use it directly
 	local ext = filepath:match('%.(%w+)$')
 	if ext and ext:lower() == 'png' then
 		local w, h = png_dimensions(filepath)
@@ -181,12 +181,12 @@ function M.transmit_async(filepath, opts, callback)
 		end
 	end
 
-	-- Tenta FFI MagickWand (instantâneo, sem processo externo)
+	-- Try MagickWand FFI (instant, without an external process)
 	local mw_ok, magickwand = pcall(require, 'glimpse.magickwand')
 	if mw_ok and magickwand.available() then
 		local png_data, w, h, _ = magickwand.convert(filepath, width_px, height_px)
 		if png_data then
-			-- Salva no cache para re-renders futuros
+			-- Save to cache for future re-renders
 			local tmp = get_cache_dir() .. '/' .. vim.fn.sha256(cache_key) .. '.png'
 			local f = io.open(tmp, 'wb')
 			if f then
@@ -199,10 +199,10 @@ function M.transmit_async(filepath, opts, callback)
 			callback(id, nil, w, h)
 			return
 		end
-		-- FFI falhou, cai no fallback
+		-- FFI failed, fall back
 	end
 
-	-- Fallback: magick CLI (assíncrono)
+	-- Fallback: magick CLI (asynchronous)
 	if vim.fn.executable('magick') == 0 then
 		callback(nil, 'magick not found')
 		return
@@ -242,7 +242,7 @@ function M.transmit_async(filepath, opts, callback)
 	return job_id
 end
 
---- Pré-converte uma imagem em background (popula o cache).
+--- Pre-convert an image in the background (populate the cache).
 --- @param filepath string
 --- @param opts? { width?: number, height?: number }
 function M.prefetch(filepath, opts)

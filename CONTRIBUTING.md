@@ -81,7 +81,7 @@ lua/glimpse/
 
 ## Conventions
 
-- Comments in Brazilian Portuguese
+- Comments in English
 - Public functions in camelCase
 - Private functions with `_` prefix or `local`
 - Type annotations via `@param`, `@return`, `@class`

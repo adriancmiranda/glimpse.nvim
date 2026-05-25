@@ -1,12 +1,12 @@
---- @see credits https://github.com/folke/snacks.nvim (snacks.image) - inspiração original
---- Renderização inline via Kitty Graphics Protocol (implementação própria).
+--- @see credits https://github.com/folke/snacks.nvim (snacks.image) - original inspiration
+--- Inline rendering via Kitty Graphics Protocol (custom implementation).
 
 local renderer = require('glimpse.renderer')
 local dir = require('glimpse.dir')
 
 local M = {}
 
---- Exibe imagem num vsplit reutilizando janela existente.
+--- Show an image in a vsplit, reusing an existing window.
 --- @param filepath string
 function M.preview(filepath)
 	local oil_win = vim.api.nvim_get_current_win()
@@ -18,7 +18,7 @@ function M.preview(filepath)
 			return
 		end
 	end
-	-- Cria vsplit com buffer novo
+	-- Create a vsplit with a new buffer
 	vim.cmd('vsplit')
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_win_set_buf(0, buf)
@@ -27,14 +27,14 @@ function M.preview(filepath)
 	dir.follow(filepath)
 end
 
---- Exibe imagem no buffer atual.
+--- Show an image in the current buffer.
 --- @param filepath string
 function M.show(filepath)
 	local buf = vim.api.nvim_get_current_buf()
 	renderer.render(buf, filepath)
 end
 
---- Fecha e limpa o buffer de imagem.
+--- Close and clean up the image buffer.
 --- @param buf number
 function M.close(buf)
 	renderer.close(buf)
@@ -43,12 +43,12 @@ function M.close(buf)
 	end
 end
 
---- Registra autocmds para re-render e keymap q.
+--- Register autocmds for rerendering and the q keymap.
 function M.setup_autocmds()
 	local group = vim.api.nvim_create_augroup('ImagePreviewInline', { clear = true })
 	local util = require('glimpse.util')
 
-	-- Intercepta abertura de arquivos de imagem, fonte e archive
+	-- Intercept image, font, and archive file openings
 	vim.api.nvim_create_autocmd('BufReadPost', {
 		group = group,
 		callback = function(info)

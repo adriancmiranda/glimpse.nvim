@@ -1,10 +1,10 @@
---- Previewer para fontes (.ttf, .otf, .woff, .woff2).
+--- Previewer for fonts (.ttf, .otf, .woff, .woff2).
 local M = {}
 local float = require('glimpse.float')
 
 local font_mod = require('glimpse.font')
 
---- Renderiza a fonte como imagem via magick.
+--- Render the font as an image via magick.
 --- @param filepath string
 function M.show(filepath)
 	local config = require('glimpse').get_config()
@@ -58,7 +58,7 @@ function M.show(filepath)
 	M.preview(filepath)
 end
 
---- Preview com metadados num float.
+--- Preview metadata in a floating window.
 --- @param filepath string
 function M.preview(filepath)
 	local config = require('glimpse').get_config()

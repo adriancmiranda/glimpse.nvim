@@ -13,12 +13,12 @@ describe('cache', function()
 
 	describe('cleanup', function()
 		it('removes files older than max_age_days', function()
-			-- Cria arquivo com mtime antigo (simula tocando e mudando mtime)
+			-- Create a file with an old mtime (simulates touching and changing mtime)
 			local old_file = test_dir .. '/old.png'
 			local new_file = test_dir .. '/new.png'
 			vim.fn.writefile({ '' }, old_file)
 			vim.fn.writefile({ '' }, new_file)
-			-- Seta mtime do old_file para 10 dias atras
+			-- Set old_file mtime to 10 days ago
 			local ten_days_ago = os.time() - (10 * 86400)
 			vim.uv.fs_utime(old_file, ten_days_ago, ten_days_ago)
 
