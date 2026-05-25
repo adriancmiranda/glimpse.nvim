@@ -1,192 +1,192 @@
- glimpse.nvim - Inline image preview for Neovim.
+ glimpse.nvim - Visualização de imagens inline no Neovim.
 
- Renders images directly in the terminal via Kitty Graphics Protocol,
- with fallback to Sixel and external panes (WezTerm, iTerm, tmux).
+ Renderiza imagens diretamente no terminal via Kitty Graphics Protocol,
+ com fallback para Sixel e painéis externos (WezTerm, iTerm, tmux).
 
- Basic usage:
+ Uso básico:
  >lua
    require('glimpse').setup()
  <
 
- Default keymaps (Oil.nvim):
-   `<leader>p` - Preview image side by side
-   `;`         - Open image in a new tab
-   `q`         - Close image buffer
+ Keymaps padrão (Oil.nvim):
+   `<leader>p` - Preview da imagem ao lado
+   `;`         - Abre imagem em nova aba
+   `q`         - Fecha buffer de imagem
 
- Supported terminals:
-   Kitty, Ghostty (inline), WezTerm (pane), iTerm2 (pane),
+ Terminais suportados:
+   Kitty, Ghostty (inline), WezTerm (painel), iTerm2 (painel),
    xterm/foot/mlterm (Sixel via tmux)
 
                                                                   *glimpse.nvim*
 GlimpseConfig                                                    *GlimpseConfig*
      @see credits https://github.com/folke/snacks.nvim (snacks.image)
      @see source https://www.reddit.com/r/neovim/comments/1e1txpz/some_fun_with_oilnvim_and_wezterm_for_image/
-     glimpse.nvim configuration.
+     Configuração do glimpse.nvim.
 
     Fields: ~
-        {strategy?}            ("auto"|"inline"|"pane")     Rendering method (default: 'auto')
-        {pane_position?}       ("right"|"bottom")           External pane position (default: 'right')
-        {pane_size?}           (number)                     External pane size in percent (default: 40)
-        {inline?}              (GlimpseInlineConfig)        Inline rendering options
-        {keys?}                (GlimpseKeysConfig)          Configurable keymaps
-        {debounce?}            (GlimpseDebounceConfig)      Debounce timings in ms
-        {cell_size?}           (GlimpseCellSizeConfig)      Estimated terminal cell pixel size
-        {cache_dir?}           (string)                     Cache directory for converted images
-        {cache_max_age_days?}  (number)                     Days to keep cached files (default: 7)
-        {max_file_size?}       (number)                     Maximum bytes to process (default: 50MB)
-        {loading_text?}        (string)                     Text shown while loading
-        {formats?}             (string[])                   Supported image extensions
-        {integrations?}        (GlimpseIntegrationsConfig)  Plugin integrations
+        {strategy?}            ("auto"|"inline"|"pane")     Método de renderização (default: 'auto')
+        {pane_position?}       ("right"|"bottom")           Posição do painel externo (default: 'right')
+        {pane_size?}           (number)                     Tamanho do painel em percentual (default: 40)
+        {inline?}              (GlimpseInlineConfig)        Opções para renderização inline
+        {keys?}                (GlimpseKeysConfig)          Keymaps configuráveis
+        {debounce?}            (GlimpseDebounceConfig)      Tempos de debounce em ms
+        {cell_size?}           (GlimpseCellSizeConfig)      Pixels estimados por célula do terminal
+        {cache_dir?}           (string)                     Diretório para cache de imagens convertidas
+        {cache_max_age_days?}  (number)                     Dias para manter arquivos no cache (default: 7)
+        {max_file_size?}       (number)                     Tamanho maximo em bytes para processar (default: 50MB)
+        {loading_text?}        (string)                     Texto exibido durante carregamento
+        {formats?}             (string[])                   Extensões de imagem suportadas
+        {integrations?}        (GlimpseIntegrationsConfig)  Integrações com plugins
 
 
 GlimpseInlineConfig                                        *GlimpseInlineConfig*
 
     Fields: ~
-        {rerender_on_tab?}  (boolean)  Re-render when returning to an image tab (default: true)
-        {close_with_q?}     (boolean)  Map a key to close the image buffer (default: true)
+        {rerender_on_tab?}  (boolean)  Re-renderiza ao voltar para aba com imagem (default: true)
+        {close_with_q?}     (boolean)  Mapeia tecla para fechar buffer de imagem (default: true)
 
 
 GlimpseKeysConfig                                            *GlimpseKeysConfig*
 
     Fields: ~
-        {preview?}  (string)  Keymap for preview in Oil (default: '<leader>p')
-        {open?}     (string)  Keymap for opening in a tab in Oil (default: ';')
-        {close?}    (string)  Keymap for closing the image buffer (default: 'q')
+        {preview?}  (string)  Keymap para preview no Oil (default: '<leader>p')
+        {open?}     (string)  Keymap para abrir em aba no Oil (default: ';')
+        {close?}    (string)  Keymap para fechar buffer de imagem (default: 'q')
 
 
 GlimpseDebounceConfig                                    *GlimpseDebounceConfig*
 
     Fields: ~
-        {prefetch?}  (number)  ms before pre-converting on cursor move (default: 200)
-        {resize?}    (number)  ms before re-rendering on resize (default: 100)
+        {prefetch?}  (number)  ms antes de pré-converter ao mover cursor (default: 200)
+        {resize?}    (number)  ms antes de re-renderizar ao redimensionar (default: 100)
 
 
 GlimpseCellSizeConfig                                    *GlimpseCellSizeConfig*
 
     Fields: ~
-        {width?}   (number)  Estimated pixels per column (default: 20)
-        {height?}  (number)  Estimated pixels per row (default: 40)
+        {width?}   (number)  Pixels estimados por coluna (default: 20)
+        {height?}  (number)  Pixels estimados por linha (default: 40)
 
 
 GlimpseIntegrationsConfig                            *GlimpseIntegrationsConfig*
 
     Fields: ~
-        {oil?}        (boolean)                                                   Keymaps in Oil.nvim (default: true)
+        {oil?}        (boolean)                                                   Keymaps no Oil.nvim (default: true)
         {neotree?}    (boolean|{enable?:boolean,auto_preview?:boolean})           NeoTree integration config
-        {telescope?}  (boolean|{enable?:boolean,pickers?:string|string[]|table})  Preview in Telescope (default: true)
+        {telescope?}  (boolean|{enable?:boolean,pickers?:string|string[]|table})  Preview no Telescope (default: true)
 
 
 Glimpse                                                                *Glimpse*
 
 
 M.setup({opts?})                                                       *M.setup*
-     Configure the plugin.
+     Configura o plugin.
 
     Parameters: ~
-        {opts?}  (GlimpseConfig)  Configuration options (merged with defaults)
+        {opts?}  (GlimpseConfig)  Opções de configuração (merge com defaults)
 
 
 M.can_preview({filepath})                                        *M.can_preview*
-     Return whether the file has a known previewer.
+     Indica se o arquivo possui um previewer conhecido.
 
     Parameters: ~
-        {filepath}  (string)  Absolute file path
+        {filepath}  (string)  Caminho absoluto do arquivo
 
     Returns: ~
         (boolean)
 
 
 M.get_preview_kind({filepath})                              *M.get_preview_kind*
-     Return the preview kind that would be used for the file.
+     Retorna o tipo de preview que seria usado para o arquivo.
 
     Parameters: ~
-        {filepath}  (string)  Absolute file path
+        {filepath}  (string)  Caminho absoluto do arquivo
 
     Returns: ~
         (string|nil)  kind
 
 
 M.show({filepath})                                                      *M.show*
-     Show a file (selects the previewer automatically).
+     Exibe arquivo (escolhe previewer automaticamente).
 
     Parameters: ~
-        {filepath}  (string)  Absolute file path
+        {filepath}  (string)  Caminho absoluto do arquivo
 
 
 M.preview({filepath})                                                *M.preview*
-     Quick preview (reuses an existing window or opens a float).
+     Preview rapido (reutiliza janela existente ou abre float).
 
     Parameters: ~
-        {filepath}  (string)  Absolute file path
+        {filepath}  (string)  Caminho absoluto do arquivo
 
 
 M.get_config()                                                    *M.get_config*
-     Return the current configuration.
+     Retorna a configuração atual.
 
     Returns: ~
         (GlimpseConfig)
 
 
 M.get_terminal()                                                *M.get_terminal*
-     Detect the current terminal emulator (including inside tmux).
-     The result is cached to avoid repeated vim.fn.system calls.
+     Detecta o terminal emulador atual (inclusive dentro do tmux).
+     Resultado é cacheado para evitar chamadas repetidas a vim.fn.system.
      @return string|nil terminal 'wezterm' | 'kitty' | 'ghostty' | 'iterm' | nil
 
 
 M.supports_inline()                                          *M.supports_inline*
-     Check whether the terminal supports inline rendering (Kitty Graphics Protocol).
+     Verifica se o terminal suporta renderização inline (Kitty Graphics Protocol).
      @return boolean
 
 
 M.in_tmux()                                                          *M.in_tmux*
-     Check whether we are inside tmux.
+     Verifica se estamos dentro do tmux.
      @return boolean
 
 
 M.is_image()                                                        *M.is_image*
-     Check whether the file is a supported image.
+     Verifica se o arquivo é uma imagem suportada.
      @param filepath string
      @return boolean
 
 
 M.is_video()                                                        *M.is_video*
-     Check whether the file is a supported video.
+     Verifica se o arquivo é um vídeo suportado.
      @param filepath string
      @return boolean
 
 
 M.is_archive()                                                    *M.is_archive*
-     Check whether the file is a supported archive.
+     Verifica se o arquivo é um archive suportado.
      @param filepath string
      @return boolean
 
 
 M.is_sqlite()                                                      *M.is_sqlite*
-     Check whether the file is an SQLite database.
+     Verifica se o arquivo é um banco SQLite.
      @param filepath string
      @return boolean
 
 
 M.is_cert()                                                          *M.is_cert*
-     Check whether the file is an X.509 certificate.
+     Verifica se o arquivo é um certificado X.509.
      @param filepath string
      @return boolean
 
 
 M.is_previewable()                                            *M.is_previewable*
-     Check whether the file is previewable (image, video, certificate, archive, or SQLite).
+     Verifica se o arquivo é previewable (imagem, vídeo, certificado, archive ou sqlite).
      @param filepath string
      @return boolean
 
 
 M.is_font()                                                          *M.is_font*
-     Check whether the file is a font.
+     Verifica se o arquivo é uma fonte.
      @param filepath string
      @return boolean
 
 
 M.is_key()                                                            *M.is_key*
-     Check whether the file is a GPG or SSH key.
+     Verifica se o arquivo é uma chave GPG ou SSH.
      @param filepath string
      @return boolean
 
