@@ -14,6 +14,8 @@
 
 - Revert generated vimdoc
 - Sync api references
+- Translate comments to en-us
+- Drop generated vimdoc
 
 ### ⚙️ Miscellaneous Tasks
 
