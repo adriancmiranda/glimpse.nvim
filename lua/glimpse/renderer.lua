@@ -116,7 +116,7 @@ function M.render(buf, filepath, opts, on_done)
 
 	-- Show loading indicator
 	vim.bo[buf].modifiable = true
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '', require('glimpse').get_config().loading_text })
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '', require('glimpse').get_config().loading.text })
 	vim.bo[buf].modifiable = false
 
 	local cols = vim.api.nvim_win_get_width(win)

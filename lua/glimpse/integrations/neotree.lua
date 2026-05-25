@@ -70,8 +70,8 @@ function M.setup()
 								end)
 							else
 								require('glimpse.strategy.pane').show(target, {
-									position = config.pane_position,
-									size = config.pane_size,
+									position = config.pane.position,
+									size = config.pane.size,
 								})
 							end
 						end

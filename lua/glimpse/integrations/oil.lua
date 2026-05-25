@@ -47,11 +47,11 @@ function M.setup()
 					local fpath = dir .. entry.name
 					if util.is_video(fpath) then
 						local config = require('glimpse').get_config()
-						if config.video_open then
-							if type(config.video_open) == 'function' then
-								config.video_open(fpath)
+						if config.video.open then
+							if type(config.video.open) == 'function' then
+								config.video.open(fpath)
 							else
-								vim.fn.jobstart({ config.video_open, fpath }, { detach = true })
+								vim.fn.jobstart({ config.video.open, fpath }, { detach = true })
 							end
 						end
 						return
@@ -67,8 +67,8 @@ function M.setup()
 						else
 							local config = glimpse.get_config()
 							require('glimpse.strategy.pane').show(fpath, {
-								position = config.pane_position,
-								size = config.pane_size,
+								position = config.pane.position,
+								size = config.pane.size,
 							})
 						end
 						return

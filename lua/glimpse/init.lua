@@ -27,22 +27,46 @@
 --- glimpse.nvim configuration.
 ---@class GlimpseConfig
 ---@field strategy? 'auto'|'inline'|'pane' Rendering method (default: 'auto')
----@field pane_position? 'right'|'bottom' External pane position (default: 'right')
----@field pane_size? number External pane size in percent (default: 40)
+---@field pane? GlimpsePaneConfig External pane settings
 ---@field inline? GlimpseInlineConfig Inline rendering options
 ---@field keys? GlimpseKeysConfig Configurable keymaps
 ---@field debounce? GlimpseDebounceConfig Debounce timings in ms
 ---@field cell_size? GlimpseCellSizeConfig Estimated terminal cell pixel size
----@field cache_dir? string Cache directory for converted images
----@field cache_max_age_days? number Days to keep cached files (default: 7)
----@field max_file_size? number Maximum bytes to process (default: 50MB)
----@field loading_text? string Text shown while loading
----@field formats? string[] Supported image extensions
+---@field cache? GlimpseCacheConfig Cache settings
+---@field safety? GlimpseSafetyConfig Safety settings
+---@field loading? GlimpseLoadingConfig Loading text
+---@field image? GlimpseImageConfig Image preview settings
+---@field video? GlimpseVideoConfig Video preview settings
+---@field archive? GlimpseArchiveConfig Archive preview settings
 ---@field integrations? GlimpseIntegrationsConfig Plugin integrations
 
 ---@class GlimpseInlineConfig
 ---@field rerender_on_tab? boolean Re-render when returning to an image tab (default: true)
 ---@field close_with_q? boolean Map a key to close the image buffer (default: true)
+
+---@class GlimpsePaneConfig
+---@field position? 'right'|'bottom' External pane position (default: 'right')
+---@field size? number External pane size in percent (default: 40)
+
+---@class GlimpseCacheConfig
+---@field dir? string Cache directory for converted images
+---@field max_age_days? number Days to keep cached files (default: 7)
+
+---@class GlimpseSafetyConfig
+---@field max_file_size? number Maximum bytes to process (default: 50MB)
+
+---@class GlimpseLoadingConfig
+---@field text? string Text shown while loading
+
+---@class GlimpseImageConfig
+---@field formats? string[] Supported image extensions
+
+---@class GlimpseVideoConfig
+---@field formats? string[] Supported video extensions
+---@field open? string|fun(filepath: string) Command or callback for opening videos externally
+
+---@class GlimpseArchiveConfig
+---@field formats? string[] Supported archive extensions
 
 ---@class GlimpseKeysConfig
 ---@field preview? string Keymap for preview in Oil (default: '<leader>p')
@@ -58,9 +82,9 @@
 ---@field height? number Estimated pixels per row (default: 40)
 
 ---@class GlimpseIntegrationsConfig
----@field oil? boolean Keymaps in Oil.nvim (default: true)
----@field neotree? boolean|{enable?:boolean, auto_preview?:boolean} NeoTree integration config
----@field telescope? boolean|{enable?:boolean, pickers?:string|string[]|table} Preview in Telescope (default: true)
+---@field oil? {enable?:boolean} Keymaps in Oil.nvim (default: enabled)
+---@field neotree? {enable?:boolean, auto_preview?:boolean} NeoTree integration config
+---@field telescope? {enable?:boolean, pickers?:string|string[]|table} Preview in Telescope (default: enabled)
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
@@ -74,8 +98,10 @@ local M = {}
 ---@type GlimpseConfig
 local config = {
 	strategy = 'auto',
-	pane_position = 'right',
-	pane_size = 40,
+	pane = {
+		position = 'right',
+		size = 40,
+	},
 	inline = {
 		rerender_on_tab = true,
 		close_with_q = true,
@@ -93,41 +119,69 @@ local config = {
 		width = 20,
 		height = 40,
 	},
-	cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
-	cache_max_age_days = 7,
-	max_file_size = 50 * 1024 * 1024,
-	loading_text = '  ⏳ Loading...',
-	formats = {
-		'.png',
-		'.jpg',
-		'.jpeg',
-		'.gif',
-		'.bmp',
-		'.webp',
-		'.avif',
-		'.svg',
-		'.pdf',
-		'.pict',
+	cache = {
+		dir = vim.fn.stdpath('cache') .. '/glimpse',
+		max_age_days = 7,
+	},
+	safety = {
+		max_file_size = 50 * 1024 * 1024,
+	},
+	loading = {
+		text = '  ⏳ Loading...',
+	},
+	image = {
+		formats = {
+			'.png',
+			'.jpg',
+			'.jpeg',
+			'.gif',
+			'.bmp',
+			'.webp',
+			'.avif',
+			'.svg',
+			'.pdf',
+			'.pict',
+		},
+	},
+	video = {
+		formats = {
+			'.mp4',
+			'.mkv',
+			'.avi',
+			'.mov',
+			'.webm',
+			'.flv',
+			'.wmv',
+			'.m4v',
+		},
+		open = nil,
+	},
+	archive = {
+		formats = {
+			'.zip',
+			'.tar',
+			'.tar.gz',
+			'.tgz',
+			'.tar.bz2',
+			'.tar.xz',
+			'.txz',
+			'.jar',
+			'.war',
+			'.apk',
+		},
 	},
 	integrations = {
-		oil = true,
+		oil = {
+			enable = true,
+		},
 		neotree = {
 			enable = false,
 			auto_preview = true,
 		},
-		telescope = true,
+		telescope = {
+			enable = true,
+		},
 	},
-	video_formats = {
-		'.mp4',
-		'.mkv',
-		'.avi',
-		'.mov',
-		'.webm',
-		'.flv',
-		'.wmv',
-		'.m4v',
-	},
-	video_open = nil,
 }
 
 local kind_cache = {}
@@ -142,22 +196,20 @@ function M.setup(opts)
 	if M._should_use_inline() and config.inline.rerender_on_tab then
 		inline.setup_autocmds()
 	end
-	if config.integrations.oil then
+	if config.integrations.oil and config.integrations.oil.enable ~= false then
 		require('glimpse.integrations.oil').setup()
 	end
 	local neotree = config.integrations.neotree
 	if type(neotree) == 'table' and neotree.enable then
 		require('glimpse.integrations.neotree').setup()
-	elseif neotree == true then
-		require('glimpse.integrations.neotree').setup()
 	end
-	if config.integrations.telescope then
+	if config.integrations.telescope and config.integrations.telescope.enable ~= false then
 		require('glimpse.integrations.telescope').setup(config.integrations.telescope)
 	end
 	-- Clean up old cache entries in the background
-	if config.cache_max_age_days and config.cache_max_age_days > 0 then
+	if config.cache.max_age_days and config.cache.max_age_days > 0 then
 		vim.defer_fn(function()
-			require('glimpse.cache').cleanup(config.cache_dir, config.cache_max_age_days)
+			require('glimpse.cache').cleanup(config.cache.dir, config.cache.max_age_days)
 		end, 0)
 	end
 end
@@ -238,19 +290,19 @@ local function resolve_previewer(filepath)
 		return require('glimpse.previewer.sqlite'), { max_size = 0 }, 'sqlite'
 	end
 	if kind == 'cert' then
-		return require('glimpse.previewer.cert'), { max_size = config.max_file_size }, 'cert'
+		return require('glimpse.previewer.cert'), { max_size = config.safety.max_file_size }, 'cert'
 	end
 	if kind == 'key' then
-		return require('glimpse.previewer.key'), { max_size = config.max_file_size }, 'key'
+		return require('glimpse.previewer.key'), { max_size = config.safety.max_file_size }, 'key'
 	end
 	if kind == 'font' then
-		return require('glimpse.previewer.font'), { max_size = config.max_file_size }, 'font'
+		return require('glimpse.previewer.font'), { max_size = config.safety.max_file_size }, 'font'
 	end
 	if kind == 'video' then
-		return require('glimpse.previewer.video'), { max_size = config.max_file_size }, 'video'
+		return require('glimpse.previewer.video'), { max_size = config.safety.max_file_size }, 'video'
 	end
 	if kind == 'image' then
-		return require('glimpse.previewer.image'), { max_size = config.max_file_size }, 'image'
+		return require('glimpse.previewer.image'), { max_size = config.safety.max_file_size }, 'image'
 	end
 	if kind == 'binary' then
 		return binary, { max_size = 0 }, 'binary'

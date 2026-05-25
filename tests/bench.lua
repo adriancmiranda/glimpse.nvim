@@ -24,7 +24,15 @@ print('')
 package.loaded['glimpse'] = {
 	get_config = function()
 		return {
-			formats = { '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.avif', '.svg', '.pdf', '.pict' },
+			image = {
+				formats = { '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.avif', '.svg', '.pdf', '.pict' },
+			},
+			video = {
+				formats = { '.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v' },
+			},
+			archive = {
+				formats = { '.zip', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.txz', '.jar', '.war', '.apk' },
+			},
 		}
 	end,
 }

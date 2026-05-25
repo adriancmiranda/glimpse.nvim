@@ -8,7 +8,7 @@ function M.is_image(filepath)
 	if not ext then
 		return false
 	end
-	local formats = require('glimpse').get_config().formats
+	local formats = require('glimpse').get_config().image.formats
 	for _, fmt in ipairs(formats) do
 		if ext:lower() == fmt then
 			return true
@@ -58,7 +58,7 @@ function M.is_video(filepath)
 	if not ext then
 		return false
 	end
-	local video_formats = require('glimpse').get_config().video_formats
+	local video_formats = require('glimpse').get_config().video.formats
 	if not video_formats then
 		return false
 	end
@@ -78,7 +78,7 @@ function M.is_archive(filepath)
 	if not ext then
 		return false
 	end
-	local archive_formats = { '.zip', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.txz', '.jar', '.war', '.apk' }
+	local archive_formats = require('glimpse').get_config().archive.formats
 	for _, fmt in ipairs(archive_formats) do
 		if filepath:lower():match(fmt:gsub('%.', '%%.') .. '$') then
 			return true

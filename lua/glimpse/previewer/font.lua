@@ -47,7 +47,7 @@ function M.show(filepath)
 		return
 	end
 
-	local cache_dir = config.cache_dir
+	local cache_dir = config.cache.dir
 	vim.fn.mkdir(cache_dir, 'p')
 	local hash = vim.fn.sha256(filepath):sub(1, 12)
 	local tmp = cache_dir .. '/font_' .. hash .. '.png'
@@ -78,7 +78,10 @@ function M.show(filepath)
 		if glimpse._should_use_inline() then
 			require('glimpse.strategy.inline').show(tmp)
 		else
-			require('glimpse.strategy.pane').show(tmp, { position = config.pane_position, size = config.pane_size })
+			require('glimpse.strategy.pane').show(tmp, {
+				position = config.pane.position,
+				size = config.pane.size,
+			})
 		end
 		return
 	end
