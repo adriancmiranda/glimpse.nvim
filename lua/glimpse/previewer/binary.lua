@@ -80,7 +80,7 @@ end
 local function _is_extensionless(filepath)
 	local basename = vim.fn.fnamemodify(filepath, ':t')
 	local stripped = basename:gsub('^%.', '')
-	return not stripped:find('%.', 1, true)
+	return not stripped:find('.', 1, true)
 end
 
 local function _extension(filepath)
@@ -146,6 +146,10 @@ end
 
 function M.can_preview(filepath)
 	if _missing_tools() then
+		return false
+	end
+
+	if not M.should_preview(filepath) then
 		return false
 	end
 
