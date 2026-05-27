@@ -6,6 +6,13 @@
 
 ## [unreleased]
 
+### 📚 Documentation
+
+- Add optional ImageMagick policy example
+
+
+## [1.15.1](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.15.0..v1.15.1) - 2026-05-27
+
 ### 🐛 Bug Fixes
 
 - Avoid previewing json as binary
