@@ -6,9 +6,9 @@ describe('previewer.binary', function()
 		assert.is_true(glimpse.can_preview(vim.v.progpath))
 	end)
 
-	it('detects a binary even when the filename looks textual', function()
+	it('detects a binary without relying on the extension', function()
 		local source = vim.v.progpath
-		local target = vim.fn.tempname() .. '.txt'
+		local target = vim.fn.tempname()
 		local ok, err = vim.uv.fs_copyfile(source, target)
 		assert.is_true(ok, err)
 		assert.is_true(glimpse.can_preview(target))
@@ -23,6 +23,36 @@ describe('previewer.binary', function()
 		local file = vim.fn.tempname() .. '.txt'
 		vim.fn.writefile({ 'hello world' }, file)
 		assert.is_false(binary.can_preview(file))
+	end)
+
+	it('does not preview json files as binaries', function()
+		local file = vim.fn.tempname() .. '.json'
+		vim.fn.writefile({ '{', '"name": "example"', '}' }, file)
+		assert.is_false(binary.can_preview(file))
+		assert.is_false(glimpse.can_preview(file))
+	end)
+
+	it('still previews binaries renamed to json', function()
+		local source = vim.v.progpath
+		local target = vim.fn.tempname() .. '.json'
+		local ok, err = vim.uv.fs_copyfile(source, target)
+		assert.is_true(ok, err)
+		assert.is_true(binary.can_preview(target))
+		assert.is_true(glimpse.can_preview(target))
+	end)
+
+	it('does not preview text files as binaries', function()
+		local file = vim.fn.tempname() .. '.txt'
+		vim.fn.writefile({ 'hello world' }, file)
+		assert.is_false(binary.can_preview(file))
+	end)
+
+	it('does not treat executable json as binary', function()
+		local file = vim.fn.tempname() .. '.json'
+		vim.fn.writefile({ '{', '"name": "example"', '}' }, file)
+		vim.fn.setfperm(file, 'rwxr-xr-x')
+		assert.is_false(binary.can_preview(file))
+		assert.is_false(glimpse.can_preview(file))
 	end)
 
 	it('fails safely when file or xxd is not available', function()

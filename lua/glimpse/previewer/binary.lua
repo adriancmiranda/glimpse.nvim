@@ -4,16 +4,6 @@ local M = {}
 local float = require('glimpse.float')
 
 local MAX_HEXDUMP_BYTES = 256
-local KNOWN_BINARY_EXTENSIONS = {
-	bin = true,
-	class = true,
-	dll = true,
-	elf = true,
-	exe = true,
-	o = true,
-	so = true,
-	wasm = true,
-}
 
 local inspect_cache = {}
 
@@ -43,11 +33,6 @@ local function _cache_key(filepath, stat)
 	return table.concat({ filepath, stat.size or 0, mtime.sec or 0, mtime.nsec or 0 }, ':')
 end
 
-local function _is_text(desc)
-	local lower = (desc or ''):lower()
-	return lower:find('text', 1, true) ~= nil or lower:find('empty', 1, true) ~= nil
-end
-
 local function _inspect(filepath)
 	local stat = vim.uv.fs_stat(filepath)
 	if not stat then
@@ -65,9 +50,15 @@ local function _inspect(filepath)
 		return nil, err or 'cannot inspect file type'
 	end
 
+	local encoding, encoding_err = _run({ 'file', '-b', '--mime-encoding', filepath })
+	if not encoding then
+		return nil, encoding_err or 'cannot inspect file encoding'
+	end
+
 	local info = {
 		desc = desc,
-		is_binary = not _is_text(desc),
+		encoding = encoding,
+		is_binary = encoding == 'binary',
 	}
 	inspect_cache[key] = info
 	return info
@@ -80,11 +71,7 @@ end
 local function _is_extensionless(filepath)
 	local basename = vim.fn.fnamemodify(filepath, ':t')
 	local stripped = basename:gsub('^%.', '')
-	return not stripped:find('%.', 1, true)
-end
-
-local function _extension(filepath)
-	return vim.fn.fnamemodify(filepath, ':e'):lower()
+	return not stripped:find('.', 1, true)
 end
 
 local function _buf_lines(filepath, desc, dump)
@@ -124,24 +111,7 @@ function M.is_extensionless(filepath)
 end
 
 function M.should_preview(filepath)
-	if not filepath or filepath == '' then
-		return false
-	end
-
-	if M.is_extensionless(filepath) then
-		return true
-	end
-
-	if KNOWN_BINARY_EXTENSIONS[_extension(filepath)] then
-		return true
-	end
-
-	local ok, ft = pcall(vim.filetype.match, { filename = filepath })
-	if not ok then
-		return false
-	end
-
-	return ft == nil or ft == ''
+	return M.is_binary(filepath)
 end
 
 function M.can_preview(filepath)
