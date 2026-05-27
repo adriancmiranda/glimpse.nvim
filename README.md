@@ -275,8 +275,44 @@ It never makes network requests or sends data externally.
 
 No files are extracted, modified, or uploaded. All processing is local and read-only.
 
-> [!WARNING]
-> For additional protection, consider configuring ImageMagick's [`policy.xml`](https://imagemagick.org/script/security-policy.php) to limit resource usage.
+<!-- markdownlint-disable MD033 -->
+<details>
+<summary>Optional: ImageMagick resource policy</summary>
+
+Optional extra protection: place this in `~/.config/ImageMagick/policy.xml`.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policymap [
+  <!ELEMENT policymap (policy)*>
+  <!ATTLIST policymap xmlns CDATA #FIXED "">
+  <!ELEMENT policy EMPTY>
+  <!ATTLIST policy xmlns CDATA #FIXED "">
+  <!ATTLIST policy domain NMTOKEN #REQUIRED>
+  <!ATTLIST policy name NMTOKEN #IMPLIED>
+  <!ATTLIST policy pattern CDATA #IMPLIED>
+  <!ATTLIST policy rights NMTOKEN #IMPLIED>
+  <!ATTLIST policy stealth NMTOKEN #IMPLIED>
+  <!ATTLIST policy value CDATA #IMPLIED>
+]>
+<policymap>
+  <policy domain="resource" name="memory" value="256MiB"/>
+  <policy domain="resource" name="map" value="512MiB"/>
+  <policy domain="resource" name="disk" value="1GiB"/>
+  <policy domain="resource" name="time" value="30"/>
+  <policy domain="resource" name="thread" value="2"/>
+  <policy domain="resource" name="list-length" value="64"/>
+  <!--
+  "area" is an extra safety limit and may block very large images.
+  If Glimpse starts rejecting legitimate previews, remove or
+  increase it.
+  -->
+  <policy domain="resource" name="area" value="100MP"/>
+</policymap>
+```
+
+</details>
+<!-- markdownlint-enable MD033 -->
 
 ## Supported terminals
 
