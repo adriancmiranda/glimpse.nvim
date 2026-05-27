@@ -6,6 +6,14 @@
 
 ## [unreleased]
 
+### 🐛 Bug Fixes
+
+- Avoid previewing json as binary
+- Use mime encoding to detect binaries
+
+
+## [1.15.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.14.2..v1.15.0) - 2026-05-25
+
 ### 🚀 Features
 
 - Expose preview introspection
