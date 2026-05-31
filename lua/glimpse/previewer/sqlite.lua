@@ -3,21 +3,44 @@ local M = {}
 local float = require('glimpse.float')
 
 local sqlite = require('glimpse.sqlite')
+local preview_cache = require('glimpse.preview_cache')
+
+local function _header_lines(filepath, lines)
+	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
+	table.insert(lines, 1, header)
+	table.insert(lines, 2, string.rep('─', #header + 4))
+end
+
+local function _offset_highlights(highlights, offset)
+	local shifted = {}
+	for _, hl in ipairs(highlights or {}) do
+		shifted[#shifted + 1] = { hl[1] + offset, hl[2], hl[3], hl[4] }
+	end
+	return shifted
+end
+
+local function _preview_data(filepath)
+	return preview_cache.memoize(filepath, 'sqlite', function()
+		local tables, err = sqlite.list(filepath)
+		if not tables then
+			return nil, nil, err
+		end
+
+		local lines, highlights = sqlite.format(tables)
+		_header_lines(filepath, lines)
+		return lines, _offset_highlights(highlights, 2)
+	end)
+end
 
 --- Display the schema in a floating window.
 --- @param filepath string
 function M.show(filepath)
 	local config = require('glimpse').get_config()
-	local tables, err = sqlite.list(filepath)
-	if not tables then
+	local lines, highlights, err = _preview_data(filepath)
+	if not lines then
 		vim.notify('[glimpse] ' .. (err or 'failed to read database'), vim.log.levels.WARN)
 		return
 	end
-	local lines, highlights = sqlite.format(tables)
-
-	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
-	table.insert(lines, 1, header)
-	table.insert(lines, 2, string.rep('─', #header + 4))
 
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -27,7 +50,7 @@ function M.show(filepath)
 
 	local ns = vim.api.nvim_create_namespace('glimpse_sqlite')
 	for _, hl in ipairs(highlights) do
-		local row = hl[1] + 2
+		local row = hl[1]
 		local col_end = hl[3]
 		if col_end < 0 then
 			col_end = #(lines[row + 1] or '')
@@ -51,5 +74,7 @@ end
 --- Preview (same as show for SQLite).
 --- @param filepath string
 M.preview = M.show
+
+M.preview_data = _preview_data
 
 return M

@@ -1,4 +1,5 @@
 local archive = require('glimpse.archive')
+local preview_cache = require('glimpse.preview_cache')
 local util = require('glimpse.util')
 
 describe('archive', function()
@@ -70,6 +71,99 @@ describe('archive', function()
 			}
 			local lines, _ = archive.format(entries)
 			assert.is_true(lines[1]:match('src/') ~= nil)
+		end)
+	end)
+
+	describe('previewer.show', function()
+		it('renders the full listing instead of the summary', function()
+			local original_archive = package.loaded['glimpse.archive']
+			local original_previewer = package.loaded['glimpse.previewer.archive']
+			local original_buf = vim.api.nvim_get_current_buf()
+			local buf = vim.api.nvim_create_buf(false, true)
+			local entries = {
+				{
+					path = 'file.txt',
+					size = 12,
+					date = '2024-01-01 12:00',
+					type = 'file',
+					suspicious = false,
+				},
+			}
+
+			package.loaded['glimpse.archive'] = {
+				list = function()
+					return entries
+				end,
+				format = function()
+					return { 'full listing' }, {}
+				end,
+				summary = function()
+					return { 'summary' }, {}
+				end,
+			}
+			package.loaded['glimpse.previewer.archive'] = nil
+
+			local previewer = require('glimpse.previewer.archive')
+			pcall(vim.api.nvim_set_current_buf, buf)
+			previewer.show('/tmp/archive.zip')
+
+			assert.equals('full listing', vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1])
+
+			pcall(vim.api.nvim_set_current_buf, original_buf)
+			if vim.api.nvim_buf_is_valid(buf) then
+				pcall(vim.api.nvim_buf_delete, buf, { force = true })
+			end
+			package.loaded['glimpse.archive'] = original_archive
+			package.loaded['glimpse.previewer.archive'] = original_previewer
+		end)
+	end)
+
+	describe('previewer.preview_data', function()
+		it('memoizes archive previews until the file changes', function()
+			preview_cache.clear()
+
+			local original_archive = package.loaded['glimpse.archive']
+			local original_previewer = package.loaded['glimpse.previewer.archive']
+			local path = test_dir .. '/cache.zip'
+			vim.fn.writefile({ 'initial' }, path)
+
+			local calls = 0
+			package.loaded['glimpse.archive'] = {
+				list = function()
+					calls = calls + 1
+					return {
+						{
+							path = 'file.txt',
+							size = 12,
+							date = '2024-01-01 12:00',
+							type = 'file',
+							suspicious = false,
+						},
+					}
+				end,
+				format = function()
+					return { 'full listing' }, {}
+				end,
+				summary = function()
+					return { 'summary' }, {}
+				end,
+			}
+			package.loaded['glimpse.previewer.archive'] = nil
+
+			local previewer = require('glimpse.previewer.archive')
+			local first = previewer.preview_data(path)
+			local second = previewer.preview_data(path)
+			assert.equals(1, calls)
+			assert.are.same(first, second)
+
+			vim.fn.writefile({ 'changed' }, path)
+			local third = previewer.preview_data(path)
+			assert.equals(2, calls)
+			assert.are.same(first, third)
+
+			package.loaded['glimpse.archive'] = original_archive
+			package.loaded['glimpse.previewer.archive'] = original_previewer
+			preview_cache.clear()
 		end)
 	end)
 

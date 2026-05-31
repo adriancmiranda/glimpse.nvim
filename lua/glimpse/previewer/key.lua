@@ -1,6 +1,7 @@
 --- Previewer for GPG and SSH keys.
 local M = {}
 local float = require('glimpse.float')
+local preview_cache = require('glimpse.preview_cache')
 
 local function _render_output(output, prefix)
 	local lines = {}
@@ -99,19 +100,37 @@ local function query(filepath)
 	return query_gpg(filepath)
 end
 
+local function _preview_data(filepath)
+	return preview_cache.memoize(filepath, 'key', function()
+		local lines, err = query(filepath)
+		if not lines then
+			return nil, nil, err
+		end
+
+		local header = string.format('\u{f43d} %s', vim.fn.fnamemodify(filepath, ':t'))
+		table.insert(lines, 1, header)
+		table.insert(lines, 2, string.rep('─', #header + 4))
+
+		local highlights = {}
+		for i, line in ipairs(lines) do
+			if line:match('^⚠') then
+				table.insert(highlights, { i - 1, 0, #line, 'DiagnosticWarn' })
+			end
+		end
+
+		return lines, highlights
+	end)
+end
+
 --- Display key info in a floating window.
 --- @param filepath string
 function M.show(filepath)
 	local config = require('glimpse').get_config()
-	local lines, err = query(filepath)
+	local lines, highlights, err = _preview_data(filepath)
 	if not lines then
 		vim.notify('[glimpse] ' .. (err or 'failed to read key'), vim.log.levels.WARN)
 		return
 	end
-
-	local header = string.format('\u{f43d} %s', vim.fn.fnamemodify(filepath, ':t'))
-	table.insert(lines, 1, header)
-	table.insert(lines, 2, string.rep('─', #header + 4))
 
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -119,15 +138,17 @@ function M.show(filepath)
 	vim.bo[buf].buftype = 'nofile'
 	vim.bo[buf].filetype = 'glimpse_key'
 
-	-- Highlight warnings if present
 	local ns = vim.api.nvim_create_namespace('glimpse_key')
-	for i, line in ipairs(lines) do
-		if line:match('^⚠') then
-			vim.api.nvim_buf_set_extmark(buf, ns, i - 1, 0, {
-				end_col = #line,
-				hl_group = 'DiagnosticWarn',
-			})
+	for _, hl in ipairs(highlights) do
+		local row = hl[1]
+		local col_end = hl[3]
+		if col_end < 0 then
+			col_end = #(lines[row + 1] or '')
 		end
+		vim.api.nvim_buf_set_extmark(buf, ns, row, hl[2], {
+			end_col = col_end,
+			hl_group = hl[4],
+		})
 	end
 
 	float.open(buf, {
@@ -141,5 +162,6 @@ function M.show(filepath)
 end
 
 M.preview = M.show
+M.preview_data = _preview_data
 
 return M

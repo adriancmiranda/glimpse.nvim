@@ -18,7 +18,7 @@
 - 🎨 **Font rendering** via ImageMagick, with a textual fallback when rendering is unavailable
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
-- 🔭 **Telescope** integration (scoped media previews for `:Telescope find_files`)
+- 🔭 **Telescope** integration (scoped previews for images, videos, archives, SQLite, fonts, keys, certificates, and binaries)
 - 🌳 **Neo-tree** integration
 - 🔐 **Certificate preview** - show subject, issuer, validity, and
   fingerprint for `.crt`/`.pem`
@@ -152,7 +152,7 @@ xxd -h
         enable = false,       -- enable auto-preview in Neo-tree
         auto_preview = true,  -- preview on cursor move (set false to disable)
       },
-      telescope = true,       -- enables image/video previews in :Telescope find_files
+      telescope = true,       -- enables Glimpse previews in Telescope pickers
     },
   },
 }
@@ -181,7 +181,7 @@ Enable with `integrations = { neotree = { enable = true } }` in setup.
 
 Enable with `integrations = { telescope = true }` in setup. With lazy.nvim,
 glimpse applies its previewer when telescope.nvim loads. By default, only
-`:Telescope find_files` receives media previews.
+`:Telescope find_files` receives Glimpse previews.
 
 ```lua
 require('glimpse').setup({
@@ -191,7 +191,7 @@ require('glimpse').setup({
 })
 ```
 
-To choose the Telescope pickers that receive media previews:
+To choose the Telescope pickers that receive Glimpse previews:
 
 ```lua
 require('glimpse').setup({
@@ -218,8 +218,8 @@ require('telescope').setup({
 
 - **Images** are rendered inline via Kitty Graphics Protocol with a 100ms debounce
 - **Videos** extract a thumbnail via ffmpeg before rendering
-- **Certificates** are parsed with `openssl x509 -noout -text` to show subject, issuer, validity and fingerprint
-- **All other files** fall back to Telescope's default previewer
+- **Archives, SQLite databases, fonts, keys, certificates, and binaries** use the matching Glimpse previewer inside the Telescope preview pane
+- **Other files** fall back to Telescope's default previewer
 
 Switching between files is fast after thumbnails and conversions are cached.
 

@@ -1,6 +1,7 @@
 --- Previewer for X.509 certificates (.pem, .crt).
 local M = {}
 local float = require('glimpse.float')
+local preview_cache = require('glimpse.preview_cache')
 
 local MONTHS = {
 	Jan = 1,
@@ -157,31 +158,45 @@ local function _parse_output(output)
 	return lines, warnings
 end
 
+local function _preview_data(filepath)
+	return preview_cache.memoize(filepath, 'cert', function()
+		local output, err = _run_openssl(filepath)
+		if not output then
+			return nil, nil, err
+		end
+
+		local lines, warnings = _parse_output(output)
+		if #lines == 0 then
+			return nil, nil, 'could not parse certificate metadata'
+		end
+
+		local highlights = {}
+		if #warnings > 0 then
+			for i = #warnings, 1, -1 do
+				table.insert(lines, 1, '⚠ ' .. warnings[i])
+			end
+			table.insert(lines, 1 + #warnings, '')
+			for i = 1, #warnings do
+				table.insert(highlights, { i + 1, 0, -1, 'DiagnosticWarn' })
+			end
+		end
+
+		local header = string.format('󰌾 %s', vim.fn.fnamemodify(filepath, ':t'))
+		table.insert(lines, 1, header)
+		table.insert(lines, 2, string.rep('─', vim.fn.strdisplaywidth(header) + 4))
+
+		return lines, highlights
+	end)
+end
+
 --- Display certificate info in a floating window.
 --- @param filepath string
 function M.show(filepath)
-	local output, err = _run_openssl(filepath)
-	if not output then
+	local lines, highlights, err = _preview_data(filepath)
+	if not lines then
 		vim.notify('[glimpse] ' .. (err or 'failed to read certificate'), vim.log.levels.WARN)
 		return
 	end
-
-	local lines, warnings = _parse_output(output)
-	if #lines == 0 then
-		vim.notify('[glimpse] could not parse certificate metadata: ' .. filepath, vim.log.levels.WARN)
-		return
-	end
-
-	if #warnings > 0 then
-		for i = #warnings, 1, -1 do
-			table.insert(lines, 1, '⚠ ' .. warnings[i])
-		end
-		table.insert(lines, 1 + #warnings, '')
-	end
-
-	local header = string.format('󰌾 %s', vim.fn.fnamemodify(filepath, ':t'))
-	table.insert(lines, 1, header)
-	table.insert(lines, 2, string.rep('─', vim.fn.strdisplaywidth(header) + 4))
 
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -189,15 +204,18 @@ function M.show(filepath)
 	vim.bo[buf].buftype = 'nofile'
 	vim.bo[buf].filetype = 'glimpse_cert'
 
-	if #warnings > 0 then
+	if highlights and #highlights > 0 then
 		local ns = vim.api.nvim_create_namespace('glimpse_cert')
-		for i, line in ipairs(lines) do
-			if line:match('^⚠ ') then
-				vim.api.nvim_buf_set_extmark(buf, ns, i - 1, 0, {
-					end_col = #line,
-					hl_group = 'DiagnosticWarn',
-				})
+		for _, hl in ipairs(highlights) do
+			local row = hl[1]
+			local col_end = hl[3]
+			if col_end < 0 then
+				col_end = #(lines[row + 1] or '')
 			end
+			vim.api.nvim_buf_set_extmark(buf, ns, row, hl[2], {
+				end_col = col_end,
+				hl_group = hl[4],
+			})
 		end
 	end
 
@@ -213,5 +231,6 @@ function M.show(filepath)
 end
 
 M.preview = M.show
+M.preview_data = _preview_data
 
 return M
