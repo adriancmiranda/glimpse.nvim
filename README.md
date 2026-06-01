@@ -95,14 +95,14 @@ xxd -h
   'adriancmiranda/glimpse.nvim',
   ft = { 'oil', 'neo-tree' },
   event = {
-    'BufReadPost *.png', 'BufReadPost *.jpg', 'BufReadPost *.jpeg',
-    'BufReadPost *.gif', 'BufReadPost *.bmp', 'BufReadPost *.webp',
-    'BufReadPost *.avif', 'BufReadPost *.svg', 'BufReadPost *.pdf',
-    'BufReadPost *.ttf', 'BufReadPost *.otf',
-    'BufReadPost *.crt', 'BufReadPost *.pem',
-    'BufReadPost *.zip', 'BufReadPost *.tar', 'BufReadPost *.tgz',
-    'BufReadPost *.jar', 'BufReadPost *.war', 'BufReadPost *.apk',
-    'BufReadPost *.db', 'BufReadPost *.sqlite', 'BufReadPost *.sqlite3',
+    'BufReadPre *.png', 'BufReadPre *.jpg', 'BufReadPre *.jpeg',
+    'BufReadPre *.gif', 'BufReadPre *.bmp', 'BufReadPre *.webp',
+    'BufReadPre *.avif', 'BufReadPre *.svg', 'BufReadPre *.pdf',
+    'BufReadPre *.ttf', 'BufReadPre *.otf',
+    'BufReadPre *.crt', 'BufReadPre *.pem',
+    'BufReadPre *.zip', 'BufReadPre *.tar', 'BufReadPre *.tgz',
+    'BufReadPre *.jar', 'BufReadPre *.war', 'BufReadPre *.apk',
+    'BufReadPre *.db', 'BufReadPre *.sqlite', 'BufReadPre *.sqlite3',
   },
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'

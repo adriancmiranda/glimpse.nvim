@@ -275,6 +275,11 @@ end
 --- Show a file (selects the previewer automatically).
 ---@param filepath string Absolute file path
 function M.show(filepath)
+	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
+		vim.notify('[glimpse] Git LFS pointer detected: ' .. filepath, vim.log.levels.WARN)
+		return
+	end
+
 	local previewer, safety_opts = resolve_previewer(filepath)
 	if not previewer then
 		vim.notify('[glimpse] not previewable: ' .. filepath, vim.log.levels.WARN)
@@ -294,6 +299,11 @@ end
 --- Quick preview (reuses an existing window or opens a float).
 ---@param filepath string Absolute file path
 function M.preview(filepath)
+	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
+		vim.notify('[glimpse] Git LFS pointer detected: ' .. filepath, vim.log.levels.WARN)
+		return
+	end
+
 	local previewer, safety_opts = resolve_previewer(filepath)
 	if not previewer then
 		return
@@ -323,6 +333,7 @@ end
 ---@param filepath string File path
 ---@return boolean
 M.is_image = util.is_image
+M.is_git_lfs_pointer = util.is_git_lfs_pointer
 
 --- Check whether the file is a supported video.
 ---@param filepath string File path
