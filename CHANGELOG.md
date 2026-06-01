@@ -11,6 +11,7 @@
 - Telescope all previews
 - *(glimpse)* Refine lfs pointer preview
 - *(glimpse)* Support git lfs pointers
+- *(telescope)* Add per-kind flags
 
 ### 📚 Documentation
 
@@ -19,6 +20,7 @@
 ### 🎨 Styling
 
 - *(glimpse)* Fix stylua formatting
+- *(telescope)* Wrap config aliases
 
 
 ## [1.15.1](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.15.0..v1.15.1) - 2026-05-27
