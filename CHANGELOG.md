@@ -13,6 +13,10 @@
 - *(glimpse)* Support git lfs pointers
 - *(telescope)* Add per-kind flags
 
+### 🚜 Refactor
+
+- *(types)* Consolidate config aliases
+
 ### 📚 Documentation
 
 - Add optional ImageMagick policy example
