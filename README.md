@@ -204,6 +204,28 @@ require('glimpse').setup({
 })
 ```
 
+To disable specific preview kinds inside Telescope while keeping the integration
+enabled:
+
+```lua
+require('glimpse').setup({
+  integrations = {
+    telescope = {
+      enable = true,
+      pickers = { 'find_files', 'git_files' },
+      image = true,
+      video = true,
+      archive = true,
+      sqlite = false,
+      font = false,
+      cert = true,
+      key = true,
+      binary = false,
+    },
+  },
+})
+```
+
 If you prefer configuring Telescope manually, use the exported previewer:
 
 ```lua

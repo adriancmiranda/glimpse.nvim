@@ -217,6 +217,82 @@ describe('telescope integration', function()
 		restore_package(saved)
 	end)
 
+	it('falls back to Telescope when specific kinds are disabled', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.renderer',
+			'telescope.previewers',
+			'telescope.from_entry',
+			'telescope.config',
+			'glimpse.integrations.telescope',
+		})
+
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = vim.api.nvim_get_current_win()
+		local fallback_calls = {}
+
+		stub_package('telescope.previewers', {
+			buffer_previewer_maker = function(filepath)
+				fallback_calls[#fallback_calls + 1] = filepath
+			end,
+			new_buffer_previewer = function(spec)
+				return spec
+			end,
+		})
+		stub_package('telescope.from_entry', {
+			path = function(entry)
+				return entry.path
+			end,
+		})
+		stub_package('telescope.config', {
+			pickers = {},
+			set_pickers = function()
+				return true
+			end,
+		})
+		stub_package('glimpse.renderer', {
+			render = function()
+				error('render should not be called when a Telescope kind is disabled')
+			end,
+		})
+		stub_package('glimpse', {
+			get_preview_kind = function(filepath)
+				if filepath:match('%.png$') then
+					return 'image'
+				end
+				return 'archive'
+			end,
+			is_git_lfs_pointer = function()
+				return false
+			end,
+		})
+
+		local telescope = require('glimpse.integrations.telescope')
+		telescope.setup({
+			enable = true,
+			pickers = { 'find_files' },
+			image = false,
+			archive = false,
+		})
+
+		telescope.buffer_previewer_maker('/tmp/example.png', buf, { winid = win })
+		assert.is_true(wait_for(function()
+			return #fallback_calls == 1
+		end))
+
+		telescope.buffer_previewer_maker('/tmp/example.zip', buf, { winid = win })
+		assert.is_true(wait_for(function()
+			return #fallback_calls == 2
+		end))
+
+		assert.are.same({ '/tmp/example.png', '/tmp/example.zip' }, fallback_calls)
+
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+		restore_package(saved)
+	end)
+
 	it('ignores stale video callbacks after a newer Telescope request', function()
 		local saved = save_package({
 			'glimpse',
