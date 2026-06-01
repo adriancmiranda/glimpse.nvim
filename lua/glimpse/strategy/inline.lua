@@ -67,8 +67,12 @@ end
 --- @param buf number
 function M.close(buf)
 	renderer.close(buf)
-	if vim.api.nvim_buf_is_valid(buf) then
-		vim.api.nvim_buf_delete(buf, { force = true })
+	if not vim.api.nvim_buf_is_valid(buf) then
+		return
+	end
+	if vim.api.nvim_get_current_buf() == buf then
+		local new_buf = vim.api.nvim_create_buf(true, false)
+		vim.api.nvim_set_current_buf(new_buf)
 	end
 end
 
@@ -107,7 +111,7 @@ function M.setup_autocmds()
 				if #wins > 1 then
 					local cur_name = vim.api.nvim_buf_get_name(0)
 					if cur_name == '' and not vim.bo.modified then
-						vim.cmd('quit')
+						vim.api.nvim_win_close(0, true)
 					end
 				end
 			end, { buffer = info.buf, silent = true })
