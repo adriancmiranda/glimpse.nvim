@@ -60,7 +60,7 @@
 ---@class GlimpseIntegrationsConfig
 ---@field oil? boolean Keymaps in Oil.nvim (default: true)
 ---@field neotree? boolean|{enable?:boolean, auto_preview?:boolean} NeoTree integration config
----@field telescope? boolean|{enable?:boolean, pickers?:string|string[]|table} Preview in Telescope (default: true)
+---@field telescope? boolean|{enable?:boolean, pickers?:string|string[]|table, image?:boolean, video?:boolean, archive?:boolean, sqlite?:boolean, font?:boolean, cert?:boolean, key?:boolean, binary?:boolean} Preview in Telescope (default: true)
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
