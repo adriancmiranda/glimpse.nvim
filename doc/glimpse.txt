@@ -68,12 +68,29 @@ GlimpseCellSizeConfig                                    *GlimpseCellSizeConfig*
         {height?}  (number)  Estimated pixels per row (default: 40)
 
 
+GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
+
+    Fields: ~
+        {enable?}          (boolean)
+        {pickers?}         (string|string[]|table)
+        {previewer?}       (table)
+        {previewer_opts?}  (table)
+        {image?}           (boolean)
+        {video?}           (boolean)
+        {archive?}         (boolean)
+        {sqlite?}          (boolean)
+        {font?}            (boolean)
+        {cert?}            (boolean)
+        {key?}             (boolean)
+        {binary?}          (boolean)
+
+
 GlimpseIntegrationsConfig                            *GlimpseIntegrationsConfig*
 
     Fields: ~
-        {oil?}        (boolean)                                                   Keymaps in Oil.nvim (default: true)
-        {neotree?}    (boolean|{enable?:boolean,auto_preview?:boolean})           NeoTree integration config
-        {telescope?}  (boolean|{enable?:boolean,pickers?:string|string[]|table})  Preview in Telescope (default: true)
+        {oil?}        (boolean)                                          Keymaps in Oil.nvim (default: true)
+        {neotree?}    (boolean|{enable?:boolean,auto_preview?:boolean})  NeoTree integration config
+        {telescope?}  (boolean|GlimpseTelescopeConfig)                   Preview in Telescope (default: true)
 
 
 Glimpse                                                                *Glimpse*
