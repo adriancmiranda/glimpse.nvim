@@ -221,7 +221,7 @@ end
 
 --- Configure the Telescope integration.
 --- By default, applies the previewer only to the `find_files` picker.
----@param opts? boolean|{ enable?: boolean, pickers?: string|string[]|table, previewer?: table, previewer_opts?: table }
+---@param opts? boolean|GlimpseTelescopeConfig
 function M.setup(opts)
 	if opts == false then
 		return

@@ -68,6 +68,13 @@
 ---@class GlimpseArchiveConfig
 ---@field formats? string[] Supported archive extensions
 
+---@class GlimpseOilConfig
+---@field enable? boolean Keymaps in Oil.nvim (default: enabled)
+
+---@class GlimpseNeoTreeConfig
+---@field enable? boolean Enable auto-preview in Neo-tree
+---@field auto_preview? boolean Preview on cursor move (default: true)
+
 ---@class GlimpseKeysConfig
 ---@field preview? string Keymap for preview in Oil (default: '<leader>p')
 ---@field open? string Keymap for opening in a tab in Oil (default: ';')
@@ -82,9 +89,15 @@
 ---@field height? number Estimated pixels per row (default: 40)
 
 ---@class GlimpseIntegrationsConfig
----@field oil? {enable?:boolean} Keymaps in Oil.nvim (default: enabled)
----@field neotree? {enable?:boolean, auto_preview?:boolean} NeoTree integration config
----@field telescope? {enable?:boolean, pickers?:string|string[]|table} Preview in Telescope (default: enabled)
+---@field oil? GlimpseOilConfig Keymaps in Oil.nvim (default: enabled)
+---@field neotree? GlimpseNeoTreeConfig NeoTree integration config
+---@field telescope? GlimpseTelescopeConfig Preview in Telescope (default: enabled)
+
+---@class GlimpseTelescopeConfig
+---@field enable? boolean
+---@field pickers? string|string[]|table
+---@field previewer? table
+---@field previewer_opts? table
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
