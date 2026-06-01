@@ -149,6 +149,18 @@ M.is_image()                                                        *M.is_image*
      @return boolean
 
 
+M.parse_git_lfs_pointer()                              *M.parse_git_lfs_pointer*
+     Check whether the file is a Git LFS pointer instead of the real asset.
+     @param filepath string
+     @return boolean
+
+
+M.is_git_lfs_pointer()                                    *M.is_git_lfs_pointer*
+     Check whether the file is a Git LFS pointer instead of the real asset.
+     @param filepath string
+     @return boolean
+
+
 M.is_video()                                                        *M.is_video*
      Check whether the file is a supported video.
      @param filepath string
