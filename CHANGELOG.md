@@ -6,9 +6,19 @@
 
 ## [unreleased]
 
+### 🚀 Features
+
+- Telescope all previews
+- *(glimpse)* Refine lfs pointer preview
+- *(glimpse)* Support git lfs pointers
+
 ### 📚 Documentation
 
 - Add optional ImageMagick policy example
+
+### 🎨 Styling
+
+- *(glimpse)* Fix stylua formatting
 
 
 ## [1.15.1](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.15.0..v1.15.1) - 2026-05-27
