@@ -17,6 +17,39 @@ function M.is_image(filepath)
 	return false
 end
 
+--- Check whether the file is a Git LFS pointer instead of the real asset.
+--- @param filepath string
+--- @return boolean
+function M.parse_git_lfs_pointer(filepath)
+	local content = vim.fn.readfile(filepath, '', 3)
+	if not content or #content < 3 then
+		return nil
+	end
+
+	if content[1] ~= 'version https://git-lfs.github.com/spec/v1' then
+		return nil
+	end
+
+	local oid = content[2]:match('^oid sha256:([0-9a-f]+)$')
+	local size = content[3]:match('^size (%d+)$')
+	if not oid or not size then
+		return nil
+	end
+
+	return {
+		version = content[1],
+		oid = oid,
+		size = tonumber(size),
+	}
+end
+
+--- Check whether the file is a Git LFS pointer instead of the real asset.
+--- @param filepath string
+--- @return boolean
+function M.is_git_lfs_pointer(filepath)
+	return M.parse_git_lfs_pointer(filepath) ~= nil
+end
+
 --- Check whether the file is a supported video.
 --- @param filepath string
 --- @return boolean

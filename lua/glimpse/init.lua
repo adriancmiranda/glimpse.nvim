@@ -130,10 +130,15 @@ local config = {
 	video_open = nil,
 }
 
+local kind_cache = {}
+local kind_cache_revision = 0
+
 --- Configure the plugin.
 ---@param opts? GlimpseConfig Configuration options (merged with defaults)
 function M.setup(opts)
 	config = vim.tbl_deep_extend('force', config, opts or {})
+	kind_cache = {}
+	kind_cache_revision = kind_cache_revision + 1
 	if M._should_use_inline() and config.inline.rerender_on_tab then
 		inline.setup_autocmds()
 	end
@@ -157,6 +162,56 @@ function M.setup(opts)
 	end
 end
 
+local function _kind_cache_key(filepath)
+	local stat = vim.uv.fs_stat(filepath)
+	if not stat then
+		return nil
+	end
+
+	local mtime = stat.mtime or {}
+	return table.concat({
+		tostring(kind_cache_revision),
+		filepath,
+		tostring(stat.size or 0),
+		tostring(mtime.sec or 0),
+		tostring(mtime.nsec or 0),
+	}, ':')
+end
+
+local function resolve_kind(filepath)
+	local cache_key = _kind_cache_key(filepath)
+	if cache_key then
+		local cached = kind_cache[cache_key]
+		if cached ~= nil then
+			return cached or nil
+		end
+	end
+
+	local kind
+	if util.is_archive(filepath) then
+		kind = 'archive'
+	elseif util.is_sqlite(filepath) then
+		kind = 'sqlite'
+	elseif util.is_cert(filepath) then
+		kind = 'cert'
+	elseif util.is_key(filepath) then
+		kind = 'key'
+	elseif util.is_font(filepath) then
+		kind = 'font'
+	elseif util.is_video(filepath) then
+		kind = 'video'
+	elseif util.is_image(filepath) then
+		kind = 'image'
+	elseif binary.can_preview(filepath) then
+		kind = 'binary'
+	end
+
+	if cache_key then
+		kind_cache[cache_key] = kind or false
+	end
+	return kind
+end
+
 ---@private
 function M._should_use_inline()
 	if config.strategy == 'inline' then
@@ -175,25 +230,29 @@ end
 --- @return table|nil safety_opts
 --- @return string|nil kind
 local function resolve_previewer(filepath)
-	if util.is_archive(filepath) then
+	local kind = resolve_kind(filepath)
+	if kind == 'archive' then
 		return require('glimpse.previewer.archive'), { max_size = 0 }, 'archive'
 	end
-	if util.is_sqlite(filepath) then
+	if kind == 'sqlite' then
 		return require('glimpse.previewer.sqlite'), { max_size = 0 }, 'sqlite'
 	end
-	if util.is_cert(filepath) then
+	if kind == 'cert' then
 		return require('glimpse.previewer.cert'), { max_size = config.max_file_size }, 'cert'
 	end
-	if util.is_key(filepath) then
+	if kind == 'key' then
 		return require('glimpse.previewer.key'), { max_size = config.max_file_size }, 'key'
 	end
-	if util.is_font(filepath) then
+	if kind == 'font' then
 		return require('glimpse.previewer.font'), { max_size = config.max_file_size }, 'font'
 	end
-	if util.is_image(filepath) then
+	if kind == 'video' then
+		return require('glimpse.previewer.video'), { max_size = config.max_file_size }, 'video'
+	end
+	if kind == 'image' then
 		return require('glimpse.previewer.image'), { max_size = config.max_file_size }, 'image'
 	end
-	if binary.can_preview(filepath) then
+	if kind == 'binary' then
 		return binary, { max_size = 0 }, 'binary'
 	end
 	return nil
@@ -210,13 +269,17 @@ end
 ---@param filepath string Absolute file path
 ---@return string|nil kind
 function M.get_preview_kind(filepath)
-	local _, _, kind = resolve_previewer(filepath)
-	return kind
+	return resolve_kind(filepath)
 end
 
 --- Show a file (selects the previewer automatically).
 ---@param filepath string Absolute file path
 function M.show(filepath)
+	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
+		vim.notify('[glimpse] Git LFS pointer detected: ' .. filepath, vim.log.levels.WARN)
+		return
+	end
+
 	local previewer, safety_opts = resolve_previewer(filepath)
 	if not previewer then
 		vim.notify('[glimpse] not previewable: ' .. filepath, vim.log.levels.WARN)
@@ -236,6 +299,11 @@ end
 --- Quick preview (reuses an existing window or opens a float).
 ---@param filepath string Absolute file path
 function M.preview(filepath)
+	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
+		vim.notify('[glimpse] Git LFS pointer detected: ' .. filepath, vim.log.levels.WARN)
+		return
+	end
+
 	local previewer, safety_opts = resolve_previewer(filepath)
 	if not previewer then
 		return
@@ -265,6 +333,7 @@ end
 ---@param filepath string File path
 ---@return boolean
 M.is_image = util.is_image
+M.is_git_lfs_pointer = util.is_git_lfs_pointer
 
 --- Check whether the file is a supported video.
 ---@param filepath string File path

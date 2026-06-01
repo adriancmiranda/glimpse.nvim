@@ -77,4 +77,50 @@ describe('previewer.binary', function()
 			error(err)
 		end
 	end)
+
+	it('memoizes preview_data so xxd is only run once per file version', function()
+		local original_executable = vim.fn.executable
+		local original_system = vim.fn.system
+		local original_vim_system = vim.system
+		local file = vim.fn.tempname() .. '.bin'
+		vim.fn.writefile({ 'binary' }, file)
+
+		local xxd_calls = 0
+
+		---@diagnostic disable-next-line: duplicate-set-field
+		vim.fn.executable = function(name)
+			if name == 'file' or name == 'xxd' then
+				return 1
+			end
+			return original_executable(name)
+		end
+
+		---@diagnostic disable-next-line: duplicate-set-field
+		vim.system = nil
+		---@diagnostic disable-next-line: duplicate-set-field
+		vim.fn.system = function(args)
+			if args[1] == 'file' and args[3] == file and args[2] == '-b' then
+				return 'Binary data'
+			end
+			if args[1] == 'file' and args[2] == '-b' and args[3] == '--mime-encoding' then
+				return 'binary'
+			end
+			if args[1] == 'xxd' then
+				xxd_calls = xxd_calls + 1
+				return '00000000: 0001 02                                   ...'
+			end
+			return original_system(args)
+		end
+
+		local first = binary.preview_data(file)
+		local second = binary.preview_data(file)
+
+		vim.fn.executable = original_executable
+		vim.fn.system = original_system
+		vim.system = original_vim_system
+		vim.fn.delete(file)
+
+		assert.are.same(first, second)
+		assert.equals(1, xxd_calls)
+	end)
 end)

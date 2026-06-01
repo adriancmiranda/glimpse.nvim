@@ -3,6 +3,34 @@ local M = {}
 local float = require('glimpse.float')
 
 local font_mod = require('glimpse.font')
+local preview_cache = require('glimpse.preview_cache')
+
+local function _header_lines(filepath, lines)
+	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
+	table.insert(lines, 1, header)
+	table.insert(lines, 2, string.rep('─', #header + 4))
+end
+
+local function _offset_highlights(highlights, offset)
+	local shifted = {}
+	for _, hl in ipairs(highlights or {}) do
+		shifted[#shifted + 1] = { hl[1] + offset, hl[2], hl[3], hl[4] }
+	end
+	return shifted
+end
+
+local function _preview_data(filepath)
+	return preview_cache.memoize(filepath, 'font', function()
+		local info, err = font_mod.query(filepath)
+		if not info then
+			return nil, nil, err
+		end
+
+		local lines, highlights = font_mod.format(info)
+		_header_lines(filepath, lines)
+		return lines, _offset_highlights(highlights, 2)
+	end)
+end
 
 --- Render the font as an image via magick.
 --- @param filepath string
@@ -62,17 +90,11 @@ end
 --- @param filepath string
 function M.preview(filepath)
 	local config = require('glimpse').get_config()
-	local info, err = font_mod.query(filepath)
-	if not info then
+	local lines, highlights, err = _preview_data(filepath)
+	if not lines then
 		vim.notify('[glimpse] ' .. (err or 'failed to read font'), vim.log.levels.WARN)
 		return
 	end
-
-	local lines, highlights = font_mod.format(info)
-
-	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
-	table.insert(lines, 1, header)
-	table.insert(lines, 2, string.rep('─', #header + 4))
 
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -82,7 +104,7 @@ function M.preview(filepath)
 
 	local ns = vim.api.nvim_create_namespace('glimpse_font')
 	for _, hl in ipairs(highlights) do
-		local row = hl[1] + 2
+		local row = hl[1]
 		local col_end = hl[3]
 		if col_end < 0 then
 			col_end = #(lines[row + 1] or '')
@@ -102,5 +124,7 @@ function M.preview(filepath)
 	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })
 	vim.keymap.set('n', '<Esc>', '<cmd>close<CR>', { buffer = buf, silent = true })
 end
+
+M.preview_data = _preview_data
 
 return M

@@ -2,6 +2,7 @@
 --- Requires `file(1)` and `xxd(1)` on PATH; if either is missing, it fails safely.
 local M = {}
 local float = require('glimpse.float')
+local preview_cache = require('glimpse.preview_cache')
 
 local MAX_HEXDUMP_BYTES = 256
 
@@ -89,6 +90,35 @@ local function _buf_lines(filepath, desc, dump)
 	return lines
 end
 
+local function _preview_data(filepath)
+	return preview_cache.memoize(filepath, 'binary', function()
+		if vim.fn.executable('file') == 0 then
+			return nil, nil, 'file not found'
+		end
+
+		local info, err = _inspect(filepath)
+		if not info then
+			return nil, nil, err
+		end
+
+		if not info.is_binary then
+			return nil, nil, 'not a binary file'
+		end
+
+		if vim.fn.executable('xxd') == 0 then
+			return nil, nil, 'xxd not found'
+		end
+
+		local dump, dump_err = _run({ 'xxd', '-l', tostring(MAX_HEXDUMP_BYTES), filepath })
+		if not dump then
+			return nil, nil, dump_err or 'cannot build hexdump'
+		end
+
+		local lines = _buf_lines(filepath, info.desc, dump)
+		return lines, nil
+	end)
+end
+
 function M.is_binary(filepath)
 	if not filepath or filepath == '' then
 		return false
@@ -128,33 +158,11 @@ function M.can_preview(filepath)
 end
 
 function M.show(filepath)
-	if vim.fn.executable('file') == 0 then
-		vim.notify('[glimpse] file not found', vim.log.levels.WARN)
-		return false
-	end
-
-	local info, err = _inspect(filepath)
-	if not info then
+	local lines, _, err = _preview_data(filepath)
+	if not lines then
 		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)
 		return false
 	end
-
-	if not info.is_binary then
-		return false
-	end
-
-	if vim.fn.executable('xxd') == 0 then
-		vim.notify('[glimpse] xxd not found', vim.log.levels.WARN)
-		return false
-	end
-
-	local dump, dump_err = _run({ 'xxd', '-l', tostring(MAX_HEXDUMP_BYTES), filepath })
-	if not dump then
-		vim.notify('[glimpse] ' .. (dump_err or 'cannot build hexdump'), vim.log.levels.WARN)
-		return false
-	end
-
-	local lines = _buf_lines(filepath, info.desc, dump)
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	vim.bo[buf].buftype = 'nofile'
@@ -179,5 +187,6 @@ function M.show(filepath)
 end
 
 M.preview = M.show
+M.preview_data = _preview_data
 
 return M
