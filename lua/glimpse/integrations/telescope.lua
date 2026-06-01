@@ -4,6 +4,7 @@ local M = {}
 
 local _timer = nil
 local _request_ids = {}
+local _config = {}
 
 local function _as_list(value)
 	if value == nil or value == true then
@@ -28,6 +29,10 @@ end
 
 local function _fallback_buffer_previewer(filepath, bufnr, opts)
 	require('telescope.previewers').buffer_previewer_maker(filepath, bufnr, opts)
+end
+
+local function _kind_enabled(kind)
+	return _config[kind] ~= false
 end
 
 local function _lfs_preview_lines(filepath)
@@ -91,6 +96,11 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 	local glimpse = require('glimpse')
 	local kind = glimpse.get_preview_kind(filepath)
 	local win = (opts.winid and opts.winid ~= -1) and opts.winid or vim.fn.bufwinid(bufnr)
+
+	if kind and not _kind_enabled(kind) then
+		_fallback_buffer_previewer(filepath, bufnr, opts)
+		return
+	end
 
 	if kind == 'image' then
 		if glimpse.is_git_lfs_pointer and glimpse.is_git_lfs_pointer(filepath) then
@@ -221,17 +231,20 @@ end
 
 --- Configure the Telescope integration.
 --- By default, applies the previewer only to the `find_files` picker.
----@param opts? boolean|{ enable?: boolean, pickers?: string|string[]|table, previewer?: table, previewer_opts?: table }
+---@param opts? boolean|GlimpseTelescopeConfig
 function M.setup(opts)
 	if opts == false then
+		_config = {}
 		return
 	end
 	if opts == true or opts == nil then
 		opts = {}
 	end
 	if opts.enable == false then
+		_config = {}
 		return
 	end
+	_config = vim.deepcopy(opts)
 	opts.pickers = opts.pickers or { 'find_files' }
 
 	if package.loaded['telescope.config'] then
