@@ -44,6 +44,13 @@
 ---@field rerender_on_tab? boolean Re-render when returning to an image tab (default: true)
 ---@field close_with_q? boolean Map a key to close the image buffer (default: true)
 
+---@class GlimpseOilConfig
+---@field enable? boolean Keymaps in Oil.nvim (default: enabled)
+
+---@class GlimpseNeoTreeConfig
+---@field enable? boolean Enable auto-preview in Neo-tree
+---@field auto_preview? boolean Preview on cursor move (default: true)
+
 ---@class GlimpseKeysConfig
 ---@field preview? string Keymap for preview in Oil (default: '<leader>p')
 ---@field open? string Keymap for opening in a tab in Oil (default: ';')
@@ -72,8 +79,8 @@
 ---@field binary? boolean
 
 ---@class GlimpseIntegrationsConfig
----@field oil? boolean Keymaps in Oil.nvim (default: true)
----@field neotree? boolean|{enable?:boolean, auto_preview?:boolean} NeoTree integration config
+---@field oil? GlimpseOilConfig Keymaps in Oil.nvim (default: enabled)
+---@field neotree? GlimpseNeoTreeConfig NeoTree integration config
 ---@field telescope? boolean|GlimpseTelescopeConfig Preview in Telescope (default: true)
 
 local detect = require('glimpse.detect')
