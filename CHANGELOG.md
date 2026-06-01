@@ -13,6 +13,10 @@
 - *(glimpse)* Support git lfs pointers
 - *(telescope)* Add per-kind flags
 
+### 🐛 Bug Fixes
+
+- *(inline)* Avoid hit-enter on close
+
 ### 🚜 Refactor
 
 - *(types)* Consolidate config aliases
