@@ -37,7 +37,8 @@ local function _lfs_preview_lines(filepath)
 		return {
 			'[glimpse] Git LFS pointer detected',
 			'tip: run git lfs pull in the repository that owns this file',
-		}, 'glimpse_warning'
+		},
+			'glimpse_warning'
 	end
 
 	return {
@@ -45,7 +46,8 @@ local function _lfs_preview_lines(filepath)
 		'oid sha256:' .. pointer.oid,
 		'size ' .. tostring(pointer.size) .. ' bytes',
 		'tip: run git lfs pull in the repository that owns this file',
-	}, 'glimpse_warning'
+	},
+		'glimpse_warning'
 end
 
 local function _set_text_preview(bufnr, lines, highlights, filetype)
@@ -82,12 +84,7 @@ end
 
 local function _show_lfs_warning(bufnr, filepath)
 	local lines, filetype = _lfs_preview_lines(filepath)
-	_set_text_preview(
-		bufnr,
-		lines,
-		nil,
-		filetype
-	)
+	_set_text_preview(bufnr, lines, nil, filetype)
 end
 
 local function _render_preview(filepath, bufnr, opts, request_id)

@@ -185,9 +185,15 @@ describe('telescope integration', function()
 		assert.is_true(wait_for(function()
 			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == '[glimpse] Git LFS pointer'
 		end))
-		assert.are.equal('oid sha256:fe93af5da1f8d77dac7187f24de828c8fab913629e7870ba27cff63ba5e8554f', vim.api.nvim_buf_get_lines(buf, 1, 2, false)[1])
+		assert.are.equal(
+			'oid sha256:fe93af5da1f8d77dac7187f24de828c8fab913629e7870ba27cff63ba5e8554f',
+			vim.api.nvim_buf_get_lines(buf, 1, 2, false)[1]
+		)
 		assert.are.equal('size 1576804 bytes', vim.api.nvim_buf_get_lines(buf, 2, 3, false)[1])
-		assert.are.equal('tip: run git lfs pull in the repository that owns this file', vim.api.nvim_buf_get_lines(buf, 3, 4, false)[1])
+		assert.are.equal(
+			'tip: run git lfs pull in the repository that owns this file',
+			vim.api.nvim_buf_get_lines(buf, 3, 4, false)[1]
+		)
 		assert.equals('glimpse_warning', vim.bo[buf].filetype)
 
 		stub_package('glimpse', {

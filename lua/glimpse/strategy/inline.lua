@@ -13,7 +13,8 @@ local function _lfs_preview_lines(filepath)
 		return {
 			'[glimpse] Git LFS pointer detected',
 			'tip: run git lfs pull in the repository that owns this file',
-		}, 'glimpse_warning'
+		},
+			'glimpse_warning'
 	end
 
 	return {
@@ -21,7 +22,8 @@ local function _lfs_preview_lines(filepath)
 		'oid sha256:' .. pointer.oid,
 		'size ' .. tostring(pointer.size) .. ' bytes',
 		'tip: run git lfs pull in the repository that owns this file',
-	}, 'glimpse_warning'
+	},
+		'glimpse_warning'
 end
 
 --- Show an image in a vsplit, reusing an existing window.
