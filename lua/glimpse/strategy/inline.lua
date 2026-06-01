@@ -6,6 +6,24 @@ local dir = require('glimpse.dir')
 
 local M = {}
 
+local function _lfs_preview_lines(filepath)
+	local util = require('glimpse.util')
+	local pointer = util.parse_git_lfs_pointer(filepath)
+	if not pointer then
+		return {
+			'[glimpse] Git LFS pointer detected',
+			'tip: run git lfs pull in the repository that owns this file',
+		}, 'glimpse_warning'
+	end
+
+	return {
+		'[glimpse] Git LFS pointer',
+		'oid sha256:' .. pointer.oid,
+		'size ' .. tostring(pointer.size) .. ' bytes',
+		'tip: run git lfs pull in the repository that owns this file',
+	}, 'glimpse_warning'
+end
+
 --- Show an image in a vsplit, reusing an existing window.
 --- @param filepath string
 function M.preview(filepath)
@@ -25,6 +43,15 @@ function M.preview(filepath)
 	renderer.render(buf, filepath)
 	vim.api.nvim_set_current_win(oil_win)
 	dir.follow(filepath)
+end
+
+local function _show_lfs_warning(buf, filepath)
+	local lines, filetype = _lfs_preview_lines(filepath)
+	vim.bo[buf].modifiable = true
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].modified = false
+	vim.bo[buf].filetype = filetype
 end
 
 --- Show an image in the current buffer.
@@ -54,6 +81,10 @@ function M.setup_autocmds()
 		callback = function(info)
 			local filepath = vim.api.nvim_buf_get_name(info.buf)
 			if util.is_image(filepath) then
+				if util.is_git_lfs_pointer(filepath) then
+					_show_lfs_warning(info.buf, filepath)
+					return
+				end
 				dir.follow(filepath)
 				renderer.render(info.buf, filepath, { listed = true })
 			elseif util.is_font(filepath) then

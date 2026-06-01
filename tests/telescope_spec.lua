@@ -152,10 +152,19 @@ describe('telescope integration', function()
 		})
 
 		local telescope = require('glimpse.integrations.telescope')
+		local pointer = '/tmp/pointer.jpg'
+		vim.fn.writefile({
+			'version https://git-lfs.github.com/spec/v1',
+			'oid sha256:fe93af5da1f8d77dac7187f24de828c8fab913629e7870ba27cff63ba5e8554f',
+			'size 1576804',
+		}, pointer)
 
 		stub_package('glimpse', {
 			get_preview_kind = function()
 				return 'image'
+			end,
+			is_git_lfs_pointer = function()
+				return false
 			end,
 		})
 		telescope.buffer_previewer_maker('/tmp/example.png', buf, { winid = win })
@@ -166,7 +175,27 @@ describe('telescope integration', function()
 
 		stub_package('glimpse', {
 			get_preview_kind = function()
+				return 'image'
+			end,
+			is_git_lfs_pointer = function()
+				return true
+			end,
+		})
+		telescope.buffer_previewer_maker('/tmp/pointer.jpg', buf, { winid = win })
+		assert.is_true(wait_for(function()
+			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == '[glimpse] Git LFS pointer'
+		end))
+		assert.are.equal('oid sha256:fe93af5da1f8d77dac7187f24de828c8fab913629e7870ba27cff63ba5e8554f', vim.api.nvim_buf_get_lines(buf, 1, 2, false)[1])
+		assert.are.equal('size 1576804 bytes', vim.api.nvim_buf_get_lines(buf, 2, 3, false)[1])
+		assert.are.equal('tip: run git lfs pull in the repository that owns this file', vim.api.nvim_buf_get_lines(buf, 3, 4, false)[1])
+		assert.equals('glimpse_warning', vim.bo[buf].filetype)
+
+		stub_package('glimpse', {
+			get_preview_kind = function()
 				return 'video'
+			end,
+			is_git_lfs_pointer = function()
+				return false
 			end,
 		})
 		telescope.buffer_previewer_maker('/tmp/example.mp4', buf, { winid = win })
@@ -178,6 +207,7 @@ describe('telescope integration', function()
 		if vim.api.nvim_buf_is_valid(buf) then
 			vim.api.nvim_buf_delete(buf, { force = true })
 		end
+		vim.fn.delete(pointer)
 		restore_package(saved)
 	end)
 

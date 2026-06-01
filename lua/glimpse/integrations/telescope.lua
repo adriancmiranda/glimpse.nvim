@@ -30,6 +30,24 @@ local function _fallback_buffer_previewer(filepath, bufnr, opts)
 	require('telescope.previewers').buffer_previewer_maker(filepath, bufnr, opts)
 end
 
+local function _lfs_preview_lines(filepath)
+	local util = require('glimpse.util')
+	local pointer = util.parse_git_lfs_pointer(filepath)
+	if not pointer then
+		return {
+			'[glimpse] Git LFS pointer detected',
+			'tip: run git lfs pull in the repository that owns this file',
+		}, 'glimpse_warning'
+	end
+
+	return {
+		'[glimpse] Git LFS pointer',
+		'oid sha256:' .. pointer.oid,
+		'size ' .. tostring(pointer.size) .. ' bytes',
+		'tip: run git lfs pull in the repository that owns this file',
+	}, 'glimpse_warning'
+end
+
 local function _set_text_preview(bufnr, lines, highlights, filetype)
 	if not vim.api.nvim_buf_is_valid(bufnr) then
 		return
@@ -62,12 +80,26 @@ local function _set_text_preview(bufnr, lines, highlights, filetype)
 	end
 end
 
+local function _show_lfs_warning(bufnr, filepath)
+	local lines, filetype = _lfs_preview_lines(filepath)
+	_set_text_preview(
+		bufnr,
+		lines,
+		nil,
+		filetype
+	)
+end
+
 local function _render_preview(filepath, bufnr, opts, request_id)
 	local glimpse = require('glimpse')
 	local kind = glimpse.get_preview_kind(filepath)
 	local win = (opts.winid and opts.winid ~= -1) and opts.winid or vim.fn.bufwinid(bufnr)
 
 	if kind == 'image' then
+		if glimpse.is_git_lfs_pointer and glimpse.is_git_lfs_pointer(filepath) then
+			_show_lfs_warning(bufnr, filepath)
+			return
+		end
 		require('glimpse.renderer').render(bufnr, filepath, { winid = win })
 		return
 	end
