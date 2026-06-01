@@ -25,6 +25,22 @@ package.loaded['glimpse'] = {
 	get_config = function()
 		return {
 			formats = { '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.avif', '.svg', '.pdf', '.pict' },
+			loading = {
+				text = '  ⏳ Loading...',
+			},
+			cell_size = {
+				width = 20,
+				height = 40,
+			},
+			image = {
+				formats = { '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.avif', '.svg', '.pdf', '.pict' },
+			},
+			video = {
+				formats = { '.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v' },
+			},
+			archive = {
+				formats = { '.zip', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.txz', '.jar', '.war', '.apk' },
+			},
 		}
 	end,
 }
@@ -62,6 +78,73 @@ bench('png header parse', 10000, function()
 		+ fake_header:byte(19) * 256
 		+ fake_header:byte(20)
 end)
+
+package.loaded['glimpse'] = nil
+local glimpse = require('glimpse')
+
+bench('glimpse.get_preview_kind (image hit)', 100000, function()
+	glimpse.get_preview_kind('/a/b.png')
+end)
+
+package.loaded['glimpse.renderer'] = {
+	render = function() end,
+	close = function() end,
+	has_placement = function()
+		return false
+	end,
+	register = function() end,
+	rerender = function() end,
+}
+package.loaded['glimpse.dir'] = { follow = function() end }
+
+local inline = require('glimpse.strategy.inline')
+bench('inline.show (real jpg)', 1000, function()
+	inline.show('/private/tmp/glimpse-test.jpg')
+end)
+
+package.loaded['glimpse.kitty'] = {
+	transmit_async = function(_, _, callback)
+		callback(1, nil, 160, 120)
+		return nil
+	end,
+	delete = function()
+		return true
+	end,
+}
+package.loaded['glimpse'] = {
+	get_config = function()
+		return {
+			loading = {
+				text = '  ⏳ Loading...',
+			},
+			cell_size = {
+				width = 20,
+				height = 40,
+			},
+		}
+	end,
+}
+package.loaded['glimpse.renderer'] = nil
+package.loaded['glimpse.dir'] = { follow = function() end }
+local renderer = require('glimpse.renderer')
+local render_buf = vim.api.nvim_create_buf(false, true)
+vim.api.nvim_set_current_buf(render_buf)
+bench('renderer.render (real jpg)', 1000, function()
+	renderer.render(render_buf, '/private/tmp/glimpse-test.jpg', { winid = vim.api.nvim_get_current_win() })
+end)
+
+local pointer = vim.fn.tempname() .. '.jpg'
+vim.fn.writefile({
+	'version https://git-lfs.github.com/spec/v1',
+	'oid sha256:fe93af5da1f8d77dac7187f24de828c8fab913629e7870ba27cff63ba5e8554f',
+	'size 1576804',
+}, pointer)
+
+bench('util.parse_git_lfs_pointer', 1000, function()
+	util.parse_git_lfs_pointer(pointer)
+end)
+
+vim.fn.delete(pointer)
 
 if vim.base64 then
 	local s1k = string.rep('x', 1024)
