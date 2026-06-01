@@ -57,10 +57,24 @@
 ---@field width? number Estimated pixels per column (default: 20)
 ---@field height? number Estimated pixels per row (default: 40)
 
+---@class GlimpseTelescopeConfig
+---@field enable? boolean
+---@field pickers? string|string[]|table
+---@field previewer? table
+---@field previewer_opts? table
+---@field image? boolean
+---@field video? boolean
+---@field archive? boolean
+---@field sqlite? boolean
+---@field font? boolean
+---@field cert? boolean
+---@field key? boolean
+---@field binary? boolean
+
 ---@class GlimpseIntegrationsConfig
 ---@field oil? boolean Keymaps in Oil.nvim (default: true)
 ---@field neotree? boolean|{enable?:boolean, auto_preview?:boolean} NeoTree integration config
----@field telescope? boolean|{enable?:boolean, pickers?:string|string[]|table, image?:boolean, video?:boolean, archive?:boolean, sqlite?:boolean, font?:boolean, cert?:boolean, key?:boolean, binary?:boolean} Preview in Telescope (default: true)
+---@field telescope? boolean|GlimpseTelescopeConfig Preview in Telescope (default: true)
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
