@@ -46,6 +46,19 @@ GlimpseInlineConfig                                        *GlimpseInlineConfig*
         {close_with_q?}     (boolean)  Map a key to close the image buffer (default: true)
 
 
+GlimpseOilConfig                                              *GlimpseOilConfig*
+
+    Fields: ~
+        {enable?}  (boolean)  Keymaps in Oil.nvim (default: enabled)
+
+
+GlimpseNeoTreeConfig                                      *GlimpseNeoTreeConfig*
+
+    Fields: ~
+        {enable?}        (boolean)  Enable auto-preview in Neo-tree
+        {auto_preview?}  (boolean)  Preview on cursor move (default: true)
+
+
 GlimpseKeysConfig                                            *GlimpseKeysConfig*
 
     Fields: ~
@@ -88,9 +101,9 @@ GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
 GlimpseIntegrationsConfig                            *GlimpseIntegrationsConfig*
 
     Fields: ~
-        {oil?}        (boolean)                                          Keymaps in Oil.nvim (default: true)
-        {neotree?}    (boolean|{enable?:boolean,auto_preview?:boolean})  NeoTree integration config
-        {telescope?}  (boolean|GlimpseTelescopeConfig)                   Preview in Telescope (default: true)
+        {oil?}        (GlimpseOilConfig)                Keymaps in Oil.nvim (default: enabled)
+        {neotree?}    (GlimpseNeoTreeConfig)            NeoTree integration config
+        {telescope?}  (boolean|GlimpseTelescopeConfig)  Preview in Telescope (default: true)
 
 
 Glimpse                                                                *Glimpse*
