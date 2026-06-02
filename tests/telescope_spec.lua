@@ -172,6 +172,7 @@ describe('telescope integration', function()
 			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'rendered:/tmp/example.png'
 		end))
 		assert.equals('image', vim.bo[buf].filetype)
+		assert.not_equals('wipe', vim.bo[buf].bufhidden)
 
 		stub_package('glimpse', {
 			get_preview_kind = function()
@@ -209,6 +210,7 @@ describe('telescope integration', function()
 			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'rendered:/tmp/thumb.png'
 		end))
 		assert.equals('image', vim.bo[buf].filetype)
+		assert.not_equals('wipe', vim.bo[buf].bufhidden)
 
 		if vim.api.nvim_buf_is_valid(buf) then
 			vim.api.nvim_buf_delete(buf, { force = true })

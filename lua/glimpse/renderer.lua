@@ -97,7 +97,9 @@ function M.render(buf, filepath, opts, on_done)
 
 	pcall(vim.api.nvim_buf_set_name, buf, filepath)
 	vim.bo[buf].buftype = 'nofile'
-	vim.bo[buf].bufhidden = 'wipe'
+	if opts.listed then
+		vim.bo[buf].bufhidden = 'wipe'
+	end
 	vim.bo[buf].swapfile = false
 	vim.bo[buf].filetype = 'image'
 	vim.bo[buf].buflisted = opts.listed or false
