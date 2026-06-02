@@ -16,6 +16,7 @@
 ### 🐛 Bug Fixes
 
 - *(inline)* Avoid hit-enter on close
+- *(telescope)* Keep preview buffers reusable
 
 ### 🚜 Refactor
 
