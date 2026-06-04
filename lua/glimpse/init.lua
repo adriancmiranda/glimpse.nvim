@@ -46,7 +46,8 @@
 
 ---@class GlimpseOilConfig
 ---@field enable? boolean Keymaps in Oil.nvim (default: enabled)
----@field open? 'edit'|'tabedit' Open images in the current tab or a new tab (default: 'edit')
+---@field open? 'edit'|'tabedit'|fun(filepath: string)
+--- Open images in the current tab, a new tab, or custom logic (default: 'edit')
 
 ---@class GlimpseNeoTreeConfig
 ---@field enable? boolean Enable auto-preview in Neo-tree

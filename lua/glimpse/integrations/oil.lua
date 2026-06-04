@@ -3,6 +3,10 @@ local M = {}
 function M._open_image(fpath, open_mode)
 	local oil = require('oil')
 	oil.close()
+	if type(open_mode) == 'function' then
+		open_mode(fpath)
+		return
+	end
 	local command = open_mode == 'tabedit' and 'tabedit' or 'edit'
 	vim.cmd(command .. ' ' .. vim.fn.fnameescape(fpath))
 	vim.schedule(function()

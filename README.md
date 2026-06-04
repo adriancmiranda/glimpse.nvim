@@ -149,7 +149,7 @@ xxd -h
     integrations = {
       oil = {
         enable = true,        -- keymaps in Oil
-        open = 'edit',        -- open images in the current tab or a new tab
+        open = 'edit',        -- 'edit' | 'tabedit' | function(filepath)
       },
       neotree = {             -- Neo-tree integration
         enable = false,       -- enable auto-preview in Neo-tree
