@@ -10,7 +10,7 @@
 
  Default keymaps (Oil.nvim):
    `<leader>p` - Preview image side by side
-   `;`         - Open image in a new tab
+   `;`         - Open image (configurable: current tab or new tab)
    `q`         - Close image buffer
 
  Supported terminals:
@@ -49,10 +49,12 @@ GlimpseInlineConfig                                        *GlimpseInlineConfig*
 GlimpseOilConfig                                              *GlimpseOilConfig*
 
     Fields: ~
-        {enable?}  (boolean)  Keymaps in Oil.nvim (default: enabled)
+        {enable?}  (boolean)                                Keymaps in Oil.nvim (default: enabled)
+        {open?}    ("edit"|"tabedit"|fun(filepath:string))
 
 
 GlimpseNeoTreeConfig                                      *GlimpseNeoTreeConfig*
+     Open images in the current tab, a new tab, or custom logic (default: 'edit')
 
     Fields: ~
         {enable?}        (boolean)  Enable auto-preview in Neo-tree
@@ -101,7 +103,7 @@ GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
 GlimpseIntegrationsConfig                            *GlimpseIntegrationsConfig*
 
     Fields: ~
-        {oil?}        (GlimpseOilConfig)                Keymaps in Oil.nvim (default: enabled)
+        {oil?}        (boolean|GlimpseOilConfig)        Keymaps in Oil.nvim (default: enabled)
         {neotree?}    (GlimpseNeoTreeConfig)            NeoTree integration config
         {telescope?}  (boolean|GlimpseTelescopeConfig)  Preview in Telescope (default: true)
 
