@@ -12,6 +12,8 @@
 - *(glimpse)* Refine lfs pointer preview
 - *(glimpse)* Support git lfs pointers
 - *(telescope)* Add per-kind flags
+- *(oil)* Make image opening configurable
+- *(oil)* Support custom openers
 
 ### 🐛 Bug Fixes
 
