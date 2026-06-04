@@ -11,7 +11,7 @@
 ---
 --- Default keymaps (Oil.nvim):
 ---   `<leader>p` - Preview image side by side
----   `;`         - Open image in a new tab
+---   `;`         - Open image (configurable: current tab or new tab)
 ---   `q`         - Close image buffer
 ---
 --- Supported terminals:
@@ -46,6 +46,7 @@
 
 ---@class GlimpseOilConfig
 ---@field enable? boolean Keymaps in Oil.nvim (default: enabled)
+---@field open? 'edit'|'tabedit' Open images in the current tab or a new tab (default: 'edit')
 
 ---@class GlimpseNeoTreeConfig
 ---@field enable? boolean Enable auto-preview in Neo-tree
@@ -79,7 +80,7 @@
 ---@field binary? boolean
 
 ---@class GlimpseIntegrationsConfig
----@field oil? GlimpseOilConfig Keymaps in Oil.nvim (default: enabled)
+---@field oil? boolean|GlimpseOilConfig Keymaps in Oil.nvim (default: enabled)
 ---@field neotree? GlimpseNeoTreeConfig NeoTree integration config
 ---@field telescope? boolean|GlimpseTelescopeConfig Preview in Telescope (default: true)
 
@@ -154,16 +155,45 @@ local config = {
 local kind_cache = {}
 local kind_cache_revision = 0
 
+local function normalize_oil_config(oil)
+	if oil == false then
+		return {
+			enable = false,
+			open = 'edit',
+		}
+	end
+
+	if oil == true or oil == nil then
+		return {
+			enable = true,
+			open = 'edit',
+		}
+	end
+
+	if type(oil) == 'table' then
+		return vim.tbl_deep_extend('force', {
+			enable = true,
+			open = 'edit',
+		}, oil)
+	end
+
+	return {
+		enable = true,
+		open = 'edit',
+	}
+end
+
 --- Configure the plugin.
 ---@param opts? GlimpseConfig Configuration options (merged with defaults)
 function M.setup(opts)
 	config = vim.tbl_deep_extend('force', config, opts or {})
+	config.integrations.oil = normalize_oil_config(config.integrations.oil)
 	kind_cache = {}
 	kind_cache_revision = kind_cache_revision + 1
 	if M._should_use_inline() and config.inline.rerender_on_tab then
 		inline.setup_autocmds()
 	end
-	if config.integrations.oil then
+	if config.integrations.oil.enable ~= false then
 		require('glimpse.integrations.oil').setup()
 	end
 	local neotree = config.integrations.neotree

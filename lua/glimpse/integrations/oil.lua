@@ -1,10 +1,21 @@
 local M = {}
 
+function M._open_image(fpath, open_mode)
+	local oil = require('oil')
+	oil.close()
+	local command = open_mode == 'tabedit' and 'tabedit' or 'edit'
+	vim.cmd(command .. ' ' .. vim.fn.fnameescape(fpath))
+	vim.schedule(function()
+		pcall(vim.api.nvim_buf_set_name, 0, fpath)
+	end)
+end
+
 function M.setup()
 	local group = vim.api.nvim_create_augroup('GlimpseOil', { clear = true })
 	local util = require('glimpse.util')
 	local kitty = require('glimpse.kitty')
 	local keys = require('glimpse').get_config().keys
+	local oil_config = require('glimpse').get_config().integrations.oil
 
 	vim.api.nvim_create_autocmd('FileType', {
 		pattern = 'oil',
@@ -35,7 +46,7 @@ function M.setup()
 				end
 			end, { buffer = info.buf, silent = true, desc = 'Image/video preview' })
 
-			-- Open image in a new tab or video with an external player
+			-- Open image in the configured tab mode or video with an external player
 			vim.keymap.set('n', keys.open, function()
 				local oil = require('oil')
 				local entry = oil.get_cursor_entry()
@@ -59,11 +70,7 @@ function M.setup()
 					if util.is_image(fpath) then
 						local glimpse = require('glimpse')
 						if glimpse._should_use_inline() then
-							oil.close()
-							vim.cmd('edit ' .. vim.fn.fnameescape(fpath))
-							vim.schedule(function()
-								pcall(vim.api.nvim_buf_set_name, 0, fpath)
-							end)
+							M._open_image(fpath, oil_config.open)
 						else
 							local config = glimpse.get_config()
 							require('glimpse.strategy.pane').show(fpath, {

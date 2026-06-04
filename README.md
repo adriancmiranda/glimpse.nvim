@@ -114,7 +114,7 @@ xxd -h
     },
     keys = {
       preview = '<leader>p',  -- preview image/video side by side (Oil)
-      open = ';',             -- open image in tab or video with external player (Oil)
+      open = ';',             -- open image (configurable: current tab or new tab) (Oil)
       close = 'q',            -- close image buffer
     },
     debounce = {
@@ -147,7 +147,10 @@ xxd -h
       '.jar', '.war', '.apk',
     },
     integrations = {
-      oil = true,             -- keymaps in Oil
+      oil = {
+        enable = true,        -- keymaps in Oil
+        open = 'edit',        -- open images in the current tab or a new tab
+      },
       neotree = {             -- Neo-tree integration
         enable = false,       -- enable auto-preview in Neo-tree
         auto_preview = true,  -- preview on cursor move (set false to disable)
@@ -163,7 +166,7 @@ xxd -h
 | Key | Action |
 |-----|--------|
 | `<leader>p` | Preview image/video side by side (reuses window) |
-| `;` | Open image in tab or video with external player |
+| `;` | Open image (configurable: current tab or new tab) |
 | `q` | Close image buffer and residual empty window |
 
 When an image is opened, the current window follows that file's directory, so `Oil.nvim` opens in the same folder.
