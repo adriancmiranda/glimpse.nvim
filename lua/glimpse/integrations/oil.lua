@@ -1,5 +1,9 @@
 local M = {}
 
+local function _edit_file(command, fpath)
+	vim.cmd(command .. ' ' .. vim.fn.fnameescape(fpath))
+end
+
 function M._open_image(fpath, open_mode)
 	local oil = require('oil')
 	oil.close()
@@ -8,7 +12,7 @@ function M._open_image(fpath, open_mode)
 		return
 	end
 	local command = open_mode == 'tabedit' and 'tabedit' or 'edit'
-	vim.cmd(command .. ' ' .. vim.fn.fnameescape(fpath))
+	_edit_file(command, fpath)
 	vim.schedule(function()
 		pcall(vim.api.nvim_buf_set_name, 0, fpath)
 	end)
@@ -35,7 +39,7 @@ function M.setup()
 				if not dir then
 					return
 				end
-				local fpath = dir .. entry.name
+				local fpath = vim.fs.joinpath(dir, entry.name)
 				if util.is_video(fpath) then
 					local thumbnail = require('glimpse.thumbnail')
 					thumbnail.extract_async(fpath, function(target)
@@ -59,7 +63,7 @@ function M.setup()
 					if not dir then
 						return
 					end
-					local fpath = dir .. entry.name
+					local fpath = vim.fs.joinpath(dir, entry.name)
 					if util.is_video(fpath) then
 						local config = require('glimpse').get_config()
 						if config.video_open then
@@ -112,7 +116,7 @@ function M.setup()
 						if not dir then
 							return
 						end
-						local fpath = dir .. entry.name
+						local fpath = vim.fs.joinpath(dir, entry.name)
 						if util.is_image(fpath) then
 							local cols = math.floor(vim.api.nvim_win_get_width(0) / 2)
 							local rows = vim.api.nvim_win_get_height(0)

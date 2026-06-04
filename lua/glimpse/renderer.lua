@@ -73,7 +73,7 @@ end
 --- Render an image in the buffer.
 --- @param buf number
 --- @param filepath string
---- @param opts? { listed?: boolean }
+--- @param opts? { listed?: boolean, bufhidden?: string }
 --- @param on_done? fun()
 --- @return ImagePlacement
 function M.render(buf, filepath, opts, on_done)
@@ -97,12 +97,14 @@ function M.render(buf, filepath, opts, on_done)
 
 	pcall(vim.api.nvim_buf_set_name, buf, filepath)
 	vim.bo[buf].buftype = 'nofile'
-	if opts.listed then
-		vim.bo[buf].bufhidden = 'wipe'
-	end
 	vim.bo[buf].swapfile = false
 	vim.bo[buf].filetype = 'image'
 	vim.bo[buf].buflisted = opts.listed or false
+	if opts.bufhidden then
+		vim.bo[buf].bufhidden = opts.bufhidden
+	elseif opts.listed then
+		vim.bo[buf].bufhidden = 'wipe'
+	end
 
 	local win = opts.winid or vim.fn.bufwinid(buf)
 	if win == -1 then

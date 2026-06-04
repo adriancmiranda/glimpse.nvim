@@ -23,7 +23,7 @@ describe('oil integration', function()
 		local calls = {}
 		local dir = vim.fn.tempname() .. '/'
 		vim.fn.mkdir(dir, 'p')
-		local path = dir .. 'image.png'
+		local path = dir .. '++image.png'
 		vim.fn.writefile({ 'png' }, path)
 
 		package.loaded['oil'] = {
@@ -71,7 +71,7 @@ describe('oil integration', function()
 		local calls = {}
 		local dir = vim.fn.tempname() .. '/'
 		vim.fn.mkdir(dir, 'p')
-		local path = dir .. 'image.png'
+		local path = dir .. '++image.png'
 		vim.fn.writefile({ 'png' }, path)
 
 		package.loaded['oil'] = {
@@ -121,7 +121,7 @@ describe('oil integration', function()
 		local calls = {}
 		local dir = vim.fn.tempname() .. '/'
 		vim.fn.mkdir(dir, 'p')
-		local path = dir .. 'image.png'
+		local path = dir .. '++image.png'
 		vim.fn.writefile({ 'png' }, path)
 
 		package.loaded['oil'] = {

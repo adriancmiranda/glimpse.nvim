@@ -92,6 +92,22 @@ local function _show_lfs_warning(bufnr, filepath)
 	_set_text_preview(bufnr, lines, nil, filetype)
 end
 
+local function _attach_preview_cleanup(bufnr)
+	if not vim.api.nvim_buf_is_valid(bufnr) or vim.b[bufnr]._glimpse_telescope_cleanup_attached then
+		return
+	end
+
+	vim.b[bufnr]._glimpse_telescope_cleanup_attached = true
+	vim.api.nvim_create_autocmd('BufWipeout', {
+		buffer = bufnr,
+		once = true,
+		callback = function()
+			_request_ids[bufnr] = nil
+			pcall(require('glimpse.renderer').close, bufnr)
+		end,
+	})
+end
+
 local function _render_preview(filepath, bufnr, opts, request_id)
 	local glimpse = require('glimpse')
 	local kind = glimpse.get_preview_kind(filepath)
@@ -107,14 +123,22 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 			_show_lfs_warning(bufnr, filepath)
 			return
 		end
-		require('glimpse.renderer').render(bufnr, filepath, { winid = win })
+		_attach_preview_cleanup(bufnr)
+		require('glimpse.renderer').render(bufnr, filepath, {
+			winid = win,
+			bufhidden = 'wipe',
+		})
 		return
 	end
 
 	if kind == 'video' then
 		require('glimpse.thumbnail').extract_async(filepath, function(thumb)
 			if thumb and vim.api.nvim_buf_is_valid(bufnr) and _request_ids[bufnr] == request_id then
-				require('glimpse.renderer').render(bufnr, thumb, { winid = win })
+				_attach_preview_cleanup(bufnr)
+				require('glimpse.renderer').render(bufnr, thumb, {
+					winid = win,
+					bufhidden = 'wipe',
+				})
 			end
 		end)
 		return
