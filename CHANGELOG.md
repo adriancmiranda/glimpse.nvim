@@ -20,6 +20,7 @@
 - *(inline)* Avoid hit-enter on close
 - *(telescope)* Keep preview buffers reusable
 - *(glimpse)* Harden image buffer lifecycle
+- *(glimpse)* Remove lfs interception
 
 ### 🚜 Refactor
 
