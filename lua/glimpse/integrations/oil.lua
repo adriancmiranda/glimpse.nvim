@@ -13,8 +13,11 @@ function M._open_image(fpath, open_mode)
 	end
 	local command = open_mode == 'tabedit' and 'tabedit' or 'edit'
 	_edit_file(command, fpath)
+	local buf = vim.api.nvim_get_current_buf()
 	vim.schedule(function()
-		pcall(vim.api.nvim_buf_set_name, 0, fpath)
+		if vim.api.nvim_buf_is_valid(buf) then
+			pcall(vim.api.nvim_buf_set_name, buf, fpath)
+		end
 	end)
 end
 

@@ -28,6 +28,82 @@ describe('public api', function()
 		vim.loop.fs_unlink(pointer)
 	end)
 
+	it('treats missing git lfs pointer files as non-pointers', function()
+		local missing = vim.fn.tempname() .. '.jpg'
+
+		assert.is_false(glimpse.is_git_lfs_pointer(missing))
+	end)
+
+	it('renders images that were already open before setup', function()
+		local saved = {}
+		for _, name in ipairs({
+			'glimpse',
+			'glimpse.renderer',
+			'glimpse.kitty',
+			'glimpse.strategy.inline',
+		}) do
+			saved[name] = package.loaded[name]
+		end
+
+		local root = vim.fn.tempname()
+		vim.fn.mkdir(root, 'p')
+		local filepath = root .. '/startup.png'
+		vim.fn.writefile({ 'x' }, filepath)
+
+		local original_buf = vim.api.nvim_get_current_buf()
+		local original_swapfile = vim.o.swapfile
+		vim.o.swapfile = false
+		vim.cmd('edit ' .. vim.fn.fnameescape(filepath))
+
+		local buf = vim.api.nvim_get_current_buf()
+		assert.equals('', vim.bo[buf].filetype)
+
+		package.loaded['glimpse.kitty'] = {
+			transmit_async = function(_, _, callback)
+				callback(1, nil, 16, 16)
+				return nil
+			end,
+			delete = function()
+				return true
+			end,
+			prefetch = function()
+				return true
+			end,
+		}
+		package.loaded['glimpse'] = nil
+		package.loaded['glimpse.renderer'] = nil
+		package.loaded['glimpse.strategy.inline'] = nil
+
+		local reloaded = require('glimpse')
+		reloaded.setup({
+			strategy = 'inline',
+			integrations = {
+				oil = false,
+				neotree = false,
+				telescope = false,
+			},
+			cache_max_age_days = 0,
+		})
+
+		local ok = vim.wait(200, function()
+			return vim.bo[buf].filetype == 'image' and require('glimpse.renderer').has_placement(buf)
+		end, 10)
+		assert.is_true(ok)
+		assert.equals('image', vim.bo[buf].filetype)
+		assert.is_true(require('glimpse.renderer').has_placement(buf))
+
+		pcall(vim.api.nvim_set_current_buf, original_buf)
+		if vim.api.nvim_buf_is_valid(buf) then
+			pcall(vim.api.nvim_buf_delete, buf, { force = true })
+		end
+		vim.o.swapfile = original_swapfile
+		vim.loop.fs_unlink(filepath)
+
+		for name, value in pairs(saved) do
+			package.loaded[name] = value
+		end
+	end)
+
 	it('exposes terminal capability helpers', function()
 		assert.is_boolean(glimpse.supports_inline())
 		assert.is_boolean(glimpse.in_tmux())

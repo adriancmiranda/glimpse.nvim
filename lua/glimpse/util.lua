@@ -21,6 +21,10 @@ end
 --- @param filepath string
 --- @return boolean
 function M.parse_git_lfs_pointer(filepath)
+	if vim.uv.fs_stat(filepath) == nil then
+		return nil
+	end
+
 	local content = vim.fn.readfile(filepath, '', 3)
 	if not content or #content < 3 then
 		return nil

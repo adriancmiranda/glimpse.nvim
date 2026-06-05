@@ -6,6 +6,37 @@ local dir = require('glimpse.dir')
 
 local M = {}
 
+local function _render_existing_buffer(buf, follow_dir)
+	local util = require('glimpse.util')
+	if not vim.api.nvim_buf_is_valid(buf) or renderer.has_placement(buf) then
+		return
+	end
+
+	local filepath = vim.api.nvim_buf_get_name(buf)
+	if filepath == '' or not util.is_image(filepath) then
+		return
+	end
+
+	if vim.uv.fs_stat(filepath) == nil then
+		return
+	end
+
+	if util.is_git_lfs_pointer(filepath) then
+		return
+	end
+
+	if follow_dir ~= false then
+		dir.follow(filepath)
+	end
+	renderer.render(buf, filepath, { listed = true })
+end
+
+local function _render_existing_buffers()
+	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+		_render_existing_buffer(buf, false)
+	end
+end
+
 --- Show an image in a vsplit, reusing an existing window.
 --- @param filepath string
 function M.preview(filepath)
@@ -62,11 +93,7 @@ function M.setup_autocmds()
 		callback = function(info)
 			local filepath = vim.api.nvim_buf_get_name(info.buf)
 			if util.is_image(filepath) then
-				if util.is_git_lfs_pointer(filepath) then
-					return
-				end
-				dir.follow(filepath)
-				renderer.render(info.buf, filepath, { listed = true })
+				_render_existing_buffer(info.buf)
 			elseif util.is_font(filepath) then
 				require('glimpse.previewer.font').show(filepath)
 			elseif util.is_archive(filepath) then
@@ -141,6 +168,8 @@ function M.setup_autocmds()
 			end, require('glimpse').get_config().debounce.resize)
 		end,
 	})
+
+	vim.schedule(_render_existing_buffers)
 end
 
 return M
