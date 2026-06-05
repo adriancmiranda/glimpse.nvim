@@ -63,16 +63,20 @@ function M.show(filepath)
 	renderer.render(buf, filepath)
 end
 
---- Close and clean up the image buffer.
+--- Close and clean up the image placement.
 --- @param buf number
-function M.close(buf)
+--- @param delete_buf? boolean
+function M.close(buf, delete_buf)
 	renderer.close(buf)
-	if not vim.api.nvim_buf_is_valid(buf) then
-		return
-	end
-	if vim.api.nvim_get_current_buf() == buf then
-		local new_buf = vim.api.nvim_create_buf(true, false)
-		vim.api.nvim_set_current_buf(new_buf)
+	if delete_buf and vim.api.nvim_buf_is_valid(buf) then
+		if vim.api.nvim_get_current_buf() == buf then
+			local scratch = vim.api.nvim_create_buf(false, true)
+			vim.api.nvim_set_current_buf(scratch)
+		end
+
+		if #vim.fn.win_findbuf(buf) == 0 then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
 	end
 end
 
@@ -107,7 +111,7 @@ function M.setup_autocmds()
 		callback = function(info)
 			vim.keymap.set('n', require('glimpse').get_config().keys.close, function()
 				local wins = vim.api.nvim_list_wins()
-				M.close(info.buf)
+				M.close(info.buf, true)
 				if #wins > 1 then
 					local cur_name = vim.api.nvim_buf_get_name(0)
 					if cur_name == '' and not vim.bo.modified then

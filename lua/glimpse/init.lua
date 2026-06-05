@@ -377,7 +377,7 @@ end
 function M.close()
 	local buf = vim.api.nvim_get_current_buf()
 	if vim.bo[buf].filetype == 'image' then
-		inline.close(buf)
+		inline.close(buf, true)
 	end
 end
 
