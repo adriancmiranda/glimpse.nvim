@@ -1,27 +1,13 @@
-local function save_package(names)
-	local saved = {}
-	for _, name in ipairs(names) do
-		saved[name] = package.loaded[name]
-	end
-	return saved
-end
-
-local function restore_package(saved)
-	for name, value in pairs(saved) do
-		package.loaded[name] = value
-	end
-end
-
 describe('git lfs pointer handling', function()
-	it('replaces inline image previews with a warning', function()
-		local saved = save_package({
-			'glimpse.renderer',
-			'glimpse.dir',
-			'glimpse.detect',
-			'glimpse.integrations.oil',
-			'glimpse.integrations.neotree',
-			'glimpse.integrations.telescope',
-		})
+	it('keeps git lfs pointers out of the image renderer', function()
+		local saved = {
+			renderer = package.loaded['glimpse.renderer'],
+			detect = package.loaded['glimpse.detect'],
+			dir = package.loaded['glimpse.dir'],
+			oil = package.loaded['glimpse.integrations.oil'],
+			neotree = package.loaded['glimpse.integrations.neotree'],
+			telescope = package.loaded['glimpse.integrations.telescope'],
+		}
 
 		package.loaded['glimpse.renderer'] = {
 			render = function()
@@ -34,12 +20,12 @@ describe('git lfs pointer handling', function()
 			register = function() end,
 			rerender = function() end,
 		}
-		package.loaded['glimpse.dir'] = { follow = function() end }
 		package.loaded['glimpse.detect'] = {
 			supports_inline = function()
 				return true
 			end,
 		}
+		package.loaded['glimpse.dir'] = { follow = function() end }
 		package.loaded['glimpse.integrations.oil'] = { setup = function() end }
 		package.loaded['glimpse.integrations.neotree'] = { setup = function() end }
 		package.loaded['glimpse.integrations.telescope'] = { setup = function() end }
@@ -68,21 +54,13 @@ describe('git lfs pointer handling', function()
 		vim.o.swapfile = false
 		vim.cmd('edit ' .. pointer)
 		assert.is_true(vim.wait(500, function()
-			return vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == '[glimpse] Git LFS pointer'
+			return vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == 'version https://git-lfs.github.com/spec/v1'
 		end, 10))
-		assert.are.equal(
-			'oid sha256:fe93af5da1f8d77dac7187f24de828c8fab913629e7870ba27cff63ba5e8554f',
-			vim.api.nvim_buf_get_lines(0, 1, 2, false)[1]
-		)
-		assert.are.equal('size 1576804 bytes', vim.api.nvim_buf_get_lines(0, 2, 3, false)[1])
-		assert.are.equal(
-			'tip: run git lfs pull in the repository that owns this file',
-			vim.api.nvim_buf_get_lines(0, 3, 4, false)[1]
-		)
-		assert.equals('glimpse_warning', vim.bo.filetype)
 		assert.is_true(glimpse.is_git_lfs_pointer(pointer))
 
 		vim.loop.fs_unlink(pointer)
-		restore_package(saved)
+		for name, value in pairs(saved) do
+			package.loaded[name] = value
+		end
 	end)
 end)

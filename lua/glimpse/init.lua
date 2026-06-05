@@ -328,7 +328,6 @@ end
 ---@param filepath string Absolute file path
 function M.show(filepath)
 	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
-		vim.notify('[glimpse] Git LFS pointer detected: ' .. filepath, vim.log.levels.WARN)
 		return
 	end
 
@@ -352,7 +351,6 @@ end
 ---@param filepath string Absolute file path
 function M.preview(filepath)
 	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
-		vim.notify('[glimpse] Git LFS pointer detected: ' .. filepath, vim.log.levels.WARN)
 		return
 	end
 
