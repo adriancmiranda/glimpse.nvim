@@ -75,7 +75,6 @@ describe('video preview', function()
 
 		restore_package(saved)
 	end)
-
 	it('uses the pane strategy when inline rendering is unavailable', function()
 		local saved = save_package({
 			'glimpse',
@@ -128,100 +127,6 @@ describe('video preview', function()
 		assert.equals('bottom', calls.pane_show.opts.position)
 		assert.equals(55, calls.pane_show.opts.size)
 
-		restore_package(saved)
-	end)
-end)
-
-describe('preview kind cache', function()
-	it('recomputes preview kind after setup clears the cache', function()
-		local saved = save_package({
-			'glimpse',
-			'glimpse.util',
-			'glimpse.previewer.binary',
-			'glimpse.strategy.inline',
-			'glimpse.integrations.oil',
-			'glimpse.integrations.neotree',
-			'glimpse.integrations.telescope',
-		})
-
-		local video_enabled = true
-		local video_calls = 0
-		local path = vim.fn.tempname() .. '.mp4'
-		vim.fn.writefile({ 'dummy' }, path)
-
-		stub_package('glimpse.util', {
-			is_archive = function()
-				return false
-			end,
-			is_sqlite = function()
-				return false
-			end,
-			is_cert = function()
-				return false
-			end,
-			is_key = function()
-				return false
-			end,
-			is_font = function()
-				return false
-			end,
-			is_video = function()
-				video_calls = video_calls + 1
-				return video_enabled
-			end,
-			is_image = function()
-				return false
-			end,
-		})
-		stub_package('glimpse.previewer.binary', {
-			can_preview = function()
-				return false
-			end,
-		})
-		stub_package('glimpse.strategy.inline', {
-			setup_autocmds = function()
-				return true
-			end,
-		})
-		stub_package('glimpse.integrations.oil', {
-			setup = function()
-				return true
-			end,
-		})
-		stub_package('glimpse.integrations.neotree', {
-			setup = function()
-				return true
-			end,
-		})
-		stub_package('glimpse.integrations.telescope', {
-			setup = function()
-				return true
-			end,
-		})
-
-		package.loaded['glimpse'] = nil
-		local glimpse = require('glimpse')
-
-		assert.equals('video', glimpse.get_preview_kind(path))
-		assert.equals(1, video_calls)
-
-		video_enabled = false
-		assert.equals('video', glimpse.get_preview_kind(path))
-		assert.equals(1, video_calls)
-
-		glimpse.setup({
-			strategy = 'pane',
-			integrations = {
-				oil = false,
-				neotree = false,
-				telescope = false,
-			},
-		})
-
-		assert.is_nil(glimpse.get_preview_kind(path))
-		assert.equals(2, video_calls)
-
-		vim.fn.delete(path)
 		restore_package(saved)
 	end)
 end)

@@ -116,7 +116,10 @@ describe('telescope integration', function()
 		})
 
 		local buf = vim.api.nvim_create_buf(false, true)
+		local original_win = vim.api.nvim_get_current_win()
+		vim.cmd('vsplit')
 		local win = vim.api.nvim_get_current_win()
+		vim.api.nvim_win_set_buf(win, buf)
 		local render_calls = {}
 		local close_calls = {}
 
@@ -146,9 +149,6 @@ describe('telescope integration', function()
 				vim.api.nvim_buf_set_lines(target_buf, 0, -1, false, { 'rendered:' .. filepath })
 				vim.bo[target_buf].modifiable = false
 				vim.bo[target_buf].filetype = 'image'
-				if opts and opts.bufhidden then
-					vim.bo[target_buf].bufhidden = opts.bufhidden
-				end
 			end,
 			close = function(target_buf)
 				close_calls[#close_calls + 1] = target_buf
@@ -174,8 +174,8 @@ describe('telescope integration', function()
 			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'rendered:/tmp/example.png'
 		end))
 		assert.equals('image', vim.bo[buf].filetype)
-		assert.equals('wipe', vim.bo[buf].bufhidden)
-		assert.equals('wipe', render_calls[1].opts.bufhidden)
+		assert.equals('hide', vim.bo[buf].bufhidden)
+		assert.is_nil(render_calls[1].opts.bufhidden)
 
 		stub_package('glimpse', {
 			get_preview_kind = function()
@@ -190,14 +190,19 @@ describe('telescope integration', function()
 			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'rendered:/tmp/thumb.png'
 		end))
 		assert.equals('image', vim.bo[buf].filetype)
-		assert.equals('wipe', vim.bo[buf].bufhidden)
-		assert.equals('wipe', render_calls[2].opts.bufhidden)
+		assert.equals('hide', vim.bo[buf].bufhidden)
+		assert.is_nil(render_calls[2].opts.bufhidden)
+
+		vim.api.nvim_win_close(win, true)
+		assert.equals(1, #close_calls)
+		assert.equals(buf, close_calls[1])
 
 		if vim.api.nvim_buf_is_valid(buf) then
 			vim.api.nvim_buf_delete(buf, { force = true })
 		end
-		assert.equals(1, #close_calls)
-		assert.equals(buf, close_calls[1])
+		if vim.api.nvim_win_is_valid(original_win) then
+			vim.api.nvim_set_current_win(original_win)
+		end
 		restore_package(saved)
 	end)
 

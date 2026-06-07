@@ -4,6 +4,7 @@ local M = {}
 
 local _timer = nil
 local _request_ids = {}
+local _cleanup_windows = {}
 local _config = {}
 
 local function _as_list(value)
@@ -35,10 +36,32 @@ local function _kind_enabled(kind)
 	return _config[kind] ~= false
 end
 
+local function _normalize_lines(lines)
+	local normalized = {}
+	for _, line in ipairs(lines or {}) do
+		if type(line) ~= 'string' then
+			line = tostring(line)
+		end
+		if line == '' then
+			table.insert(normalized, '')
+		else
+			for chunk in line:gmatch('[^\n]+') do
+				table.insert(normalized, chunk)
+			end
+			if line:sub(-1) == '\n' then
+				table.insert(normalized, '')
+			end
+		end
+	end
+	return normalized
+end
+
 local function _set_text_preview(bufnr, lines, highlights, filetype)
 	if not vim.api.nvim_buf_is_valid(bufnr) then
 		return
 	end
+
+	lines = _normalize_lines(lines)
 
 	vim.bo[bufnr].modifiable = true
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
@@ -67,16 +90,17 @@ local function _set_text_preview(bufnr, lines, highlights, filetype)
 	end
 end
 
-local function _attach_preview_cleanup(bufnr)
-	if not vim.api.nvim_buf_is_valid(bufnr) or vim.b[bufnr]._glimpse_telescope_cleanup_attached then
+local function _attach_preview_cleanup(winid, bufnr)
+	if not vim.api.nvim_win_is_valid(winid) or not vim.api.nvim_buf_is_valid(bufnr) or _cleanup_windows[winid] then
 		return
 	end
 
-	vim.b[bufnr]._glimpse_telescope_cleanup_attached = true
-	vim.api.nvim_create_autocmd('BufWipeout', {
-		buffer = bufnr,
+	_cleanup_windows[winid] = bufnr
+	vim.api.nvim_create_autocmd('WinClosed', {
+		pattern = tostring(winid),
 		once = true,
 		callback = function()
+			_cleanup_windows[winid] = nil
 			_request_ids[bufnr] = nil
 			pcall(require('glimpse.renderer').close, bufnr)
 		end,
@@ -93,10 +117,10 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 	end
 
 	if kind == 'image' then
-		_attach_preview_cleanup(bufnr)
+		_attach_preview_cleanup(win, bufnr)
+		vim.bo[bufnr].bufhidden = 'hide'
 		require('glimpse.renderer').render(bufnr, filepath, {
 			winid = win,
-			bufhidden = 'wipe',
 		})
 		return
 	end
@@ -104,10 +128,10 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 	if kind == 'video' then
 		require('glimpse.thumbnail').extract_async(filepath, function(thumb)
 			if thumb and vim.api.nvim_buf_is_valid(bufnr) and _request_ids[bufnr] == request_id then
-				_attach_preview_cleanup(bufnr)
+				_attach_preview_cleanup(win, bufnr)
+				vim.bo[bufnr].bufhidden = 'hide'
 				require('glimpse.renderer').render(bufnr, thumb, {
 					winid = win,
-					bufhidden = 'wipe',
 				})
 			end
 		end)
@@ -187,7 +211,16 @@ function M.previewer(opts)
 		title = opts.title or 'File Preview',
 
 		get_buffer_by_name = function(_, entry)
-			return from_entry.path(entry, false, false)
+			local filepath = from_entry.path(entry, false, false)
+			if not filepath or filepath == '' then
+				return nil
+			end
+			local glimpse = require('glimpse')
+			local kind = glimpse.get_preview_kind(filepath)
+			if kind == 'image' or kind == 'video' then
+				return nil
+			end
+			return filepath
 		end,
 
 		define_preview = function(self, entry)
