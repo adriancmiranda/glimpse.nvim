@@ -339,6 +339,7 @@ local config = {
 			open = 'edit',
 			follow_cwd = true,
 		},
+		lir = false,
 		neotree = {
 			enable = false,
 			auto_preview = true,
@@ -450,6 +451,9 @@ function M.setup(opts)
 		vim.defer_fn(function()
 			require('glimpse.cache').cleanup(config.cache.dir, config.cache.max_age_days)
 		end, 0)
+	end
+	if config.integrations.lir then
+		require('glimpse.integrations.lir').setup()
 	end
 end
 

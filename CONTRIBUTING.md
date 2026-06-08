@@ -80,6 +80,7 @@ lua/glimpse/
 │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
 └── integrations/
     ├── oil.lua           -- Oil.nvim integration (preview, open, prefetch)
+    ├── lir.lua           -- lir.nvim integration (preview, open, prefetch)
     ├── neotree.lua       -- Neo-tree integration (auto-preview, cleanup)
     └── telescope.lua     -- Telescope integration (scoped picker preview)
 ```
