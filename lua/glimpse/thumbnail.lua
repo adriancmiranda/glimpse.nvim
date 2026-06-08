@@ -77,7 +77,7 @@ function M.extract_async(filepath, callback, opts)
 
 	vim.fn.mkdir(cache_dir, 'p')
 
-	vim.fn.jobstart({
+	local job_id = vim.fn.jobstart({
 		'ffmpeg',
 		'-y',
 		'-i',
@@ -97,6 +97,9 @@ function M.extract_async(filepath, callback, opts)
 			end
 		end,
 	})
+	if job_id <= 0 then
+		callback(nil)
+	end
 end
 
 return M

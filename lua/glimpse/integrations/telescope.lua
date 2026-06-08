@@ -178,6 +178,7 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 		if not vim.api.nvim_win_is_valid(win) or not vim.api.nvim_buf_is_valid(bufnr) then
 			return
 		end
+		local tabnr = vim.api.nvim_win_get_tabpage(win)
 		_attach_preview_cleanup(win, bufnr)
 		require('glimpse.thumbnail').extract_async(filepath, function(thumb)
 			if
@@ -190,7 +191,11 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 					bufname = opts.bufname,
 					winid = win,
 				})
-				if _should_follow_cwd() then
+				if
+					_should_follow_cwd()
+					and vim.api.nvim_tabpage_is_valid(tabnr)
+					and vim.api.nvim_get_current_tabpage() == tabnr
+				then
 					dir.follow(filepath)
 				end
 			end
