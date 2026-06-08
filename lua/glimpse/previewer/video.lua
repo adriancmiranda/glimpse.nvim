@@ -3,15 +3,17 @@ local M = {}
 
 local thumbnail = require('glimpse.thumbnail')
 
-local _generation = 0
+local _tokens = {}
 
 local function _show_thumbnail(filepath, mode)
-	_generation = _generation + 1
-	local gen = _generation
+	local winid = vim.api.nvim_get_current_win()
+	local token = {}
+	_tokens[winid] = token
 	thumbnail.extract_async(filepath, function(thumb)
-		if gen ~= _generation then
+		if _tokens[winid] ~= token then
 			return
 		end
+		_tokens[winid] = nil
 		if not thumb then
 			vim.notify('[glimpse] failed to extract video thumbnail', vim.log.levels.WARN)
 			return
@@ -19,6 +21,11 @@ local function _show_thumbnail(filepath, mode)
 
 		local glimpse = require('glimpse')
 		local config = glimpse.get_config()
+		local current_win = vim.api.nvim_get_current_win()
+		local restore_win = current_win ~= winid and vim.api.nvim_win_is_valid(winid)
+		if restore_win then
+			vim.api.nvim_set_current_win(winid)
+		end
 		if glimpse._should_use_inline() then
 			if mode == 'preview' then
 				require('glimpse.strategy.inline').preview(thumb)
@@ -30,6 +37,9 @@ local function _show_thumbnail(filepath, mode)
 				position = config.pane_position,
 				size = config.pane_size,
 			})
+		end
+		if restore_win and vim.api.nvim_win_is_valid(current_win) then
+			vim.api.nvim_set_current_win(current_win)
 		end
 	end)
 end

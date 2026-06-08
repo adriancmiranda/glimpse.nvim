@@ -92,30 +92,25 @@ local inline = require('glimpse.strategy.inline')
 ---@class Glimpse
 local M = {}
 
-local function normalize_oil_config(oil)
-	if oil == false then
+local function _normalize_integration_config(value, defaults)
+	if value == false then
 		return { enable = false, follow_cwd = false }
 	end
-	if oil == true or oil == nil then
-		return { enable = true, follow_cwd = true }
+	if value == true or value == nil then
+		return vim.tbl_deep_extend('force', { enable = true }, defaults)
 	end
-	if type(oil) == 'table' then
-		return vim.tbl_deep_extend('force', { enable = true, follow_cwd = true }, oil)
+	if type(value) == 'table' then
+		return vim.tbl_deep_extend('force', { enable = true }, defaults, value)
 	end
-	return { enable = true, follow_cwd = true }
+	return vim.tbl_deep_extend('force', { enable = true }, defaults)
+end
+
+local function normalize_oil_config(oil)
+	return _normalize_integration_config(oil, { follow_cwd = true })
 end
 
 local function normalize_telescope_config(telescope)
-	if telescope == false then
-		return { enable = false, follow_cwd = false }
-	end
-	if telescope == true or telescope == nil then
-		return { enable = true, follow_cwd = false }
-	end
-	if type(telescope) == 'table' then
-		return vim.tbl_deep_extend('force', { enable = true, follow_cwd = false }, telescope)
-	end
-	return { enable = true, follow_cwd = false }
+	return _normalize_integration_config(telescope, { follow_cwd = false })
 end
 
 ---@type GlimpseConfig

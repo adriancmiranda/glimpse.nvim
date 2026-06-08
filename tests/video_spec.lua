@@ -190,4 +190,84 @@ describe('video preview', function()
 
 		restore_package(saved)
 	end)
+
+	it('keeps independent video previews isolated by window', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.thumbnail',
+			'glimpse.strategy.inline',
+			'glimpse.strategy.pane',
+			'glimpse.previewer.video',
+		})
+
+		local calls = {}
+		local current_win = 11
+		stub_package('glimpse', {
+			_should_use_inline = function()
+				return true
+			end,
+			get_config = function()
+				return {
+					pane_position = 'right',
+					pane_size = 40,
+				}
+			end,
+		})
+		stub_package('glimpse.thumbnail', {
+			extract_async = function(filepath, callback)
+				calls.extract = calls.extract or {}
+				calls.extract[#calls.extract + 1] = { filepath = filepath, callback = callback, win = current_win }
+			end,
+		})
+		stub_package('glimpse.strategy.inline', {
+			show = function(filepath)
+				calls.inline_show = calls.inline_show or {}
+				calls.inline_show[#calls.inline_show + 1] = { filepath = filepath, win = current_win }
+			end,
+			preview = function(filepath)
+				calls.inline_preview = calls.inline_preview or {}
+				calls.inline_preview[#calls.inline_preview + 1] = { filepath = filepath, win = current_win }
+			end,
+		})
+		stub_package('glimpse.strategy.pane', {
+			show = function(filepath, opts)
+				calls.pane_show = calls.pane_show or {}
+				calls.pane_show[#calls.pane_show + 1] = { filepath = filepath, opts = opts, win = current_win }
+			end,
+		})
+
+		local original_get_current_win = vim.api.nvim_get_current_win
+		local original_set_current_win = vim.api.nvim_set_current_win
+		local original_win_is_valid = vim.api.nvim_win_is_valid
+
+		vim.api.nvim_get_current_win = function()
+			return current_win
+		end
+		vim.api.nvim_set_current_win = function(win)
+			current_win = win
+		end
+		vim.api.nvim_win_is_valid = function(win)
+			return win == 11 or win == 22
+		end
+
+		local video = require('glimpse.previewer.video')
+		current_win = 11
+		video.show('/tmp/example.mp4')
+		current_win = 22
+		video.show('/tmp/example.mp4')
+
+		calls.extract[1].callback('/tmp/thumb-1.png')
+		calls.extract[2].callback('/tmp/thumb-2.png')
+
+		assert.equals(2, #calls.inline_show)
+		assert.equals('/tmp/thumb-1.png', calls.inline_show[1].filepath)
+		assert.equals(11, calls.inline_show[1].win)
+		assert.equals('/tmp/thumb-2.png', calls.inline_show[2].filepath)
+		assert.equals(22, calls.inline_show[2].win)
+
+		vim.api.nvim_get_current_win = original_get_current_win
+		vim.api.nvim_set_current_win = original_set_current_win
+		vim.api.nvim_win_is_valid = original_win_is_valid
+		restore_package(saved)
+	end)
 end)

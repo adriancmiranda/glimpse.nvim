@@ -164,7 +164,6 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 
 	if kind == 'image' then
 		_attach_preview_cleanup(win, bufnr)
-		vim.bo[bufnr].bufhidden = 'hide'
 		require('glimpse.renderer').render(bufnr, filepath, {
 			bufname = opts.bufname,
 			winid = win,
@@ -180,7 +179,6 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 			return
 		end
 		_attach_preview_cleanup(win, bufnr)
-		vim.bo[bufnr].bufhidden = 'hide'
 		require('glimpse.thumbnail').extract_async(filepath, function(thumb)
 			if
 				thumb
@@ -333,8 +331,8 @@ function M.setup(opts)
 		_config = { follow_cwd = false }
 		return
 	end
-	_config = vim.tbl_deep_extend('force', { follow_cwd = false }, vim.deepcopy(opts))
 	opts.pickers = opts.pickers or { 'find_files' }
+	_config = vim.tbl_deep_extend('force', { follow_cwd = false }, opts)
 
 	if package.loaded['telescope.config'] then
 		_apply_to_pickers(opts)
