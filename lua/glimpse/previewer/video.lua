@@ -3,8 +3,15 @@ local M = {}
 
 local thumbnail = require('glimpse.thumbnail')
 
+local _generation = 0
+
 local function _show_thumbnail(filepath, mode)
+	_generation = _generation + 1
+	local gen = _generation
 	thumbnail.extract_async(filepath, function(thumb)
+		if gen ~= _generation then
+			return
+		end
 		if not thumb then
 			vim.notify('[glimpse] failed to extract video thumbnail', vim.log.levels.WARN)
 			return

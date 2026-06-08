@@ -5,8 +5,18 @@ MARKDOWNLINT_VERSION ?= 0.48.0
 .PHONY: test bench setup-hooks docs lint lint-fix lint-changelog changelog changelog-check
 
 test:
-	@env -u NVIM_LISTEN_ADDRESS PLENARY_PATH="$(PLENARY_PATH)" nvim --headless -u tests/minimal_init.lua \
-		-c "PlenaryBustedDirectory tests/ {minimal_init = 'tests/minimal_init.lua'}"
+	@tmpfile="$$(mktemp)"; \
+	trap 'rm -f "$$tmpfile"' EXIT; \
+	env -u NVIM_LISTEN_ADDRESS XDG_CACHE_HOME=/tmp XDG_STATE_HOME=/tmp PLENARY_PATH="$(PLENARY_PATH)" nvim --headless --noplugin -u tests/minimal_init.lua \
+		-c "PlenaryBustedDirectory tests/ {minimal_init = 'tests/minimal_init.lua', sequential = true}" >"$$tmpfile" 2>&1; \
+	status="$$?"; \
+	cat "$$tmpfile"; \
+	if [ "$$status" -ne 0 ]; then \
+		exit "$$status"; \
+	fi; \
+	if grep -Eq 'Failed :[[:space:]]+[1-9][0-9]*|Errors :[[:space:]]+[1-9][0-9]*' "$$tmpfile"; then \
+		exit 1; \
+	fi
 
 bench:
 	@env -u NVIM_LISTEN_ADDRESS nvim -l tests/bench.lua

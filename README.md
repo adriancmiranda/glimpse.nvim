@@ -114,7 +114,7 @@ xxd -h
     },
     keys = {
       preview = '<leader>p',  -- preview image/video side by side (Oil)
-      open = ';',             -- open image (configurable: current tab or new tab) (Oil)
+      open = ';',             -- open image (Oil)
       close = 'q',            -- close image buffer
     },
     debounce = {
@@ -149,13 +149,16 @@ xxd -h
     integrations = {
       oil = {
         enable = true,        -- keymaps in Oil
-        open = 'edit',        -- 'edit' | 'tabedit' | function(filepath)
+        follow_cwd = true,    -- keep Oil moving to the image directory
       },
       neotree = {             -- Neo-tree integration
         enable = false,       -- enable auto-preview in Neo-tree
         auto_preview = true,  -- preview on cursor move (set false to disable)
       },
-      telescope = true,       -- enables Glimpse previews in Telescope pickers
+      telescope = {
+        enable = true,        -- enables Glimpse previews in Telescope pickers
+        follow_cwd = false,   -- keep Telescope previews from changing cwd by default
+      },
     },
   },
 }
@@ -165,11 +168,11 @@ xxd -h
 
 | Key | Action |
 |-----|--------|
-| `<leader>p` | Preview image/video side by side (reuses window) |
-| `;` | Open image (configurable: current tab or new tab) |
+| `<leader>p` | Preview image/video side by side (reuses window, does not change `cwd`) |
+| `;` | Open image (may follow the image directory when `integrations.oil.follow_cwd = true`) |
 | `q` | Close image buffer and residual empty window |
 
-When an image is opened, the current window follows that file's directory, so `Oil.nvim` opens in the same folder.
+`integrations.oil.follow_cwd` only affects `;` in Oil. Preview with `<leader>p` and Telescope previews do not change `cwd`.
 
 ### Keymaps (Neo-tree)
 
@@ -242,6 +245,8 @@ require('telescope').setup({
 ```
 
 - **Images** are rendered inline via Kitty Graphics Protocol with a 100ms debounce
+- **Oil** keeps following the opened image directory in the active tab
+- **Telescope** previews images without changing `:pwd` by default
 - **Videos** extract a thumbnail via ffmpeg before rendering
 - **Archives, SQLite databases, fonts, keys, certificates, and binaries** use the matching Glimpse previewer inside the Telescope preview pane
 - **Other files** fall back to Telescope's default previewer

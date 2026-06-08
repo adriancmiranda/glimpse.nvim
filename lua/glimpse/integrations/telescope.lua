@@ -1,10 +1,14 @@
 --- Telescope integration for all Glimpse previews.
 
 local M = {}
+local dir = require('glimpse.dir')
 
-local _timer = nil
+local _timers = {}
 local _request_ids = {}
-local _config = {}
+local _cleanup_windows = {}
+local _cleanup_autocmds = {}
+local _media_buffer_refs = {}
+local _config = { follow_cwd = false }
 
 local function _as_list(value)
 	if value == nil or value == true then
@@ -35,10 +39,57 @@ local function _kind_enabled(kind)
 	return _config[kind] ~= false
 end
 
+local function _should_follow_cwd()
+	return _config.follow_cwd == true
+end
+
+local function _buffer_name_for_entry(kind, filepath)
+	local normalized = vim.uv.fs_realpath(filepath) or vim.fn.fnamemodify(filepath, ':p')
+	return string.format('glimpse://telescope/media/%s/%s', kind, vim.fn.sha256(normalized))
+end
+
+local function _release_media_buffer(bufnr)
+	local refs = _media_buffer_refs[bufnr]
+	if refs == nil then
+		return
+	end
+
+	refs = refs - 1
+	if refs <= 0 then
+		_media_buffer_refs[bufnr] = nil
+		_request_ids[bufnr] = nil
+		if _timers[bufnr] then
+			_timers[bufnr]:stop()
+			_timers[bufnr]:close()
+			_timers[bufnr] = nil
+		end
+		pcall(require('glimpse.renderer').close, bufnr)
+		return
+	end
+
+	_media_buffer_refs[bufnr] = refs
+end
+
+local function _normalize_lines(lines)
+	local normalized = {}
+	for _, line in ipairs(lines or {}) do
+		if type(line) ~= 'string' then
+			line = tostring(line)
+		end
+		local chunks = vim.split(line, '\n', { plain = true, trimempty = false })
+		for _, chunk in ipairs(chunks) do
+			table.insert(normalized, chunk)
+		end
+	end
+	return normalized
+end
+
 local function _set_text_preview(bufnr, lines, highlights, filetype)
 	if not vim.api.nvim_buf_is_valid(bufnr) then
 		return
 	end
+
+	lines = _normalize_lines(lines)
 
 	vim.bo[bufnr].modifiable = true
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
@@ -67,18 +118,37 @@ local function _set_text_preview(bufnr, lines, highlights, filetype)
 	end
 end
 
-local function _attach_preview_cleanup(bufnr)
-	if not vim.api.nvim_buf_is_valid(bufnr) or vim.b[bufnr]._glimpse_telescope_cleanup_attached then
+local function _attach_preview_cleanup(winid, bufnr)
+	if not vim.api.nvim_win_is_valid(winid) or not vim.api.nvim_buf_is_valid(bufnr) then
 		return
 	end
 
-	vim.b[bufnr]._glimpse_telescope_cleanup_attached = true
-	vim.api.nvim_create_autocmd('BufWipeout', {
-		buffer = bufnr,
+	local previous = _cleanup_windows[winid]
+	if previous == bufnr then
+		return
+	end
+
+	if previous and previous ~= bufnr then
+		_release_media_buffer(previous)
+	end
+
+	_cleanup_windows[winid] = bufnr
+	_media_buffer_refs[bufnr] = (_media_buffer_refs[bufnr] or 0) + 1
+
+	if _cleanup_autocmds[winid] then
+		return
+	end
+
+	_cleanup_autocmds[winid] = vim.api.nvim_create_autocmd('WinClosed', {
+		pattern = tostring(winid),
 		once = true,
 		callback = function()
-			_request_ids[bufnr] = nil
-			pcall(require('glimpse.renderer').close, bufnr)
+			local tracked_buf = _cleanup_windows[winid]
+			_cleanup_windows[winid] = nil
+			_cleanup_autocmds[winid] = nil
+			if tracked_buf then
+				_release_media_buffer(tracked_buf)
+			end
 		end,
 	})
 end
@@ -93,22 +163,38 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 	end
 
 	if kind == 'image' then
-		_attach_preview_cleanup(bufnr)
+		_attach_preview_cleanup(win, bufnr)
+		vim.bo[bufnr].bufhidden = 'hide'
 		require('glimpse.renderer').render(bufnr, filepath, {
+			bufname = opts.bufname,
 			winid = win,
-			bufhidden = 'wipe',
 		})
+		if _should_follow_cwd() then
+			dir.follow(filepath)
+		end
 		return
 	end
 
 	if kind == 'video' then
+		if not vim.api.nvim_win_is_valid(win) or not vim.api.nvim_buf_is_valid(bufnr) then
+			return
+		end
+		_attach_preview_cleanup(win, bufnr)
+		vim.bo[bufnr].bufhidden = 'hide'
 		require('glimpse.thumbnail').extract_async(filepath, function(thumb)
-			if thumb and vim.api.nvim_buf_is_valid(bufnr) and _request_ids[bufnr] == request_id then
-				_attach_preview_cleanup(bufnr)
+			if
+				thumb
+				and vim.api.nvim_win_is_valid(win)
+				and vim.api.nvim_buf_is_valid(bufnr)
+				and _request_ids[bufnr] == request_id
+			then
 				require('glimpse.renderer').render(bufnr, thumb, {
+					bufname = opts.bufname,
 					winid = win,
-					bufhidden = 'wipe',
 				})
+				if _should_follow_cwd() then
+					dir.follow(filepath)
+				end
 			end
 		end)
 		return
@@ -145,27 +231,27 @@ end
 function M.buffer_previewer_maker(filepath, bufnr, opts)
 	opts = opts or {}
 
-	if _timer then
-		_timer:stop()
-		_timer:close()
-		_timer = nil
+	if not _timers[bufnr] then
+		_timers[bufnr] = vim.uv.new_timer()
+		if not _timers[bufnr] then
+			return
+		end
+	else
+		_timers[bufnr]:stop()
 	end
 
 	local request_id = tostring(vim.uv.hrtime()) .. ':' .. tostring(bufnr)
 	_request_ids[bufnr] = request_id
 
-	_timer = vim.uv.new_timer()
-	if not _timer then
-		return
-	end
-
-	_timer:start(
+	_timers[bufnr]:start(
 		100,
 		0,
 		vim.schedule_wrap(function()
-			if _timer then
-				_timer:close()
-				_timer = nil
+			local t = _timers[bufnr]
+			if t then
+				t:stop()
+				t:close()
+				_timers[bufnr] = nil
 			end
 			if not vim.api.nvim_buf_is_valid(bufnr) or _request_ids[bufnr] ~= request_id then
 				return
@@ -187,7 +273,16 @@ function M.previewer(opts)
 		title = opts.title or 'File Preview',
 
 		get_buffer_by_name = function(_, entry)
-			return from_entry.path(entry, false, false)
+			local filepath = from_entry.path(entry, false, false)
+			if not filepath or filepath == '' then
+				return nil
+			end
+			local glimpse = require('glimpse')
+			local kind = glimpse.get_preview_kind(filepath)
+			if kind == 'image' or kind == 'video' then
+				return _buffer_name_for_entry(kind, filepath)
+			end
+			return filepath
 		end,
 
 		define_preview = function(self, entry)
@@ -228,17 +323,17 @@ end
 ---@param opts? boolean|GlimpseTelescopeConfig
 function M.setup(opts)
 	if opts == false then
-		_config = {}
+		_config = { follow_cwd = false }
 		return
 	end
 	if opts == true or opts == nil then
 		opts = {}
 	end
 	if opts.enable == false then
-		_config = {}
+		_config = { follow_cwd = false }
 		return
 	end
-	_config = vim.deepcopy(opts)
+	_config = vim.tbl_deep_extend('force', { follow_cwd = false }, vim.deepcopy(opts))
 	opts.pickers = opts.pickers or { 'find_files' }
 
 	if package.loaded['telescope.config'] then

@@ -51,6 +51,9 @@ describe('git lfs pointer handling', function()
 			cache_max_age_days = 0,
 		})
 
+		assert.is_false(glimpse.can_preview(pointer))
+		assert.is_nil(glimpse.get_preview_kind(pointer))
+
 		vim.o.swapfile = false
 		vim.cmd('edit ' .. pointer)
 		assert.is_true(vim.wait(500, function()

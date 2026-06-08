@@ -2,11 +2,10 @@
 --- Inline rendering via Kitty Graphics Protocol (custom implementation).
 
 local renderer = require('glimpse.renderer')
-local dir = require('glimpse.dir')
 
 local M = {}
 
-local function _render_existing_buffer(buf, follow_dir)
+local function _render_existing_buffer(buf)
 	local util = require('glimpse.util')
 	if not vim.api.nvim_buf_is_valid(buf) or renderer.has_placement(buf) then
 		return
@@ -25,15 +24,12 @@ local function _render_existing_buffer(buf, follow_dir)
 		return
 	end
 
-	if follow_dir ~= false then
-		dir.follow(filepath)
-	end
 	renderer.render(buf, filepath, { listed = true })
 end
 
 local function _render_existing_buffers()
 	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-		_render_existing_buffer(buf, false)
+		_render_existing_buffer(buf)
 	end
 end
 
@@ -41,13 +37,26 @@ end
 --- @param filepath string
 function M.preview(filepath)
 	local oil_win = vim.api.nvim_get_current_win()
+	local existing_buf = renderer.find_by_filepath(filepath)
+	local target_win = nil
+	local target_buf = nil
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
 		if win ~= oil_win and vim.bo[vim.api.nvim_win_get_buf(win)].filetype == 'image' then
 			local buf = vim.api.nvim_win_get_buf(win)
-			renderer.render(buf, filepath)
-			dir.follow(filepath)
-			return
+			if existing_buf == buf or target_win == nil then
+				target_win = win
+				target_buf = buf
+				if existing_buf == buf then
+					break
+				end
+			end
 		end
+	end
+	if target_win and target_buf then
+		vim.api.nvim_set_current_win(target_win)
+		renderer.render(target_buf, filepath)
+		vim.api.nvim_set_current_win(oil_win)
+		return
 	end
 	-- Create a vsplit with a new buffer
 	vim.cmd('vsplit')
@@ -55,7 +64,6 @@ function M.preview(filepath)
 	vim.api.nvim_win_set_buf(0, buf)
 	renderer.render(buf, filepath)
 	vim.api.nvim_set_current_win(oil_win)
-	dir.follow(filepath)
 end
 
 --- Show an image in the current buffer.
@@ -65,7 +73,7 @@ function M.show(filepath)
 	renderer.render(buf, filepath)
 end
 
---- Close and clean up the image placement.
+--- Close and clean up the image buffer.
 --- @param buf number
 --- @param delete_buf? boolean
 function M.close(buf, delete_buf)
@@ -93,7 +101,10 @@ function M.setup_autocmds()
 		callback = function(info)
 			local filepath = vim.api.nvim_buf_get_name(info.buf)
 			if util.is_image(filepath) then
-				_render_existing_buffer(info.buf)
+				if util.is_git_lfs_pointer(filepath) then
+					return
+				end
+				renderer.render(info.buf, filepath, { listed = true })
 			elseif util.is_font(filepath) then
 				require('glimpse.previewer.font').show(filepath)
 			elseif util.is_archive(filepath) then
@@ -112,7 +123,7 @@ function M.setup_autocmds()
 				if #wins > 1 then
 					local cur_name = vim.api.nvim_buf_get_name(0)
 					if cur_name == '' and not vim.bo.modified then
-						vim.api.nvim_win_close(0, true)
+						vim.cmd('quit')
 					end
 				end
 			end, { buffer = info.buf, silent = true })
