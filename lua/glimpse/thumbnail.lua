@@ -19,11 +19,11 @@ end
 --- Extract a video thumbnail using ffmpeg (synchronous).
 ---@param filepath string Absolute video path
 --- @param opts? { cache_dir?: string }
---- @return string|nil thumbnail_path Caminho do thumbnail ou nil se falhar
+--- @return string|nil thumbnail_path Thumbnail path or nil on failure
 function M.extract(filepath, opts)
 	opts = opts or {}
 	local config = require('glimpse').get_config()
-	local cache_dir = opts.cache_dir or config.cache_dir
+	local cache_dir = opts.cache_dir or config.cache.dir
 
 	local thumb_path, cached = resolve_thumb_path(filepath, cache_dir)
 	if not thumb_path then
@@ -63,7 +63,7 @@ end
 function M.extract_async(filepath, callback, opts)
 	opts = opts or {}
 	local config = require('glimpse').get_config()
-	local cache_dir = opts.cache_dir or config.cache_dir
+	local cache_dir = opts.cache_dir or config.cache.dir
 
 	local thumb_path, cached = resolve_thumb_path(filepath, cache_dir)
 	if not thumb_path then
@@ -77,7 +77,7 @@ function M.extract_async(filepath, callback, opts)
 
 	vim.fn.mkdir(cache_dir, 'p')
 
-	local job_id = vim.fn.jobstart({
+	vim.fn.jobstart({
 		'ffmpeg',
 		'-y',
 		'-i',
@@ -97,9 +97,6 @@ function M.extract_async(filepath, callback, opts)
 			end
 		end,
 	})
-	if job_id <= 0 then
-		callback(nil)
-	end
 end
 
 return M

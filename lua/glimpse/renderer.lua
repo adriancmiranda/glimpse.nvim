@@ -33,54 +33,6 @@ local placements = {}
 
 local request_counter = 0
 
-local function normalize_path(path)
-	return vim.uv.fs_realpath(path) or vim.fn.fnamemodify(path, ':p')
-end
-
-local function same_path(left, right)
-	if left == right then
-		return true
-	end
-	if left == nil or right == nil then
-		return false
-	end
-	return normalize_path(left) == normalize_path(right)
-end
-
-local function file_signature(path)
-	local stat = vim.uv.fs_stat(path)
-	if not stat then
-		return nil
-	end
-	return {
-		size = stat.size,
-		mtime_sec = stat.mtime.sec,
-		mtime_nsec = stat.mtime.nsec,
-		ctime_sec = stat.ctime and stat.ctime.sec or nil,
-		ctime_nsec = stat.ctime and stat.ctime.nsec or nil,
-		ino = stat.ino,
-	}
-end
-
-local function same_signature(left, right)
-	if left == nil or right == nil then
-		return false
-	end
-	return left.size == right.size
-		and left.mtime_sec == right.mtime_sec
-		and left.mtime_nsec == right.mtime_nsec
-		and left.ctime_sec == right.ctime_sec
-		and left.ctime_nsec == right.ctime_nsec
-		and left.ino == right.ino
-end
-
-local function window_signature(win)
-	if win == nil or win == -1 or not vim.api.nvim_win_is_valid(win) then
-		return nil, nil
-	end
-	return vim.api.nvim_win_get_width(win), vim.api.nvim_win_get_height(win)
-end
-
 --- Generate a placeholder grid as real lines in the buffer.
 --- @param buf number
 --- @param image_id number
@@ -121,33 +73,12 @@ end
 --- Render an image in the buffer.
 --- @param buf number
 --- @param filepath string
---- @param opts? { listed?: boolean }
+--- @param opts? { listed?: boolean, bufhidden?: string }
 --- @param on_done? fun()
 --- @return ImagePlacement
 function M.render(buf, filepath, opts, on_done)
 	opts = opts or {}
-	local existing = placements[buf]
-	local signature = file_signature(filepath)
-	local buffer_name = opts.bufname or filepath
-	local win = opts.winid or vim.fn.bufwinid(buf)
-	local cols, rows = window_signature(win)
-	if
-		existing
-		and same_path(existing.filepath, filepath)
-		and same_signature(existing.signature, signature)
-		and (cols == nil or rows == nil or (existing.win_cols == cols and existing.win_rows == rows))
-	then
-		pcall(vim.api.nvim_buf_set_name, buf, buffer_name)
-		vim.bo[buf].buflisted = opts.listed or false
-		if opts.listed then
-			vim.bo[buf].bufhidden = 'hide'
-		end
-		if on_done then
-			on_done()
-		end
-		return existing
-	end
-	if existing then
+	if placements[buf] then
 		M.close(buf)
 	end
 
@@ -157,25 +88,25 @@ function M.render(buf, filepath, opts, on_done)
 	local placement = {
 		buf = buf,
 		filepath = filepath,
-		signature = signature,
 		image_id = nil,
 		closed = false,
 		created_at = vim.uv.hrtime(),
 		request_id = req_id,
-		win_cols = cols,
-		win_rows = rows,
 	}
 	placements[buf] = placement
 
-	pcall(vim.api.nvim_buf_set_name, buf, buffer_name)
+	pcall(vim.api.nvim_buf_set_name, buf, filepath)
 	vim.bo[buf].buftype = 'nofile'
 	vim.bo[buf].swapfile = false
 	vim.bo[buf].filetype = 'image'
 	vim.bo[buf].buflisted = opts.listed or false
-	if opts.listed then
-		vim.bo[buf].bufhidden = 'hide'
+	if opts.bufhidden then
+		vim.bo[buf].bufhidden = opts.bufhidden
+	elseif opts.listed then
+		vim.bo[buf].bufhidden = 'wipe'
 	end
 
+	local win = opts.winid or vim.fn.bufwinid(buf)
 	if win == -1 then
 		return placement
 	end
@@ -190,11 +121,11 @@ function M.render(buf, filepath, opts, on_done)
 
 	-- Show loading indicator
 	vim.bo[buf].modifiable = true
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '', require('glimpse').get_config().loading_text })
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '', require('glimpse').get_config().loading.text })
 	vim.bo[buf].modifiable = false
 
-	local win_cols = vim.api.nvim_win_get_width(win)
-	local win_rows = vim.api.nvim_win_get_height(win)
+	local cols = vim.api.nvim_win_get_width(win)
+	local rows = vim.api.nvim_win_get_height(win)
 
 	-- Cancel the previous conversion job if it is still running
 	if placement.job_id then
@@ -202,66 +133,34 @@ function M.render(buf, filepath, opts, on_done)
 		placement.job_id = nil
 	end
 
-	placement.job_id = kitty.transmit_async(
-		filepath,
-		{ width = win_cols, height = win_rows },
-		function(id, err, w_px, h_px)
-			placement.job_id = nil
-			if err or not id then
-				vim.notify('[glimpse] ' .. (err or 'render failed'), vim.log.levels.WARN)
-				return
-			end
-			-- Discard if the placement changed (race condition)
-			if placement.closed or placement.request_id ~= req_id then
-				kitty.delete(id)
-				return
-			end
-			if not vim.api.nvim_buf_is_valid(buf) then
-				kitty.delete(id)
-				return
-			end
-			if not w_px or not h_px then
-				return
-			end
-			placement.image_id = id
-			placement.win_cols = win_cols
-			placement.win_rows = win_rows
-			local grid_cols = math.min(win_cols, math.ceil(w_px / require('glimpse').get_config().cell_size.width))
-			local grid_rows = math.min(win_rows, math.ceil(h_px / require('glimpse').get_config().cell_size.height))
-			render_grid(buf, id, grid_cols, grid_rows)
-			if on_done then
-				on_done()
-			end
+	placement.job_id = kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
+		placement.job_id = nil
+		if err or not id then
+			vim.notify('[glimpse] ' .. (err or 'render failed'), vim.log.levels.WARN)
+			return
 		end
-	)
+		-- Discard if the placement changed (race condition)
+		if placement.closed or placement.request_id ~= req_id then
+			kitty.delete(id)
+			return
+		end
+		if not vim.api.nvim_buf_is_valid(buf) then
+			kitty.delete(id)
+			return
+		end
+		if not w_px or not h_px then
+			return
+		end
+		placement.image_id = id
+		local grid_cols = math.min(cols, math.ceil(w_px / require('glimpse').get_config().cell_size.width))
+		local grid_rows = math.min(rows, math.ceil(h_px / require('glimpse').get_config().cell_size.height))
+		render_grid(buf, id, grid_cols, grid_rows)
+		if on_done then
+			on_done()
+		end
+	end)
 
 	return placement
-end
-
---- Find the buffer currently tracking a filepath.
---- @param filepath string
---- @return number|nil
-function M.find_by_filepath(filepath)
-	for _, win in ipairs(vim.api.nvim_list_wins()) do
-		if vim.api.nvim_win_is_valid(win) then
-			local buf = vim.api.nvim_win_get_buf(win)
-			local placement = placements[buf]
-			if
-				placement
-				and placement.filepath
-				and same_path(placement.filepath, filepath)
-				and vim.api.nvim_buf_is_valid(buf)
-			then
-				return buf
-			end
-		end
-	end
-
-	for buf, placement in pairs(placements) do
-		if placement.filepath and same_path(placement.filepath, filepath) and vim.api.nvim_buf_is_valid(buf) then
-			return buf
-		end
-	end
 end
 
 --- Close and clean up a placement.
@@ -289,7 +188,6 @@ function M.register(buf, filepath)
 	placements[buf] = {
 		buf = buf,
 		filepath = filepath,
-		signature = file_signature(filepath),
 		image_id = nil,
 		closed = false,
 	}
@@ -349,8 +247,6 @@ function M.rerender(buf)
 			return
 		end
 		placement.image_id = id
-		placement.win_cols = cols
-		placement.win_rows = rows
 		local grid_cols = math.min(cols, math.ceil(w_px / require('glimpse').get_config().cell_size.width))
 		local grid_rows = math.min(rows, math.ceil(h_px / require('glimpse').get_config().cell_size.height))
 		render_grid(buf, id, grid_cols, grid_rows)

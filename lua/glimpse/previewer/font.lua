@@ -4,10 +4,20 @@ local float = require('glimpse.float')
 
 local font_mod = require('glimpse.font')
 local preview_cache = require('glimpse.preview_cache')
-local shared = require('glimpse.previewer.shared')
 
-local _header_lines = shared.header_lines
-local _offset_highlights = shared.offset_highlights
+local function _header_lines(filepath, lines)
+	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
+	table.insert(lines, 1, header)
+	table.insert(lines, 2, string.rep('─', #header + 4))
+end
+
+local function _offset_highlights(highlights, offset)
+	local shifted = {}
+	for _, hl in ipairs(highlights or {}) do
+		shifted[#shifted + 1] = { hl[1] + offset, hl[2], hl[3], hl[4] }
+	end
+	return shifted
+end
 
 local function _preview_data(filepath)
 	return preview_cache.memoize(filepath, 'font', function()
@@ -37,7 +47,7 @@ function M.show(filepath)
 		return
 	end
 
-	local cache_dir = config.cache_dir
+	local cache_dir = config.cache.dir
 	vim.fn.mkdir(cache_dir, 'p')
 	local hash = vim.fn.sha256(filepath):sub(1, 12)
 	local tmp = cache_dir .. '/font_' .. hash .. '.png'
@@ -68,7 +78,10 @@ function M.show(filepath)
 		if glimpse._should_use_inline() then
 			require('glimpse.strategy.inline').show(tmp)
 		else
-			require('glimpse.strategy.pane').show(tmp, { position = config.pane_position, size = config.pane_size })
+			require('glimpse.strategy.pane').show(tmp, {
+				position = config.pane.position,
+				size = config.pane.size,
+			})
 		end
 		return
 	end
