@@ -4,20 +4,10 @@ local float = require('glimpse.float')
 
 local sqlite = require('glimpse.sqlite')
 local preview_cache = require('glimpse.preview_cache')
+local shared = require('glimpse.previewer.shared')
 
-local function _header_lines(filepath, lines)
-	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
-	table.insert(lines, 1, header)
-	table.insert(lines, 2, string.rep('─', #header + 4))
-end
-
-local function _offset_highlights(highlights, offset)
-	local shifted = {}
-	for _, hl in ipairs(highlights or {}) do
-		shifted[#shifted + 1] = { hl[1] + offset, hl[2], hl[3], hl[4] }
-	end
-	return shifted
-end
+local _header_lines = shared.header_lines
+local _offset_highlights = shared.offset_highlights
 
 local function _preview_data(filepath)
 	return preview_cache.memoize(filepath, 'sqlite', function()

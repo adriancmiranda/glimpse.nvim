@@ -14,6 +14,7 @@ local plenary_path = first_non_empty(
 )
 
 vim.opt.rtp:prepend('.')
+vim.opt.shadafile = 'NONE'
 
 if plenary_path then
 	vim.opt.rtp:prepend(plenary_path)
