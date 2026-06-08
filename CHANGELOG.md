@@ -4,7 +4,7 @@
 
 > All notable changes to glimpse.nvim will be documented in this file.
 
-## [unreleased]
+## [1.16.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.15.1..v1.16.0) - 2026-06-08
 
 ### 🚀 Features
 

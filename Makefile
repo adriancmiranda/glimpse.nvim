@@ -2,7 +2,7 @@ PLENARY_PATH ?= $(firstword $(wildcard $(HOME)/.local/share/nvim/packages/plenar
 MARKDOWNLINT_FILES ?= README.md CONTRIBUTING.md
 MARKDOWNLINT_VERSION ?= 0.48.0
 
-.PHONY: test bench setup-hooks docs lint lint-fix lint-changelog changelog changelog-check
+.PHONY: test bench setup-hooks docs lint lint-fix lint-changelog changelog changelog-check release-notes
 
 test:
 	@tmpfile="$$(mktemp)"; \
@@ -43,3 +43,6 @@ changelog:
 
 changelog-check:
 	@git cliff -o /tmp/CHANGELOG.md
+
+release-notes:
+	@git cliff --config cliff.toml --latest --strip header
