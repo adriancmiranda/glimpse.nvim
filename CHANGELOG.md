@@ -14,6 +14,7 @@
 - *(telescope)* Add per-kind flags
 - *(oil)* Make image opening configurable
 - *(oil)* Support custom openers
+- Separate cwd following from preview flow
 
 ### 🐛 Bug Fixes
 
@@ -21,10 +22,12 @@
 - *(telescope)* Keep preview buffers reusable
 - *(glimpse)* Harden image buffer lifecycle
 - *(glimpse)* Remove lfs interception
+- Harden telescope cwd follow and thumbnail fallback
 
 ### 🚜 Refactor
 
 - *(types)* Consolidate config aliases
+- Isolate preview lifecycles
 
 ### 📚 Documentation
 
