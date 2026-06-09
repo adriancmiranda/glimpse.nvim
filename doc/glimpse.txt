@@ -9,8 +9,8 @@
  <
 
  Default keymaps (Oil.nvim):
-   `<leader>p` - Preview image side by side (does not change cwd)
-   `;`         - Open image (may change cwd when configured)
+   `<leader>p` - Preview image side by side
+   `;`         - Open image (configurable: current tab or new tab)
    `q`         - Close image buffer
 
  Supported terminals:
@@ -24,19 +24,19 @@ GlimpseConfig                                                    *GlimpseConfig*
      glimpse.nvim configuration.
 
     Fields: ~
-        {strategy?}            ("auto"|"inline"|"pane")     Rendering method (default: 'auto')
-        {pane_position?}       ("right"|"bottom")           External pane position (default: 'right')
-        {pane_size?}           (number)                     External pane size in percent (default: 40)
-        {inline?}              (GlimpseInlineConfig)        Inline rendering options
-        {keys?}                (GlimpseKeysConfig)          Configurable keymaps
-        {debounce?}            (GlimpseDebounceConfig)      Debounce timings in ms
-        {cell_size?}           (GlimpseCellSizeConfig)      Estimated terminal cell pixel size
-        {cache_dir?}           (string)                     Cache directory for converted images
-        {cache_max_age_days?}  (number)                     Days to keep cached files (default: 7)
-        {max_file_size?}       (number)                     Maximum bytes to process (default: 50MB)
-        {loading_text?}        (string)                     Text shown while loading
-        {formats?}             (string[])                   Supported image extensions
-        {integrations?}        (GlimpseIntegrationsConfig)  Plugin integrations
+        {strategy?}      ("auto"|"inline"|"pane")     Rendering method (default: 'auto')
+        {pane?}          (GlimpsePaneConfig)          External pane settings
+        {inline?}        (GlimpseInlineConfig)        Inline rendering options
+        {keys?}          (GlimpseKeysConfig)          Configurable keymaps
+        {debounce?}      (GlimpseDebounceConfig)      Debounce timings in ms
+        {cell_size?}     (GlimpseCellSizeConfig)      Estimated terminal cell pixel size
+        {cache?}         (GlimpseCacheConfig)         Cache settings
+        {safety?}        (GlimpseSafetyConfig)        Safety settings
+        {loading?}       (GlimpseLoadingConfig)       Loading text
+        {image?}         (GlimpseImageConfig)         Image preview settings
+        {video?}         (GlimpseVideoConfig)         Video preview settings
+        {archive?}       (GlimpseArchiveConfig)       Archive preview settings
+        {integrations?}  (GlimpseIntegrationsConfig)  Plugin integrations
 
 
 GlimpseInlineConfig                                        *GlimpseInlineConfig*
@@ -49,35 +49,61 @@ GlimpseInlineConfig                                        *GlimpseInlineConfig*
 GlimpseOilConfig                                              *GlimpseOilConfig*
 
     Fields: ~
-        {enable?}      (boolean)                              Keymaps in Oil.nvim (default: enabled)
-        {follow_cwd?}  (boolean)                              Follow image directories when opening with `;` in Oil (default: true)
-        {open?}        (string|fun(filepath:string):integer)
+        {enable?}  (boolean)                                Keymaps in Oil.nvim (default: enabled)
+        {open?}    ("edit"|"tabedit"|fun(filepath:string))
 
 
-GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
-    or custom logic returning the opened buffer (default: 'edit')
+GlimpsePaneConfig                                            *GlimpsePaneConfig*
+     Open images in the current tab, a new tab, or custom logic (default: 'edit')
 
     Fields: ~
-        {enable?}          (boolean)                Preview in Telescope (default: enabled)
-        {pickers?}         (string|string[]|table)  Telescope pickers that receive Glimpse previews
-        {follow_cwd?}      (boolean)                Follow image directories when previewing in Telescope (default: false)
-        {previewer?}       (table)                  Custom Telescope previewer instance
-        {previewer_opts?}  (table)                  Options passed to the Glimpse previewer factory
-        {image?}           (boolean)                Enable image previews (default: true)
-        {video?}           (boolean)                Enable video previews (default: true)
-        {archive?}         (boolean)                Enable archive previews (default: true)
-        {sqlite?}          (boolean)                Enable SQLite previews (default: true)
-        {font?}            (boolean)                Enable font previews (default: true)
-        {cert?}            (boolean)                Enable certificate previews (default: true)
-        {key?}             (boolean)                Enable key previews (default: true)
-        {binary?}          (boolean)                Enable binary previews (default: true)
+        {position?}  ("right"|"bottom")  External pane position (default: 'right')
+        {size?}      (number)            External pane size in percent (default: 40)
+
+
+GlimpseCacheConfig                                          *GlimpseCacheConfig*
+
+    Fields: ~
+        {dir?}           (string)  Cache directory for converted images
+        {max_age_days?}  (number)  Days to keep cached files (default: 7)
+
+
+GlimpseSafetyConfig                                        *GlimpseSafetyConfig*
+
+    Fields: ~
+        {max_file_size?}  (number)  Maximum bytes to process (default: 50MB)
+
+
+GlimpseLoadingConfig                                      *GlimpseLoadingConfig*
+
+    Fields: ~
+        {text?}  (string)  Text shown while loading
+
+
+GlimpseImageConfig                                          *GlimpseImageConfig*
+
+    Fields: ~
+        {formats?}  (string[])  Supported image extensions
+
+
+GlimpseVideoConfig                                          *GlimpseVideoConfig*
+
+    Fields: ~
+        {formats?}  (string[])                     Supported video extensions
+        {open?}     (string|fun(filepath:string))  Command or callback for opening videos externally
+
+
+GlimpseArchiveConfig                                      *GlimpseArchiveConfig*
+
+    Fields: ~
+        {formats?}  (string[])  Supported archive extensions
 
 
 GlimpseKeysConfig                                            *GlimpseKeysConfig*
 
     Fields: ~
         {preview?}  (string)  Keymap for preview in Oil (default: '<leader>p')
-        {open?}     (string)  Keymap for opening an image in Oil (default: ';')
+        {open?}     (string)  Keymap for opening in a tab in Oil (default: ';')
         {close?}    (string)  Keymap for closing the image buffer (default: 'q')
 
 
@@ -95,12 +121,29 @@ GlimpseCellSizeConfig                                    *GlimpseCellSizeConfig*
         {height?}  (number)  Estimated pixels per row (default: 40)
 
 
+GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
+
+    Fields: ~
+        {enable?}          (boolean)
+        {pickers?}         (string|string[]|table)
+        {previewer?}       (table)
+        {previewer_opts?}  (table)
+        {image?}           (boolean)
+        {video?}           (boolean)
+        {archive?}         (boolean)
+        {sqlite?}          (boolean)
+        {font?}            (boolean)
+        {cert?}            (boolean)
+        {key?}             (boolean)
+        {binary?}          (boolean)
+
+
 GlimpseIntegrationsConfig                            *GlimpseIntegrationsConfig*
 
     Fields: ~
-        {oil?}        (boolean|GlimpseOilConfig)                         Keymaps in Oil.nvim (default: true)
-        {neotree?}    (boolean|{enable?:boolean,auto_preview?:boolean})  NeoTree integration config
-        {telescope?}  (boolean|GlimpseTelescopeConfig)                   Preview in Telescope (default: true)
+        {oil?}        ({enable?:boolean,open?:"edit"|"tabedit"|fun(filepath:string)})  Keymaps in Oil.nvim (default: enabled)
+        {neotree?}    ({enable?:boolean,auto_preview?:boolean})                        NeoTree integration config
+        {telescope?}  ({enable?:boolean,pickers?:string|string[]|table})               Preview in Telescope (default: enabled)
 
 
 Glimpse                                                                *Glimpse*
