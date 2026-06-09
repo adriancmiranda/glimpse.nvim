@@ -15,6 +15,7 @@
 - *(oil)* Make image opening configurable
 - *(oil)* Support custom openers
 - Separate cwd following from preview flow
+- [**breaking**] Refactor public config contract
 
 ### 🐛 Bug Fixes
 
