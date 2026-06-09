@@ -10,8 +10,8 @@
 --- <
 ---
 --- Default keymaps (Oil.nvim):
----   `<leader>p` - Preview image side by side (does not change cwd)
----   `;`         - Open image (may change cwd when configured)
+---   `<leader>p` - Preview image side by side
+---   `;`         - Open image (configurable: current tab or new tab)
 ---   `q`         - Close image buffer
 ---
 --- Supported terminals:
@@ -27,17 +27,17 @@
 --- glimpse.nvim configuration.
 ---@class GlimpseConfig
 ---@field strategy? 'auto'|'inline'|'pane' Rendering method (default: 'auto')
----@field pane_position? 'right'|'bottom' External pane position (default: 'right')
----@field pane_size? number External pane size in percent (default: 40)
+---@field pane? GlimpsePaneConfig External pane settings
 ---@field inline? GlimpseInlineConfig Inline rendering options
 ---@field keys? GlimpseKeysConfig Configurable keymaps
 ---@field debounce? GlimpseDebounceConfig Debounce timings in ms
 ---@field cell_size? GlimpseCellSizeConfig Estimated terminal cell pixel size
----@field cache_dir? string Cache directory for converted images
----@field cache_max_age_days? number Days to keep cached files (default: 7)
----@field max_file_size? number Maximum bytes to process (default: 50MB)
----@field loading_text? string Text shown while loading
----@field formats? string[] Supported image extensions
+---@field cache? GlimpseCacheConfig Cache settings
+---@field safety? GlimpseSafetyConfig Safety settings
+---@field loading? GlimpseLoadingConfig Loading text
+---@field image? GlimpseImageConfig Image preview settings
+---@field video? GlimpseVideoConfig Video preview settings
+---@field archive? GlimpseArchiveConfig Archive preview settings
 ---@field integrations? GlimpseIntegrationsConfig Plugin integrations
 
 ---@class GlimpseInlineConfig
@@ -46,28 +46,36 @@
 
 ---@class GlimpseOilConfig
 ---@field enable? boolean Keymaps in Oil.nvim (default: enabled)
----@field follow_cwd? boolean Follow image directories when opening with `;` in Oil (default: true)
----@field open? string|fun(filepath:string):integer? Open images in the current tab, a new tab,
----or custom logic returning the opened buffer (default: 'edit')
+---@field open? 'edit'|'tabedit'|fun(filepath: string)
+--- Open images in the current tab, a new tab, or custom logic (default: 'edit')
 
----@class GlimpseTelescopeConfig
----@field enable? boolean Preview in Telescope (default: enabled)
----@field pickers? string|string[]|table Telescope pickers that receive Glimpse previews
----@field follow_cwd? boolean Follow image directories when previewing in Telescope (default: false)
----@field previewer? table Custom Telescope previewer instance
----@field previewer_opts? table Options passed to the Glimpse previewer factory
----@field image? boolean Enable image previews (default: true)
----@field video? boolean Enable video previews (default: true)
----@field archive? boolean Enable archive previews (default: true)
----@field sqlite? boolean Enable SQLite previews (default: true)
----@field font? boolean Enable font previews (default: true)
----@field cert? boolean Enable certificate previews (default: true)
----@field key? boolean Enable key previews (default: true)
----@field binary? boolean Enable binary previews (default: true)
+---@class GlimpsePaneConfig
+---@field position? 'right'|'bottom' External pane position (default: 'right')
+---@field size? number External pane size in percent (default: 40)
+
+---@class GlimpseCacheConfig
+---@field dir? string Cache directory for converted images
+---@field max_age_days? number Days to keep cached files (default: 7)
+
+---@class GlimpseSafetyConfig
+---@field max_file_size? number Maximum bytes to process (default: 50MB)
+
+---@class GlimpseLoadingConfig
+---@field text? string Text shown while loading
+
+---@class GlimpseImageConfig
+---@field formats? string[] Supported image extensions
+
+---@class GlimpseVideoConfig
+---@field formats? string[] Supported video extensions
+---@field open? string|fun(filepath: string) Command or callback for opening videos externally
+
+---@class GlimpseArchiveConfig
+---@field formats? string[] Supported archive extensions
 
 ---@class GlimpseKeysConfig
 ---@field preview? string Keymap for preview in Oil (default: '<leader>p')
----@field open? string Keymap for opening an image in Oil (default: ';')
+---@field open? string Keymap for opening in a tab in Oil (default: ';')
 ---@field close? string Keymap for closing the image buffer (default: 'q')
 
 ---@class GlimpseDebounceConfig
@@ -78,10 +86,24 @@
 ---@field width? number Estimated pixels per column (default: 20)
 ---@field height? number Estimated pixels per row (default: 40)
 
+---@class GlimpseTelescopeConfig
+---@field enable? boolean
+---@field pickers? string|string[]|table
+---@field previewer? table
+---@field previewer_opts? table
+---@field image? boolean
+---@field video? boolean
+---@field archive? boolean
+---@field sqlite? boolean
+---@field font? boolean
+---@field cert? boolean
+---@field key? boolean
+---@field binary? boolean
+
 ---@class GlimpseIntegrationsConfig
----@field oil? boolean|GlimpseOilConfig Keymaps in Oil.nvim (default: true)
----@field neotree? boolean|{enable?:boolean, auto_preview?:boolean} NeoTree integration config
----@field telescope? boolean|GlimpseTelescopeConfig Preview in Telescope (default: true)
+---@field oil? {enable?:boolean, open?:'edit'|'tabedit'|fun(filepath: string)} Keymaps in Oil.nvim (default: enabled)
+---@field neotree? {enable?:boolean, auto_preview?:boolean} NeoTree integration config
+---@field telescope? {enable?:boolean, pickers?:string|string[]|table} Preview in Telescope (default: enabled)
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
@@ -92,32 +114,13 @@ local inline = require('glimpse.strategy.inline')
 ---@class Glimpse
 local M = {}
 
-local function _normalize_integration_config(value, defaults)
-	if value == false then
-		return { enable = false, follow_cwd = false }
-	end
-	if value == true or value == nil then
-		return vim.tbl_deep_extend('force', { enable = true }, defaults)
-	end
-	if type(value) == 'table' then
-		return vim.tbl_deep_extend('force', { enable = true }, defaults, value)
-	end
-	return vim.tbl_deep_extend('force', { enable = true }, defaults)
-end
-
-local function normalize_oil_config(oil)
-	return _normalize_integration_config(oil, { follow_cwd = true })
-end
-
-local function normalize_telescope_config(telescope)
-	return _normalize_integration_config(telescope, { follow_cwd = false })
-end
-
 ---@type GlimpseConfig
 local config = {
 	strategy = 'auto',
-	pane_position = 'right',
-	pane_size = 40,
+	pane = {
+		position = 'right',
+		size = 40,
+	},
 	inline = {
 		rerender_on_tab = true,
 		close_with_q = true,
@@ -135,42 +138,114 @@ local config = {
 		width = 20,
 		height = 40,
 	},
-	cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
-	cache_max_age_days = 7,
-	max_file_size = 50 * 1024 * 1024,
-	loading_text = '  ⏳ Loading...',
-	formats = {
-		'.png',
-		'.jpg',
-		'.jpeg',
-		'.gif',
-		'.bmp',
-		'.webp',
-		'.avif',
-		'.svg',
-		'.pdf',
-		'.pict',
+	cache = {
+		dir = vim.fn.stdpath('cache') .. '/glimpse',
+		max_age_days = 7,
+	},
+	safety = {
+		max_file_size = 50 * 1024 * 1024,
+	},
+	loading = {
+		text = '  ⏳ Loading...',
+	},
+	image = {
+		formats = {
+			'.png',
+			'.jpg',
+			'.jpeg',
+			'.gif',
+			'.bmp',
+			'.webp',
+			'.avif',
+			'.svg',
+			'.pdf',
+			'.pict',
+		},
+	},
+	video = {
+		formats = {
+			'.mp4',
+			'.mkv',
+			'.avi',
+			'.mov',
+			'.webm',
+			'.flv',
+			'.wmv',
+			'.m4v',
+		},
+		open = nil,
+	},
+	archive = {
+		formats = {
+			'.zip',
+			'.tar',
+			'.tar.gz',
+			'.tgz',
+			'.tar.bz2',
+			'.tar.xz',
+			'.txz',
+			'.jar',
+			'.war',
+			'.apk',
+		},
 	},
 	integrations = {
-		oil = true,
+		oil = {
+			enable = true,
+		},
 		neotree = {
 			enable = false,
 			auto_preview = true,
 		},
-		telescope = true,
+		telescope = {
+			enable = true,
+		},
 	},
-	video_formats = {
-		'.mp4',
-		'.mkv',
-		'.avi',
-		'.mov',
-		'.webm',
-		'.flv',
-		'.wmv',
-		'.m4v',
-	},
-	video_open = nil,
 }
+
+local kind_cache = {}
+local kind_cache_revision = 0
+
+local function normalize_telescope_config(telescope)
+	if telescope == false then
+		return { enable = false }
+	end
+	if telescope == true or telescope == nil then
+		return { enable = true }
+	end
+	if type(telescope) == 'table' then
+		return vim.tbl_deep_extend('force', { enable = true }, telescope)
+	end
+	return { enable = true }
+end
+
+local function normalize_oil_config(oil)
+	if oil == false then
+		return {
+			enable = false,
+			open = 'edit',
+		}
+	end
+
+	if oil == true or oil == nil then
+		return {
+			enable = true,
+			open = 'edit',
+		}
+	end
+
+	if type(oil) == 'table' then
+		return vim.tbl_deep_extend('force', {
+			enable = true,
+			open = 'edit',
+		}, oil)
+	end
+
+	return {
+		enable = true,
+		open = 'edit',
+	}
+end
 
 --- Configure the plugin.
 ---@param opts? GlimpseConfig Configuration options (merged with defaults)
@@ -178,27 +253,79 @@ function M.setup(opts)
 	config = vim.tbl_deep_extend('force', config, opts or {})
 	config.integrations.oil = normalize_oil_config(config.integrations.oil)
 	config.integrations.telescope = normalize_telescope_config(config.integrations.telescope)
+	kind_cache = {}
+	kind_cache_revision = kind_cache_revision + 1
 	if M._should_use_inline() and config.inline.rerender_on_tab then
 		inline.setup_autocmds()
 	end
-	if config.integrations.oil.enable ~= false then
+	if config.integrations.oil and config.integrations.oil.enable ~= false then
 		require('glimpse.integrations.oil').setup()
 	end
 	local neotree = config.integrations.neotree
 	if type(neotree) == 'table' and neotree.enable then
-		require('glimpse.integrations.neotree').setup()
-	elseif neotree == true then
 		require('glimpse.integrations.neotree').setup()
 	end
 	if config.integrations.telescope.enable ~= false then
 		require('glimpse.integrations.telescope').setup(config.integrations.telescope)
 	end
 	-- Clean up old cache entries in the background
-	if config.cache_max_age_days and config.cache_max_age_days > 0 then
+	if config.cache.max_age_days and config.cache.max_age_days > 0 then
 		vim.defer_fn(function()
-			require('glimpse.cache').cleanup(config.cache_dir, config.cache_max_age_days)
+			require('glimpse.cache').cleanup(config.cache.dir, config.cache.max_age_days)
 		end, 0)
 	end
+end
+
+local function _kind_cache_key(filepath)
+	local stat = vim.uv.fs_stat(filepath)
+	if not stat then
+		return nil
+	end
+
+	local mtime = stat.mtime or {}
+	return table.concat({
+		tostring(kind_cache_revision),
+		filepath,
+		tostring(stat.size or 0),
+		tostring(mtime.sec or 0),
+		tostring(mtime.nsec or 0),
+	}, ':')
+end
+
+local function resolve_kind(filepath)
+	local cache_key = _kind_cache_key(filepath)
+	if cache_key then
+		local cached = kind_cache[cache_key]
+		if cached ~= nil then
+			return cached or nil
+		end
+	end
+
+	local kind
+	if util.is_archive(filepath) then
+		kind = 'archive'
+	elseif util.is_sqlite(filepath) then
+		kind = 'sqlite'
+	elseif util.is_cert(filepath) then
+		kind = 'cert'
+	elseif util.is_key(filepath) then
+		kind = 'key'
+	elseif util.is_font(filepath) then
+		kind = 'font'
+	elseif util.is_video(filepath) then
+		kind = 'video'
+	elseif util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
+		kind = nil
+	elseif util.is_image(filepath) then
+		kind = 'image'
+	elseif binary.can_preview(filepath) then
+		kind = 'binary'
+	end
+
+	if cache_key then
+		kind_cache[cache_key] = kind or false
+	end
+	return kind
 end
 
 ---@private
@@ -219,31 +346,29 @@ end
 --- @return table|nil safety_opts
 --- @return string|nil kind
 local function resolve_previewer(filepath)
-	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
-		return nil
-	end
-	if util.is_archive(filepath) then
+	local kind = resolve_kind(filepath)
+	if kind == 'archive' then
 		return require('glimpse.previewer.archive'), { max_size = 0 }, 'archive'
 	end
-	if util.is_sqlite(filepath) then
+	if kind == 'sqlite' then
 		return require('glimpse.previewer.sqlite'), { max_size = 0 }, 'sqlite'
 	end
-	if util.is_cert(filepath) then
-		return require('glimpse.previewer.cert'), { max_size = config.max_file_size }, 'cert'
+	if kind == 'cert' then
+		return require('glimpse.previewer.cert'), { max_size = config.safety.max_file_size }, 'cert'
 	end
-	if util.is_key(filepath) then
-		return require('glimpse.previewer.key'), { max_size = config.max_file_size }, 'key'
+	if kind == 'key' then
+		return require('glimpse.previewer.key'), { max_size = config.safety.max_file_size }, 'key'
 	end
-	if util.is_font(filepath) then
-		return require('glimpse.previewer.font'), { max_size = config.max_file_size }, 'font'
+	if kind == 'font' then
+		return require('glimpse.previewer.font'), { max_size = config.safety.max_file_size }, 'font'
 	end
-	if util.is_video(filepath) then
-		return require('glimpse.previewer.video'), { max_size = config.max_file_size }, 'video'
+	if kind == 'video' then
+		return require('glimpse.previewer.video'), { max_size = config.safety.max_file_size }, 'video'
 	end
-	if util.is_image(filepath) then
-		return require('glimpse.previewer.image'), { max_size = config.max_file_size }, 'image'
+	if kind == 'image' then
+		return require('glimpse.previewer.image'), { max_size = config.safety.max_file_size }, 'image'
 	end
-	if binary.can_preview(filepath) then
+	if kind == 'binary' then
 		return binary, { max_size = 0 }, 'binary'
 	end
 	return nil
@@ -260,8 +385,7 @@ end
 ---@param filepath string Absolute file path
 ---@return string|nil kind
 function M.get_preview_kind(filepath)
-	local _, _, kind = resolve_previewer(filepath)
-	return kind
+	return resolve_kind(filepath)
 end
 
 --- Show a file (selects the previewer automatically).
@@ -281,12 +405,19 @@ function M.show(filepath)
 		vim.notify('[glimpse] ' .. reason .. ': ' .. filepath, vim.log.levels.WARN)
 		return
 	end
+	if util.is_image(filepath) then
+		require('glimpse.dir').follow(filepath)
+	end
 	previewer.show(filepath)
 end
 
 --- Quick preview (reuses an existing window or opens a float).
 ---@param filepath string Absolute file path
 function M.preview(filepath)
+	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
+		return
+	end
+
 	local previewer, safety_opts = resolve_previewer(filepath)
 	if not previewer then
 		return
@@ -313,6 +444,7 @@ end
 ---@param filepath string File path
 ---@return boolean
 M.is_image = util.is_image
+M.is_git_lfs_pointer = util.is_git_lfs_pointer
 
 --- Check whether the file is a supported video.
 ---@param filepath string File path
@@ -332,7 +464,6 @@ M.is_previewable = util.is_previewable
 M.is_cert = util.is_cert
 M.is_font = util.is_font
 M.is_key = util.is_key
-M.is_git_lfs_pointer = util.is_git_lfs_pointer
 
 --- Return the detected terminal.
 ---@return string|nil terminal 'wezterm'|'kitty'|'ghostty'|'iterm'|nil

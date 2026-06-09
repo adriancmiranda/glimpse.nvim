@@ -48,7 +48,7 @@ describe('git lfs pointer handling', function()
 			inline = {
 				rerender_on_tab = true,
 			},
-			cache_max_age_days = 0,
+			cache = { max_age_days = 0 },
 		})
 
 		assert.is_false(glimpse.can_preview(pointer))

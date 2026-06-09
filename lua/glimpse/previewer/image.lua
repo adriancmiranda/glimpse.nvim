@@ -9,7 +9,10 @@ function M.show(filepath)
 	if glimpse._should_use_inline() then
 		require('glimpse.strategy.inline').show(filepath)
 	else
-		require('glimpse.strategy.pane').show(filepath, { position = config.pane_position, size = config.pane_size })
+		require('glimpse.strategy.pane').show(filepath, {
+			position = config.pane.position,
+			size = config.pane.size,
+		})
 	end
 end
 
@@ -21,7 +24,10 @@ function M.preview(filepath)
 	if glimpse._should_use_inline() then
 		require('glimpse.strategy.inline').preview(filepath)
 	else
-		require('glimpse.strategy.pane').show(filepath, { position = config.pane_position, size = config.pane_size })
+		require('glimpse.strategy.pane').show(filepath, {
+			position = config.pane.position,
+			size = config.pane.size,
+		})
 	end
 end
 

@@ -14,9 +14,20 @@ local function open_image(filepath)
 	if type(open_mode) == 'function' then
 		local opened_buf = open_mode(filepath)
 		if type(opened_buf) == 'number' and vim.api.nvim_buf_is_valid(opened_buf) then
+			vim.schedule(function()
+				if vim.api.nvim_buf_is_valid(opened_buf) then
+					pcall(vim.api.nvim_buf_set_name, opened_buf, filepath)
+				end
+			end)
 			return opened_buf
 		end
-		return vim.api.nvim_get_current_buf()
+		local current_buf = vim.api.nvim_get_current_buf()
+		vim.schedule(function()
+			if vim.api.nvim_buf_is_valid(current_buf) then
+				pcall(vim.api.nvim_buf_set_name, current_buf, filepath)
+			end
+		end)
+		return current_buf
 	end
 
 	if open_mode ~= 'edit' and open_mode ~= 'tabedit' then
@@ -24,7 +35,13 @@ local function open_image(filepath)
 	end
 
 	vim.cmd(open_mode .. ' ' .. vim.fn.fnameescape(filepath))
-	return vim.api.nvim_get_current_buf()
+	local buf = vim.api.nvim_get_current_buf()
+	vim.schedule(function()
+		if vim.api.nvim_buf_is_valid(buf) then
+			pcall(vim.api.nvim_buf_set_name, buf, filepath)
+		end
+	end)
+	return buf
 end
 
 local function focus_existing_image(filepath)
@@ -97,16 +114,18 @@ function M.setup()
 					local fpath = vim.fs.joinpath(current_dir, entry.name)
 					if util.is_video(fpath) then
 						local settings = require('glimpse').get_config()
-						if settings.video_open then
-							if type(settings.video_open) == 'function' then
-								settings.video_open(fpath)
+						local video_config = settings.video
+						if video_config and video_config.open then
+							if type(video_config.open) == 'function' then
+								video_config.open(fpath)
 							else
-								vim.fn.jobstart({ settings.video_open, fpath }, { detach = true })
+								vim.fn.jobstart({ video_config.open, fpath }, { detach = true })
 							end
 						end
 						return
 					end
 					if util.is_image(fpath) then
+						local renderer = require('glimpse.renderer')
 						if glimpse._should_use_inline() then
 							oil.close()
 							local existing_buf = focus_existing_image(fpath)
@@ -114,23 +133,29 @@ function M.setup()
 								if should_follow_cwd() then
 									dir.follow(fpath)
 								end
-								require('glimpse.renderer').render(existing_buf, fpath, { listed = true })
+								if renderer.render then
+									renderer.render(existing_buf, fpath, { listed = true })
+								end
 								return
 							end
 							if should_follow_cwd() then
 								dir.follow(fpath)
 							end
 							local buf = open_image(fpath)
-							vim.schedule(function()
-								pcall(vim.api.nvim_buf_set_name, buf, fpath)
-							end)
-						else
-							local pane_config = glimpse.get_config()
-							require('glimpse.strategy.pane').show(fpath, {
-								position = pane_config.pane_position,
-								size = pane_config.pane_size,
-							})
+							if renderer.render then
+								renderer.render(buf, fpath, { listed = true })
+							end
+							return
 						end
+
+						local pane_config = glimpse.get_config()
+						if should_follow_cwd() then
+							dir.follow(fpath)
+						end
+						require('glimpse.strategy.pane').show(fpath, {
+							position = pane_config.pane.position,
+							size = pane_config.pane.size,
+						})
 						return
 					end
 					if util.is_font(fpath) then

@@ -34,8 +34,8 @@ local function _show_thumbnail(filepath, mode)
 			end
 		else
 			require('glimpse.strategy.pane').show(thumb, {
-				position = config.pane_position,
-				size = config.pane_size,
+				position = config.pane.position,
+				size = config.pane.size,
 			})
 		end
 		if restore_win and vim.api.nvim_win_is_valid(current_win) then
