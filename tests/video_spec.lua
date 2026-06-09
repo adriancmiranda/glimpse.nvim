@@ -40,8 +40,7 @@ describe('video preview', function()
 			end,
 			get_config = function()
 				return {
-					pane_position = 'right',
-					pane_size = 40,
+					pane = { position = 'right', size = 40 },
 				}
 			end,
 		})
@@ -92,8 +91,7 @@ describe('video preview', function()
 			end,
 			get_config = function()
 				return {
-					pane_position = 'bottom',
-					pane_size = 55,
+					pane = { position = 'bottom', size = 55 },
 				}
 			end,
 		})
@@ -147,8 +145,7 @@ describe('video preview', function()
 			end,
 			get_config = function()
 				return {
-					pane_position = 'right',
-					pane_size = 40,
+					pane = { position = 'right', size = 40 },
 				}
 			end,
 		})
@@ -208,8 +205,7 @@ describe('video preview', function()
 			end,
 			get_config = function()
 				return {
-					pane_position = 'right',
-					pane_size = 40,
+					pane = { position = 'right', size = 40 },
 				}
 			end,
 		})

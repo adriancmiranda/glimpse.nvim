@@ -62,7 +62,7 @@ describe('oil integration', function()
 			get_config = function()
 				return {
 					keys = { preview = 'p', open = 'o', close = 'q' },
-					video_open = nil,
+					video = { open = nil },
 				}
 			end,
 			_should_use_inline = function()
@@ -199,7 +199,7 @@ describe('oil integration', function()
 							follow_cwd = false,
 						},
 					},
-					video_open = nil,
+					video = { open = nil },
 				}
 			end,
 			_should_use_inline = function()
@@ -336,7 +336,7 @@ describe('oil integration', function()
 							follow_cwd = true,
 						},
 					},
-					video_open = nil,
+					video = { open = nil },
 				}
 			end,
 			_should_use_inline = function()
@@ -443,7 +443,7 @@ describe('oil integration', function()
 			get_config = function()
 				return {
 					keys = { preview = 'p', open = 'o', close = 'q' },
-					video_open = nil,
+					video = { open = nil },
 					integrations = {
 						oil = {
 							open = function(filepath)
@@ -592,7 +592,7 @@ describe('oil integration', function()
 			get_config = function()
 				return {
 					keys = { preview = 'p', open = 'o', close = 'q' },
-					video_open = nil,
+					video = { open = nil },
 				}
 			end,
 			_should_use_inline = function()

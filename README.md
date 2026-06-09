@@ -106,15 +106,17 @@ xxd -h
   },
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
-    pane_position = 'right',  -- 'right' | 'bottom'
-    pane_size = 40,           -- split/pane size percentage
+    pane = {
+      position = 'right',     -- 'right' | 'bottom'
+      size = 40,              -- split/pane size percentage
+    },
     inline = {
       rerender_on_tab = true, -- re-render when switching back to image tab
       close_with_q = true,    -- map key to close image buffer
     },
     keys = {
       preview = '<leader>p',  -- preview image/video side by side (Oil)
-      open = ';',             -- open image (Oil)
+      open = ';',             -- open image (configurable: current tab or new tab) (Oil)
       close = 'q',            -- close image buffer
     },
     debounce = {
@@ -125,54 +127,67 @@ xxd -h
       width = 20,             -- estimated pixels per terminal column
       height = 40,            -- estimated pixels per terminal row
     },
-    cache_dir = vim.fn.stdpath('cache') .. '/glimpse',
-    cache_max_age_days = 7,   -- auto-remove cached files older than N days (0 to disable)
-    max_file_size = 50 * 1024 * 1024, -- skip files larger than 50MB
-    loading_text = '  ⏳ Loading...',
-    formats = {               -- supported image extensions
-      '.png', '.jpg', '.jpeg', '.gif', '.bmp',
-      '.webp', '.avif', '.svg', '.pdf', '.pict',
+    cache = {
+      dir = vim.fn.stdpath('cache') .. '/glimpse',
+      max_age_days = 7,      -- auto-remove cached files older than N days (0 to disable)
     },
-    video_formats = {         -- supported video extensions (requires ffmpeg)
-      '.mp4', '.mkv', '.avi', '.mov',
-      '.webm', '.flv', '.wmv', '.m4v',
+    safety = {
+      max_file_size = 50 * 1024 * 1024, -- skip files larger than 50MB
     },
-    video_open = nil,         -- command or function to open videos externally
+    loading = {
+      text = '  ⏳ Loading...',
+    },
+    image = {
+      formats = {            -- supported image extensions
+        '.png', '.jpg', '.jpeg', '.gif', '.bmp',
+        '.webp', '.avif', '.svg', '.pdf', '.pict',
+      },
+    },
+    video = {
+      formats = {            -- supported video extensions (requires ffmpeg)
+        '.mp4', '.mkv', '.avi', '.mov',
+        '.webm', '.flv', '.wmv', '.m4v',
+      },
+      open = nil,            -- command or function to open videos externally
                               -- string: 'open' (macOS), 'xdg-open' (Linux)
                               -- function: fun(filepath) for custom logic
                               -- nil: opens as buffer in Neovim
-    archive_formats = {       -- supported archive extensions (preview only, no extraction)
-      '.zip', '.tar', '.tar.gz', '.tgz',
-      '.tar.bz2', '.tar.xz', '.txz',
-      '.jar', '.war', '.apk',
+    },
+    archive = {
+      formats = {            -- supported archive extensions (preview only, no extraction)
+        '.zip', '.tar', '.tar.gz', '.tgz',
+        '.tar.bz2', '.tar.xz', '.txz',
+        '.jar', '.war', '.apk',
+      },
     },
     integrations = {
       oil = {
         enable = true,        -- keymaps in Oil
-        follow_cwd = true,    -- keep Oil moving to the image directory
+        open = 'edit',        -- 'edit' | 'tabedit' | function(filepath)
       },
       neotree = {             -- Neo-tree integration
         enable = false,       -- enable auto-preview in Neo-tree
         auto_preview = true,  -- preview on cursor move (set false to disable)
       },
       telescope = {
-        enable = true,        -- enables Glimpse previews in Telescope pickers
-        follow_cwd = false,   -- keep Telescope previews from changing cwd by default
+        enable = true,        -- enables image/video previews in :Telescope find_files
       },
     },
   },
 }
 ```
 
+Breaking change: the public config was reorganized into nested tables.
+
 ### Keymaps (Oil.nvim)
 
 | Key | Action |
 |-----|--------|
-| `<leader>p` | Preview image/video side by side (reuses window, does not change `cwd`) |
-| `;` | Open image (may follow the image directory when `integrations.oil.follow_cwd = true`) |
+| `<leader>p` | Preview image/video side by side (reuses window) |
+| `;` | Open image (configurable: current tab or new tab) |
 | `q` | Close image buffer and residual empty window |
 
-`integrations.oil.follow_cwd` only affects `;` in Oil. Preview with `<leader>p` and Telescope previews do not change `cwd`.
+When an image is opened, the current window follows that file's directory, so `Oil.nvim` opens in the same folder.
 
 ### Keymaps (Neo-tree)
 
@@ -185,14 +200,16 @@ Enable with `integrations = { neotree = { enable = true } }` in setup.
 
 ### Telescope
 
-Enable with `integrations = { telescope = true }` in setup. With lazy.nvim,
+Enable with `integrations = { telescope = { enable = true } }` in setup. With lazy.nvim,
 glimpse applies its previewer when telescope.nvim loads. By default, only
 `:Telescope find_files` receives Glimpse previews.
 
 ```lua
 require('glimpse').setup({
   integrations = {
-    telescope = true,
+    telescope = {
+      enable = true,
+    },
   },
 })
 ```
@@ -245,8 +262,6 @@ require('telescope').setup({
 ```
 
 - **Images** are rendered inline via Kitty Graphics Protocol with a 100ms debounce
-- **Oil** keeps following the opened image directory in the active tab
-- **Telescope** previews images without changing `:pwd` by default
 - **Videos** extract a thumbnail via ffmpeg before rendering
 - **Archives, SQLite databases, fonts, keys, certificates, and binaries** use the matching Glimpse previewer inside the Telescope preview pane
 - **Other files** fall back to Telescope's default previewer
@@ -287,7 +302,7 @@ It never makes network requests or sends data externally.
 ### File validation
 
 - **Symlinks** are rejected (prevents reading unintended targets)
-- **Large files** above `max_file_size` are skipped (default: 50MB)
+- **Large files** above `safety.max_file_size` are skipped (default: 50MB)
 - **SVG files** are processed with restricted XML parsing (no entity expansion, no external resources)
 - **Archive preview** never extracts files, only reads metadata
 - **Shell commands** use list arguments (no shell interpolation)

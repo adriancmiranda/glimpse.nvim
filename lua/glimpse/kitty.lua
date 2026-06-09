@@ -22,7 +22,7 @@ local function make_cache_key(filepath, suffix)
 end
 
 local function get_cache_dir()
-	local dir = get_config().cache_dir
+	local dir = get_config().cache.dir
 	vim.fn.mkdir(dir, 'p')
 	return dir
 end
