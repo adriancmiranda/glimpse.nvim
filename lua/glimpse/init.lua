@@ -268,6 +268,23 @@ function M.setup(opts)
 	if config.integrations.telescope.enable ~= false then
 		require('glimpse.integrations.telescope').setup(config.integrations.telescope)
 	end
+	-- Auto-detect terminal cell pixel dimensions only when user did not provide them
+	if not (opts and opts.cell_size) then
+		require('glimpse.kitty').detect_cell_size(function(w, h)
+			config.cell_size.width = w
+			config.cell_size.height = h
+			-- Re-render any image buffers that were opened before detection completed
+			local renderer = require('glimpse.renderer')
+			for _, win in ipairs(vim.api.nvim_list_wins()) do
+				if vim.api.nvim_win_is_valid(win) then
+					local buf = vim.api.nvim_win_get_buf(win)
+					if vim.bo[buf].filetype == 'image' and renderer.has_placement(buf) then
+						renderer.rerender(buf)
+					end
+				end
+			end
+		end)
+	end
 	-- Clean up old cache entries in the background
 	if config.cache.max_age_days and config.cache.max_age_days > 0 then
 		vim.defer_fn(function()
