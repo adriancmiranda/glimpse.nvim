@@ -95,6 +95,7 @@ describe('public api', function()
 			prefetch = function()
 				return true
 			end,
+			detect_cell_size = function() end,
 		}
 		package.loaded['glimpse'] = nil
 		package.loaded['glimpse.renderer'] = nil

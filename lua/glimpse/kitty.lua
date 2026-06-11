@@ -6,6 +6,8 @@ local M = {}
 local image_id_counter = 0
 local convert_cache = {}
 local dims_cache = {}
+local _detected_cell_size = nil
+local _detecting_cell_size = false
 
 local function get_config()
 	return require('glimpse').get_config()
@@ -100,6 +102,82 @@ local function send(params, payload)
 		cmd = '\027Ptmux;' .. cmd:gsub('\027', '\027\027') .. '\027\\'
 	end
 	io.stdout:write(cmd)
+end
+
+--- Query the terminal cell pixel size.
+--- Inside tmux uses `display-message -p '#{client_cell_width} #{client_cell_height}'`
+--- (requires tmux ≥ 3.3). Outside tmux sends CSI 16 t and reads the TermResponse.
+--- Calls callback(width_px, height_px) on success; skips silently on failure.
+--- Result is cached — subsequent calls return immediately.
+--- @param callback fun(w: number, h: number)
+function M.detect_cell_size(callback)
+	if _detected_cell_size then
+		callback(_detected_cell_size.width, _detected_cell_size.height)
+		return
+	end
+
+	if _detecting_cell_size then
+		return
+	end
+	_detecting_cell_size = true
+
+	local function store_and_call(w, h)
+		_detecting_cell_size = false
+		if w and h and w > 0 and h > 0 then
+			_detected_cell_size = { width = w, height = h }
+			callback(w, h)
+		end
+	end
+
+	-- Inside tmux: ask tmux directly (tmux ≥ 3.3 tracks pixel cell dimensions)
+	if os.getenv('TMUX') and vim.fn.executable('tmux') == 1 then
+		vim.fn.jobstart({ 'tmux', 'display-message', '-p', '#{client_cell_width} #{client_cell_height}' }, {
+			stdout_buffered = true,
+			on_stdout = function(_, data)
+				vim.schedule(function()
+					local out = table.concat(data or {}, ' ')
+					local w, h = out:match('(%d+)%s+(%d+)')
+					store_and_call(tonumber(w), tonumber(h))
+				end)
+			end,
+		})
+		return
+	end
+
+	-- Outside tmux: CSI 16 t query via TermResponse autocmd
+	local autocmd_id
+	local timer = vim.uv.new_timer()
+
+	autocmd_id = vim.api.nvim_create_autocmd('TermResponse', {
+		callback = function()
+			-- Response format: ESC[6;<height>;<width>t
+			local resp = tostring(vim.v.termresponse or '')
+			local h_str, w_str = resp:match('%[6;(%d+);(%d+)')
+			local w, h = tonumber(w_str), tonumber(h_str)
+			if w and h and w > 0 and h > 0 then
+				if timer then
+					timer:stop()
+					timer:close()
+					timer = nil
+				end
+				pcall(vim.api.nvim_del_autocmd, autocmd_id)
+				store_and_call(w, h)
+			end
+		end,
+	})
+
+	timer:start(
+		2000,
+		0,
+		vim.schedule_wrap(function()
+			timer:close()
+			timer = nil
+			pcall(vim.api.nvim_del_autocmd, autocmd_id)
+		end)
+	)
+
+	io.stdout:write('\027[16t')
+	io.stdout:flush()
 end
 
 --- Delete an image from the terminal by ID.
