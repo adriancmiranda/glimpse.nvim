@@ -4,6 +4,13 @@
 
 > All notable changes to glimpse.nvim will be documented in this file.
 
+## [unreleased]
+
+### 🚀 Features
+
+- *(kitty)* Auto-detect terminal cell pixel dimensions
+
+
 ## [2.0.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.16.0..v2.0.0) - 2026-06-09
 
 ### 🚀 Features
