@@ -10,6 +10,10 @@
 
 - *(kitty)* Auto-detect terminal cell pixel dimensions
 
+### 🐛 Bug Fixes
+
+- *(docs)* Replace broken xxd vimhelp link with linux.die.net man page
+
 
 ## [2.0.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.16.0..v2.0.0) - 2026-06-09
 
