@@ -13,6 +13,7 @@
 ### 🐛 Bug Fixes
 
 - *(docs)* Replace broken xxd vimhelp link with linux.die.net man page
+- *(docs)* Fix v1.0.0 changelog link to point to commits
 
 
 ## [2.0.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.16.0..v2.0.0) - 2026-06-09
@@ -352,7 +353,7 @@
 - Auto-detect WezTerm socket for tmux environments
 
 
-## [1.0.0](https://github.com/adriancmiranda/glimpse.nvim/commits/v1.0.0) - 2026-05-18
+## [1.0.0](https://github.com/adriancmiranda/glimpse.nvim/compare/..v1.0.0) - 2026-05-18
 
 ### 🚀 Features
 
