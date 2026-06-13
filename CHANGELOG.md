@@ -15,6 +15,13 @@
 
 - *(docs)* Replace broken xxd vimhelp link with linux.die.net man page
 - *(docs)* Fix v1.0.0 changelog link to point to commits
+- *(telescope)* Scaffold investigation for stale render state (#71)
+- *(telescope)* Close active Kitty render before text preview
+- *(telescope)* Also clear stale image on disabled-kind fallback path
+
+### 🧪 Testing
+
+- *(telescope)* Add regression for stale Kitty image on text preview
 
 
 ## [2.0.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.16.0..v2.0.0) - 2026-06-09
