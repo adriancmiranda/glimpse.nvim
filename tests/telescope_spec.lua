@@ -917,9 +917,6 @@ describe('telescope integration', function()
 			get_preview_kind = function(path)
 				return path:match('%.zip$') and 'archive' or 'image'
 			end,
-			is_git_lfs_pointer = function()
-				return false
-			end,
 		})
 
 		stub_package('glimpse.integrations.telescope', nil)
@@ -932,8 +929,9 @@ describe('telescope integration', function()
 			return vim.bo[buf].filetype == 'glimpse_archive'
 		end))
 
-		-- renderer.close must have been called to clear any previous Kitty image
-		assert.is_true(#close_calls >= 1)
+		-- renderer.close must have been called exactly once with the correct buffer
+		assert.equals(1, #close_calls)
+		assert.equals(buf, close_calls[1])
 
 		if vim.api.nvim_buf_is_valid(buf) then
 			vim.api.nvim_buf_delete(buf, { force = true })
