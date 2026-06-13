@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - *(kitty)* Auto-detect terminal cell pixel dimensions
+- *(changelog)* Include commit body in changelog for breaking changes
 
 ### 🐛 Bug Fixes
 
