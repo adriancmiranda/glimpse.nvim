@@ -33,7 +33,7 @@
 - [ffmpeg](https://ffmpeg.org/) (optional) - video thumbnail extraction
 - [OpenSSL](https://www.openssl.org/) (`openssl` CLI) - certificate metadata extraction
 - [file](https://man7.org/linux/man-pages/man1/file.1.html) (`file` CLI) - binary type detection
-- [xxd](https://vimhelp.org/xxd.txt.html) (`xxd` CLI) - binary hexdump rendering
+- [xxd](https://linux.die.net/man/1/xxd) (`xxd` CLI) - binary hexdump rendering
 - Terminal with support for at least one protocol:
   - **Kitty Graphics** (recommended): Kitty, Ghostty
   - **Terminal CLI**: WezTerm, iTerm2
