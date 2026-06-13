@@ -376,3 +376,65 @@ describe('renderer', function()
 		end
 	end)
 end)
+
+describe('renderer animation helpers', function()
+	local original_kitty
+	local original_renderer
+
+	before_each(function()
+		original_kitty = package.loaded['glimpse.kitty']
+		original_renderer = package.loaded['glimpse.renderer']
+		restore_package('glimpse.kitty', {
+			transmit_async = function(_, _, callback)
+				callback(1, nil, 16, 16)
+				return nil
+			end,
+			delete = function() end,
+		})
+		restore_package('glimpse.renderer', nil)
+	end)
+
+	after_each(function()
+		restore_package('glimpse.kitty', original_kitty)
+		restore_package('glimpse.renderer', original_renderer)
+	end)
+
+	it('setup_animation_buf creates a placement with image_id and created_at', function()
+		local renderer = require('glimpse.renderer')
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = vim.api.nvim_get_current_win()
+		renderer.setup_animation_buf(buf, win, 42, 4, 4, 20, 10)
+		local placement = renderer.get_placement(buf)
+		assert.is_not_nil(placement)
+		assert.equals(42, placement.image_id)
+		assert.is_not_nil(placement.created_at)
+		pcall(vim.api.nvim_buf_delete, buf, { force = true })
+	end)
+
+	it('setup_animation_buf writes placeholder lines to the buffer', function()
+		local renderer = require('glimpse.renderer')
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = vim.api.nvim_get_current_win()
+		renderer.setup_animation_buf(buf, win, 99, 2, 3, 20, 10)
+		local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+		assert.equals(3, #lines)
+		assert.is_true(#lines[1] > 0)
+		pcall(vim.api.nvim_buf_delete, buf, { force = true })
+	end)
+
+	it('get_placement returns nil for unknown buffer', function()
+		local renderer = require('glimpse.renderer')
+		assert.is_nil(renderer.get_placement(99999))
+	end)
+
+	it('update_animation_highlight updates the placement image_id', function()
+		local renderer = require('glimpse.renderer')
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = vim.api.nvim_get_current_win()
+		renderer.setup_animation_buf(buf, win, 10, 2, 2, 20, 10)
+		renderer.update_animation_highlight(buf, 20)
+		local placement = renderer.get_placement(buf)
+		assert.equals(20, placement.image_id)
+		pcall(vim.api.nvim_buf_delete, buf, { force = true })
+	end)
+end)

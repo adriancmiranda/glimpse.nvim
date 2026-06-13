@@ -80,6 +80,12 @@ local function base64(str)
 	return (vim.fn.system('printf "%s" ' .. vim.fn.shellescape(str) .. ' | base64'):gsub('%s+', ''))
 end
 
+--- Output function — defaults to io.stdout:write, replaceable in tests.
+---@private
+M._write = function(cmd)
+	io.stdout:write(cmd)
+end
+
 --- Send a Kitty Graphics Protocol command to the terminal.
 --- @param params table<string, string|number>
 --- @param payload? string
@@ -101,7 +107,25 @@ local function send(params, payload)
 	if os.getenv('TMUX') then
 		cmd = '\027Ptmux;' .. cmd:gsub('\027', '\027\027') .. '\027\\'
 	end
-	io.stdout:write(cmd)
+	M._write(cmd)
+end
+
+--- Return a new unique image ID.
+--- @return number
+function M.new_id()
+	return next_id()
+end
+
+--- Read PNG width and height directly from raw PNG bytes.
+--- @param data string Raw PNG bytes
+--- @return number|nil w, number|nil h
+function M.png_dimensions_from_data(data)
+	if not data or #data < 24 then
+		return nil, nil
+	end
+	local w = data:byte(17) * 16777216 + data:byte(18) * 65536 + data:byte(19) * 256 + data:byte(20)
+	local h = data:byte(21) * 16777216 + data:byte(22) * 65536 + data:byte(23) * 256 + data:byte(24)
+	return w, h
 end
 
 --- Query the terminal cell pixel size.
@@ -178,6 +202,73 @@ function M.detect_cell_size(callback)
 
 	io.stdout:write('\027[16t')
 	io.stdout:flush()
+end
+
+--- Transmit a video animation frame.
+--- The first call for a given id uses action 'T' (new image); subsequent
+--- calls use action 'f' (add frame). The caller is responsible for tracking
+--- which frame is first.
+--- @param id number Image ID (must match across all frames of the same video)
+--- @param png_data string Raw PNG bytes
+--- @param delay_ms number Frame duration in milliseconds
+--- @param is_first boolean True for the first frame of a new animation
+function M.animation_frame(id, png_data, delay_ms, is_first)
+	-- Write to a temp file and use t=f (file path mode) to avoid large
+	-- inline base64 payloads through tmux DCS passthrough.
+	local tmp = vim.fn.tempname() .. '.png'
+	local f = io.open(tmp, 'wb')
+	if not f then
+		return
+	end
+	f:write(png_data)
+	f:close()
+
+	local params = {
+		a = is_first and 'T' or 'f',
+		t = 'f',
+		f = 100,
+		i = id,
+		z = delay_ms,
+		q = 2,
+		data = base64(tmp),
+	}
+	if is_first then
+		params.U = 1
+	end
+	send(params)
+
+	-- Kitty reads the file synchronously; remove after a brief safety margin
+	vim.defer_fn(function()
+		os.remove(tmp)
+	end, 2000)
+end
+
+--- Start or resume animation playback (Kitty native, may not work through tmux).
+--- @param id number Image ID
+function M.animation_play(id)
+	send({ a = 'a', v = 3, r = 0, i = id, q = 2 })
+end
+
+--- Pause animation playback.
+--- @param id number Image ID
+function M.animation_pause(id)
+	send({ a = 'a', v = 1, i = id, q = 2 })
+end
+
+--- Retransmit an image from file, replacing the displayed image with the same ID.
+--- Used for manual frame cycling when native animation is unreliable.
+--- @param id number Image ID
+--- @param filepath string Path to PNG file
+function M.retransmit_frame(id, filepath)
+	send({
+		a = 'T',
+		t = 'f',
+		f = 100,
+		i = id,
+		U = 1,
+		q = 2,
+		data = base64(filepath),
+	})
 end
 
 --- Delete an image from the terminal by ID.

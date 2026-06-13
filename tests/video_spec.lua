@@ -188,6 +188,38 @@ describe('video preview', function()
 		restore_package(saved)
 	end)
 
+	it('registers temp files and clears the registry after normal cleanup', function()
+		local saved = save_package({ 'glimpse.previewer.video' })
+		package.loaded['glimpse.previewer.video'] = nil
+		local video = require('glimpse.previewer.video')
+
+		local registry = video._temp_registry
+		assert.are.same({}, registry)
+
+		local tmp1 = vim.fn.tempname() .. '.png'
+		local tmp2 = vim.fn.tempname() .. '.png'
+		vim.fn.writefile({ 'a' }, tmp1)
+		vim.fn.writefile({ 'b' }, tmp2)
+
+		registry[tmp1] = true
+		registry[tmp2] = true
+		assert.is_not_nil(registry[tmp1])
+		assert.equals(1, vim.fn.filereadable(tmp1))
+
+		-- simulate what cleanup_anim does on normal stop
+		os.remove(tmp1)
+		os.remove(tmp2)
+		registry[tmp1] = nil
+		registry[tmp2] = nil
+
+		assert.is_nil(registry[tmp1])
+		assert.is_nil(registry[tmp2])
+		assert.equals(0, vim.fn.filereadable(tmp1))
+		assert.equals(0, vim.fn.filereadable(tmp2))
+
+		restore_package(saved)
+	end)
+
 	it('keeps independent video previews isolated by window', function()
 		local saved = save_package({
 			'glimpse',

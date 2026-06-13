@@ -67,9 +67,21 @@
 ---@class GlimpseImageConfig
 ---@field formats? string[] Supported image extensions
 
+---@class GlimpseVideoFramesConfig
+---@field strategy? 'auto'|'batch'|'poll'|'pipe' Frame extraction strategy for inline playback (default: 'auto')
+---@field per_second? number Frames per second to extract (default: 10)
+---@field limit? integer Maximum frames to extract (default: 120)
+
+---@class GlimpseVideoKeysConfig
+---@field toggle? string Keymap to toggle play/pause in an animation buffer (default: '<CR>')
+---@field seek_forward? string Keymap to seek forward 5 seconds (default: 'l')
+---@field seek_backward? string Keymap to seek backward 5 seconds (default: 'h')
+
 ---@class GlimpseVideoConfig
 ---@field formats? string[] Supported video extensions
 ---@field open? string|fun(filepath: string) Command or callback for opening videos externally
+---@field keys? GlimpseVideoKeysConfig Keymaps for inline video playback
+---@field frames? GlimpseVideoFramesConfig Inline video playback settings
 
 ---@class GlimpseArchiveConfig
 ---@field formats? string[] Supported archive extensions
@@ -176,6 +188,11 @@ local config = {
 			'.m4v',
 		},
 		open = nil,
+		keys = {
+			toggle = '<CR>',
+			seek_forward = 'l',
+			seek_backward = 'h',
+		},
 	},
 	archive = {
 		formats = {
@@ -270,8 +287,8 @@ function M.setup(opts)
 	if config.integrations.telescope.enable ~= false then
 		require('glimpse.integrations.telescope').setup(config.integrations.telescope)
 	end
-	-- Auto-detect terminal cell pixel dimensions only when user did not provide them
-	if not (opts and opts.cell_size) then
+	-- Auto-detect terminal cell pixel dimensions (skip in headless/non-tty mode)
+	if not (opts and opts.cell_size) and vim.fn.has('ttyin') == 1 then
 		require('glimpse.kitty').detect_cell_size(function(w, h)
 			config.cell_size.width = w
 			config.cell_size.height = h
@@ -481,6 +498,7 @@ M.is_key = util.is_key
 ---@return string|nil terminal 'wezterm'|'kitty'|'ghostty'|'iterm'|nil
 M.get_terminal = detect.get_terminal
 M.supports_inline = detect.supports_inline
+M.supports_animation = detect.supports_animation
 M.in_tmux = detect.in_tmux
 
 --- Return the current configuration.

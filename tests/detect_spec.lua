@@ -135,6 +135,60 @@ describe('detect', function()
 		end)
 	end)
 
+	describe('supports_animation', function()
+		it('returns true for kitty', function()
+			os.getenv = function(var)
+				if var == 'TERM_PROGRAM' then
+					return 'kitty'
+				end
+				if var == 'TMUX' then
+					return nil
+				end
+				return orig_getenv(var)
+			end
+			assert.is_true(detect.supports_animation())
+		end)
+
+		it('returns true for ghostty', function()
+			os.getenv = function(var)
+				if var == 'TERM_PROGRAM' then
+					return 'ghostty'
+				end
+				if var == 'TMUX' then
+					return nil
+				end
+				return orig_getenv(var)
+			end
+			assert.is_true(detect.supports_animation())
+		end)
+
+		it('returns false for wezterm', function()
+			os.getenv = function(var)
+				if var == 'TERM_PROGRAM' then
+					return 'WezTerm'
+				end
+				if var == 'TMUX' then
+					return nil
+				end
+				return orig_getenv(var)
+			end
+			assert.is_false(detect.supports_animation())
+		end)
+
+		it('mirrors supports_inline', function()
+			os.getenv = function(var)
+				if var == 'TERM_PROGRAM' then
+					return 'kitty'
+				end
+				if var == 'TMUX' then
+					return nil
+				end
+				return orig_getenv(var)
+			end
+			assert.equals(detect.supports_inline(), detect.supports_animation())
+		end)
+	end)
+
 	describe('in_tmux', function()
 		it('returns true when TMUX is set', function()
 			os.getenv = function(var)

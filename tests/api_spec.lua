@@ -54,6 +54,10 @@ describe('public api', function()
 			config.image.formats
 		)
 		assert.are.same({ '.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v' }, config.video.formats)
+		assert.is_table(config.video.keys)
+		assert.equals('<CR>', config.video.keys.toggle)
+		assert.equals('l', config.video.keys.seek_forward)
+		assert.equals('h', config.video.keys.seek_backward)
 		assert.are.same(
 			{ '.zip', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.txz', '.jar', '.war', '.apk' },
 			config.archive.formats

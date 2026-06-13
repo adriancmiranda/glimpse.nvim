@@ -14,7 +14,7 @@
 | Dependency | Usage |
 |------------|-------|
 | openssl | Certificate metadata extraction |
-| ffmpeg | Video thumbnail extraction |
+| ffmpeg | Video thumbnail extraction and inline animation |
 | ghostscript | PDF rendering via ImageMagick |
 | tmux >= 3.4 | Escape sequence passthrough (Kitty Graphics via tmux) |
 | `kitten` | Included with Kitty |
@@ -48,6 +48,12 @@ lua/glimpse/
 ├── font.lua              -- Font metadata extraction and rendering
 ├── sqlite.lua            -- SQLite schema preview
 ├── safety.lua            -- File validation and safety checks
+├── frames/
+│   ├── init.lua          -- Router: selects strategy from config (auto/batch/poll/pipe)
+│   ├── auto.lua          -- Selects poll when ffmpeg is available
+│   ├── batch.lua         -- Low-res preview immediately, full-res all at once when done
+│   ├── poll.lua          -- Progressive delivery as ffmpeg writes files to temp dir
+│   └── pipe.lua          -- Binary stream via image2pipe (not yet implemented)
 ├── previewer/
 │   ├── archive.lua       -- Archive previewer
 │   ├── cert.lua          -- X.509 certificate previewer
@@ -55,7 +61,8 @@ lua/glimpse/
 │   ├── font.lua          -- Font previewer
 │   ├── image.lua         -- Inline image previewer
 │   ├── key.lua           -- GPG/SSH key previewer
-│   └── sqlite.lua        -- SQLite previewer
+│   ├── sqlite.lua        -- SQLite previewer
+│   └── video.lua         -- Inline animation (Kitty/Ghostty) or thumbnail fallback
 ├── strategy/
 │   ├── inline.lua        -- Inline rendering + autocmds
 │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
@@ -125,8 +132,11 @@ make bench
 " Test image rendering
 :lua require('glimpse').show('/path/to/image.png')
 
-" Test video preview (async thumbnail)
+" Test video preview (inline animation on Kitty/Ghostty, thumbnail otherwise)
 :lua require('glimpse').preview('/path/to/video.mp4')
+
+" Test inline animation directly
+:lua require('glimpse.previewer.video').show('/path/to/video.mp4')
 
 " Test prefetch
 :lua require('glimpse.kitty').prefetch('/path/to/image.png', { width = 40, height = 30 })
@@ -141,4 +151,6 @@ make bench
 - **Terminal latency**: after transmission, the terminal takes ~200-500ms to render. Outside our control.
 - **WezTerm**: does not support unicode placeholders - uses external pane via `wezterm cli`.
 - **WezTerm + tmux**: requires `WEZTERM_UNIX_SOCKET` propagated via `update-environment`.
-- **Video thumbnails**: first extraction is synchronous (~500ms). Subsequent uses cache.
+- **Video thumbnails**: first extraction takes ~500ms. Subsequent previews use cache.
+- **Inline animation**: requires Kitty or Ghostty. WezTerm, iTerm2, and tmux+Sixel fall back to a static thumbnail.
+- **Inline animation + resize**: re-extracts all frames when the preview window is resized; expect a brief blank before the new animation starts.
