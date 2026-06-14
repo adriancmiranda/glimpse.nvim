@@ -31,6 +31,260 @@ end
 --- @type table<number, ImagePlacement>
 local placements = {}
 
+-- Bounded pool of highlight group names to avoid E849 "too many highlight groups".
+-- Each active buffer leases one slot; the slot is released when the buffer closes.
+local POOL_SIZE = 64
+local _pool_owner = {} -- slot_index (0-based) -> buf or nil
+local _buf_slot = {} -- buf -> slot_index
+local _wipeout_autocmd_id = {} -- buf -> autocmd id, so stale autocmds can be deleted
+local _pool_exhausted_count = 0 -- number of placements currently marked pool_exhausted
+
+-- Clears pool_exhausted on a placement and decrements the counter.
+-- Centralised here so all three recovery sites (immediate, deferred, M.close)
+-- stay in sync and a future refactor cannot forget one.
+local function _decrement_exhausted(p)
+	if p.pool_exhausted then
+		_pool_exhausted_count = math.max(0, _pool_exhausted_count - 1)
+		p.pool_exhausted = nil
+	end
+end
+
+-- Register a one-shot BufWipeout autocmd so the pool slot is released even
+-- when a buffer is destroyed outside M.close() (:bwipeout, another plugin).
+-- Defined before _acquire_slot (which calls it) so no forward declaration is
+-- needed. The autocmd ID is stored so _release_slot can delete it explicitly
+-- when the buffer is reused before wipeout, preventing accumulation.
+local function _ensure_wipeout_guard(buf)
+	if _wipeout_autocmd_id[buf] then
+		return
+	end
+	local id = vim.api.nvim_create_autocmd('BufWipeout', {
+		buffer = buf,
+		once = true,
+		callback = function()
+			_wipeout_autocmd_id[buf] = nil
+			M.close(buf)
+		end,
+	})
+	_wipeout_autocmd_id[buf] = id
+end
+
+local function _evict_invalid_owner(i, owner, buf)
+	local p = placements[owner]
+	if p then
+		-- Mark closed BEFORE clearing placements[owner]. In-flight
+		-- kitty.transmit_async callbacks for this owner still hold a reference
+		-- to the old placement table. Setting closed=true ensures they bail out
+		-- at the `placement.closed` guard rather than rendering into a buffer
+		-- number that Neovim may have recycled for an unrelated buffer.
+		p.closed = true
+		if p.image_id then
+			kitty.delete(p.image_id)
+		end
+		-- Pool-exhausted buffers never received a BufWipeout guard (the guard is
+		-- only registered after a slot is successfully acquired). If such a buffer
+		-- becomes invalid without M.close being called, the counter would
+		-- permanently over-count without this decrement.
+		_decrement_exhausted(p)
+	end
+	placements[owner] = nil
+	local aid = _wipeout_autocmd_id[owner]
+	if aid then
+		pcall(vim.api.nvim_del_autocmd, aid)
+		_wipeout_autocmd_id[owner] = nil
+	end
+	_buf_slot[owner] = nil
+	_pool_owner[i] = buf
+	_buf_slot[buf] = i
+end
+
+local function _acquire_slot(buf)
+	local existing = _buf_slot[buf]
+	if existing ~= nil then
+		return existing
+	end
+	-- Single pass: take the first free slot; remember the first invalid-owner
+	-- slot as a fallback so we avoid a second full scan.
+	local fallback_slot, fallback_owner
+	for i = 0, POOL_SIZE - 1 do
+		local owner = _pool_owner[i]
+		if owner == nil then
+			_pool_owner[i] = buf
+			_buf_slot[buf] = i
+			_ensure_wipeout_guard(buf)
+			return i
+		end
+		if fallback_slot == nil and not vim.api.nvim_buf_is_valid(owner) then
+			fallback_slot = i
+			fallback_owner = owner
+		end
+	end
+	if fallback_slot ~= nil then
+		-- Clear stale placement so a recycled buf number does not inherit old
+		-- state (has_placement() and M.render's fast-path both read placements[]).
+		-- M.close() cannot be called here: nvim_buf_clear_namespace raises on
+		-- an invalid buffer.
+		_evict_invalid_owner(fallback_slot, fallback_owner, buf)
+		_ensure_wipeout_guard(buf)
+		return fallback_slot
+	end
+	-- Pool exhausted: all 64 slots are owned by live buffers and none could be
+	-- reclaimed. Return nil so the caller can abort the render cleanly rather
+	-- than forcibly tearing down an unrelated, still-visible preview.
+	return nil
+end
+
+local function _release_slot(buf)
+	local slot = _buf_slot[buf]
+	if slot ~= nil then
+		_pool_owner[slot] = nil
+		_buf_slot[buf] = nil
+		-- Delete the pending BufWipeout autocmd so it does not accumulate when
+		-- the buffer is reused (re-rendered) before it is actually wiped out.
+		local aid = _wipeout_autocmd_id[buf]
+		if aid then
+			pcall(vim.api.nvim_del_autocmd, aid)
+			_wipeout_autocmd_id[buf] = nil
+		end
+		-- A slot was freed: give the first pool-exhausted placement a chance to
+		-- render. Guard on the counter so rapid close loops do not flood the event
+		-- queue with empty scans when the pool was never exhausted.
+		if _pool_exhausted_count > 0 then
+			vim.schedule(function()
+				-- Pre-pass: clear pool_exhausted on hidden buffers unconditionally.
+				-- This must run even when a visible placement is immediately recovered
+				-- below (which returns early). Without this, the first-pass return would
+				-- skip the hidden-buffer clearing, leaving those placements flagged
+				-- forever and making M.rerender() short-circuit when the user shows them.
+				-- For each hidden buffer we also register a one-shot BufWinEnter autocmd
+				-- so recovery fires immediately when the user brings it back into view
+				-- via :buffer, vsplit, etc. (paths that do not trigger TabEnter/WinResized).
+				for pb, p in pairs(placements) do
+					if
+						p
+						and p.pool_exhausted
+						and not p.closed
+						and vim.api.nvim_buf_is_valid(pb)
+						and vim.fn.bufwinid(pb) == -1
+					then
+						_decrement_exhausted(p)
+						local lpb, lp = pb, p
+						vim.api.nvim_create_autocmd('BufWinEnter', {
+							buffer = lpb,
+							once = true,
+							callback = function()
+								if
+									placements[lpb] == lp
+									and not lp.pool_exhausted
+									and not lp.closed
+									and not lp.image_id
+									and vim.api.nvim_buf_is_valid(lpb)
+								then
+									local age_ns = vim.uv.hrtime() - (lp.created_at or 0)
+									if age_ns >= 500e6 then
+										-- Set the recovery marker so that if this retry fails
+										-- the error-path can restore pool_exhausted and keep
+										-- the placement in the retry queue.
+										lp._recovering = true
+										M.rerender(lpb)
+									else
+										-- Too young for M.rerender's debounce; schedule a
+										-- deferred retry just after the window expires.
+										local delay_ms = math.ceil((500e6 - age_ns) / 1e6) + 10
+										vim.defer_fn(function()
+											if
+												placements[lpb] == lp
+												and not lp.pool_exhausted
+												and not lp.closed
+												and not lp.image_id
+												and vim.api.nvim_buf_is_valid(lpb)
+											then
+												lp._recovering = true
+												M.rerender(lpb)
+											end
+										end, delay_ms)
+									end
+								end
+							end,
+						})
+					end
+				end
+				-- First pass: find and use the first immediately-eligible visible
+				-- placement (windowed + past the rerender debounce). If found, consume
+				-- the freed slot for it and return without scheduling deferred retries,
+				-- which would cause wasted transmit+delete cycles if the slot is taken.
+				for pb, p in pairs(placements) do
+					if
+						p
+						and p.pool_exhausted
+						and not p.closed
+						and vim.api.nvim_buf_is_valid(pb)
+						and vim.fn.bufwinid(pb) ~= -1
+					then
+						local age_ns = vim.uv.hrtime() - (p.created_at or 0)
+						if age_ns >= 500e6 then
+							p._recovering = true
+							_decrement_exhausted(p)
+							M.rerender(pb)
+							return
+						end
+					end
+				end
+				-- Second pass: no immediately-eligible visible placement found.
+				-- Schedule a deferred retry for each young windowed placement so
+				-- recovery is not permanently lost while the debounce window expires.
+				for pb, p in pairs(placements) do
+					if p and p.pool_exhausted and not p.closed and vim.api.nvim_buf_is_valid(pb) then
+						local winid = vim.fn.bufwinid(pb)
+						if winid ~= -1 then
+							local age_ns = vim.uv.hrtime() - (p.created_at or 0)
+							if age_ns < 500e6 then
+								local delay_ms = math.ceil((500e6 - age_ns) / 1e6) + 10
+								-- Copy loop locals explicitly so each closure captures its own
+								-- pb/p even though Lua generics-for already does this correctly.
+								local lpb, lp = pb, p
+								vim.defer_fn(function()
+									if
+										placements[lpb] == lp
+										and lp.pool_exhausted
+										and not lp.closed
+										and vim.api.nvim_buf_is_valid(lpb)
+										and vim.fn.bufwinid(lpb) ~= -1
+									then
+										lp._recovering = true
+										_decrement_exhausted(lp)
+										M.rerender(lpb)
+									end
+								end, delay_ms)
+							end
+						end
+					end
+				end
+			end)
+		end
+	end
+end
+
+-- Re-apply pool slot fg values after a colorscheme change.
+-- Colorschemes may reset or redefine highlight groups, wiping the image_id
+-- stored in each GlimpseImage<slot> group and causing placeholders to render
+-- the wrong image (fg=0 means image ID 0, which is undefined in Kitty).
+local _pool_augroup = vim.api.nvim_create_augroup('GlimpsePool', { clear = true })
+vim.api.nvim_create_autocmd('ColorScheme', {
+	group = _pool_augroup,
+	callback = function()
+		for i = 0, POOL_SIZE - 1 do
+			local owned_buf = _pool_owner[i]
+			if owned_buf then
+				local p = placements[owned_buf]
+				if p and p.image_id then
+					vim.api.nvim_set_hl(0, 'GlimpseImage' .. i, { fg = p.image_id, nocombine = true })
+				end
+			end
+		end
+	end,
+})
+
 local request_counter = 0
 
 local function normalize_path(path)
@@ -86,11 +340,41 @@ end
 --- @param image_id number
 --- @param cols number
 --- @param rows number
+-- Returns true on success, false when the image was not rendered (caller
+-- should preserve old state rather than clearing it).
 local function render_grid(buf, image_id, cols, rows)
+	if not vim.api.nvim_buf_is_valid(buf) then
+		-- The image was already transmitted; delete it so it does not leak
+		-- in the terminal. (The pool-exhausted branch below also calls delete.)
+		kitty.delete(image_id)
+		return false
+	end
 	local height = math.min(#positions, rows)
 	local width = math.min(#positions, cols)
 
-	local hl_name = 'ImagePreview' .. image_id
+	local slot = _acquire_slot(buf)
+	if slot == nil then
+		-- All 64 pool slots are occupied by live buffers. Delete the already-
+		-- transmitted image so it does not leak in the terminal, and mark the
+		-- placement as pool_exhausted so M.rerender skips it (no churn) while
+		-- still allowing recovery when another buffer frees a slot.
+		kitty.delete(image_id)
+		local p = placements[buf]
+		if p then
+			p.image_id = nil
+			p.pool_exhausted = true
+			_pool_exhausted_count = _pool_exhausted_count + 1
+			-- Register a BufWipeout guard even though no slot was acquired.
+			-- Without this, :bd or a plugin can destroy the buffer and leave
+			-- placements[buf] behind; has_placement() then returns true for a
+			-- later buffer that reuses the same number, causing the inline
+			-- auto-render path to skip it.
+			_ensure_wipeout_guard(buf)
+		end
+		vim.notify('[glimpse] highlight group pool exhausted (>64 simultaneous previews)', vim.log.levels.WARN)
+		return false
+	end
+	local hl_name = 'GlimpseImage' .. slot
 	vim.api.nvim_set_hl(0, hl_name, { fg = image_id, nocombine = true })
 
 	-- Generate placeholder lines
@@ -109,6 +393,11 @@ local function render_grid(buf, image_id, cols, rows)
 	vim.bo[buf].modifiable = false
 	vim.bo[buf].modified = false
 
+	-- Clear old extmarks before writing new ones. Done here (not in the caller)
+	-- so that a failed render_grid (pool exhausted, invalid buf) does not leave
+	-- the buffer without extmarks and with its previous image already deleted.
+	vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+
 	-- Apply highlighting via extmarks
 	for i = 0, #lines - 1 do
 		vim.api.nvim_buf_set_extmark(buf, ns, i, 0, {
@@ -116,6 +405,7 @@ local function render_grid(buf, image_id, cols, rows)
 			hl_group = hl_name,
 		})
 	end
+	return true
 end
 
 --- Render an image in the buffer.
@@ -133,6 +423,8 @@ function M.render(buf, filepath, opts, on_done)
 	local cols, rows = window_signature(win)
 	if
 		existing
+		and existing.image_id
+		and not existing.pool_exhausted
 		and same_path(existing.filepath, filepath)
 		and same_signature(existing.signature, signature)
 		and (cols == nil or rows == nil or (existing.win_cols == cols and existing.win_rows == rows))
@@ -272,10 +564,12 @@ function M.close(buf)
 		return
 	end
 	placement.closed = true
+	_decrement_exhausted(placement)
 	if placement.image_id then
 		kitty.delete(placement.image_id)
 	end
 	vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+	_release_slot(buf)
 	placements[buf] = nil
 end
 
@@ -292,6 +586,7 @@ function M.register(buf, filepath)
 		signature = file_signature(filepath),
 		image_id = nil,
 		closed = false,
+		created_at = vim.uv.hrtime(),
 	}
 end
 
@@ -303,7 +598,12 @@ function M.rerender(buf)
 		return
 	end
 	-- Skip if it was created less than 500ms ago
-	if (vim.uv.hrtime() - placement.created_at) < 500e6 then
+	if (vim.uv.hrtime() - (placement.created_at or 0)) < 500e6 then
+		return
+	end
+	-- Skip if the pool was exhausted for this buffer; M.render and _release_slot
+	-- handle recovery once a slot becomes available.
+	if placement.pool_exhausted then
 		return
 	end
 	local filepath = placement.filepath
@@ -315,6 +615,8 @@ function M.rerender(buf)
 
 	local win = vim.fn.bufwinid(buf)
 	if win == -1 then
+		-- Clear the recovery marker so it does not leak into future calls.
+		placement._recovering = nil
 		return
 	end
 	local cols = vim.api.nvim_win_get_width(win)
@@ -328,7 +630,47 @@ function M.rerender(buf)
 
 	placement.job_id = kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
 		placement.job_id = nil
+		-- Capture and clear the recovery marker before any early return so it
+		-- does not leak across retries regardless of which path is taken.
+		local was_recovering = placement._recovering
+		placement._recovering = nil
 		if err or not id then
+			-- If this was a recovery attempt (pool_exhausted was cleared to let
+			-- M.rerender proceed), restore the exhaustion state on failure so the
+			-- placement is retried on the next slot release.
+			-- Use was_recovering rather than `not placement.image_id` to avoid
+			-- falsely stamping normal first-render or re-render failures that happen
+			-- to have image_id=nil (e.g. registered placements, corrupt files).
+			if was_recovering and not placement.closed and placement.request_id == req_id then
+				placement.pool_exhausted = true
+				_pool_exhausted_count = _pool_exhausted_count + 1
+				-- The counter was 0 while the transmit was in flight; if a slot was
+				-- freed during that window, _release_slot saw count=0 and skipped its
+				-- scan. Schedule a new scan now to catch that case.
+				vim.schedule(function()
+					if _pool_exhausted_count > 0 then
+						-- Reuse the standard recovery logic: try to find an eligible
+						-- exhausted placement and rerender it.
+						for pb, p in pairs(placements) do
+							if
+								p
+								and p.pool_exhausted
+								and not p.closed
+								and vim.api.nvim_buf_is_valid(pb)
+								and vim.fn.bufwinid(pb) ~= -1
+							then
+								local age_ns = vim.uv.hrtime() - (p.created_at or 0)
+								if age_ns >= 500e6 then
+									p._recovering = true
+									_decrement_exhausted(p)
+									M.rerender(pb)
+									return
+								end
+							end
+						end
+					end
+				end)
+			end
 			return
 		end
 		if placement.closed or placement.request_id ~= req_id then
@@ -339,13 +681,8 @@ function M.rerender(buf)
 			kitty.delete(id)
 			return
 		end
-		-- Remove the old one
-		if old_id then
-			kitty.delete(old_id)
-		end
-		vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-		-- Apply the new one
 		if not w_px or not h_px then
+			kitty.delete(id)
 			return
 		end
 		placement.image_id = id
@@ -353,7 +690,14 @@ function M.rerender(buf)
 		placement.win_rows = rows
 		local grid_cols = math.min(cols, math.ceil(w_px / require('glimpse').get_config().cell_size.width))
 		local grid_rows = math.min(rows, math.ceil(h_px / require('glimpse').get_config().cell_size.height))
-		render_grid(buf, id, grid_cols, grid_rows)
+		-- render_grid clears the namespace and writes new extmarks only on
+		-- success. Old state (old_id + extmarks) is preserved on failure so
+		-- the buffer does not go blank if the slot race is lost mid-rerender.
+		if render_grid(buf, id, grid_cols, grid_rows) then
+			if old_id then
+				kitty.delete(old_id)
+			end
+		end
 	end)
 end
 
