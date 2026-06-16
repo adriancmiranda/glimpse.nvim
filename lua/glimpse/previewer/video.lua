@@ -8,7 +8,7 @@ local preview_state = require('glimpse.preview_state')
 local _tokens = {}
 
 --- Per-buffer animation state. Keyed by buf number.
---- @type table<number, {toggle: fun(), stop: fun()}>
+--- @type table<number, {source_win: number, toggle: fun(), stop: fun(full_cleanup?: boolean)}>
 local _states = {}
 
 -- Tracks all temp PNG paths written during the session so a VimLeavePre
@@ -42,8 +42,8 @@ end
 --- Exposed for tests only.
 M._temp_registry = _temp_registry
 
-local function _show_thumbnail(filepath, mode)
-	local winid = vim.api.nvim_get_current_win()
+local function _show_thumbnail(filepath, mode, source_win)
+	local winid = source_win or vim.api.nvim_get_current_win()
 	local token = {}
 	_tokens[winid] = token
 	thumbnail.extract_async(filepath, function(thumb)
@@ -78,6 +78,13 @@ end
 local function _show_animated(filepath, mode, source_win)
 	local winid = source_win or vim.api.nvim_get_current_win()
 	local token = {}
+
+	for _, state in pairs(_states) do
+		if state.source_win == winid then
+			state.stop(false)
+		end
+	end
+
 	_tokens[winid] = token
 
 	local glimpse = require('glimpse')
@@ -100,10 +107,16 @@ local function _show_animated(filepath, mode, source_win)
 	-- share the same buf/win without opening a second split.
 	local function ensure_window()
 		if anim_buf and vim.api.nvim_buf_is_valid(anim_buf) then
-			return anim_buf, anim_win
+			if anim_win and vim.api.nvim_win_is_valid(anim_win) and vim.api.nvim_win_get_buf(anim_win) == anim_buf then
+				return anim_buf, anim_win
+			end
+			anim_buf, anim_win, anim_target_buf = nil, nil, nil
 		end
 		if mode ~= 'preview' then
 			anim_win = winid
+			if not vim.api.nvim_win_is_valid(anim_win) then
+				return nil, nil
+			end
 			anim_buf = vim.api.nvim_win_get_buf(winid)
 			anim_target_buf = anim_buf
 			return anim_buf, anim_win
@@ -243,7 +256,7 @@ local function _show_animated(filepath, mode, source_win)
 
 		if err or #collected == 0 then
 			cleanup_anim()
-			_show_thumbnail(filepath, mode)
+			_show_thumbnail(filepath, mode, winid)
 			vim.notify('[glimpse] ' .. (err or 'no frames extracted'), vim.log.levels.WARN)
 			return
 		end
@@ -260,6 +273,7 @@ local function _show_animated(filepath, mode, source_win)
 			return
 		end
 
+		local animation_files = {}
 		local cell_w = (config.cell_size and config.cell_size.width) or 20
 		local cell_h = (config.cell_size and config.cell_size.height) or 40
 		local win_cols = vim.api.nvim_win_get_width(win)
@@ -268,21 +282,22 @@ local function _show_animated(filepath, mode, source_win)
 		local grid_rows = math.min(win_rows, math.ceil(h_px / cell_h))
 
 		-- Pre-write all frames to temp files
-		for i, data in ipairs(collected) do
+		for _, data in ipairs(collected) do
 			local tmp = vim.fn.tempname() .. '.png'
 			local fh = io.open(tmp, 'wb')
 			if fh then
 				fh:write(data)
 				fh:close()
-				frame_files[i] = tmp
+				animation_files[#animation_files + 1] = tmp
+				frame_files[#frame_files + 1] = tmp
 			end
 		end
 		_register_temps(frame_files)
 
 		-- Send only frame 1 to establish the image ID and placeholder
 		local image_id = kitty.new_id()
-		if frame_files[1] then
-			kitty.retransmit_frame(image_id, frame_files[1])
+		if animation_files[1] then
+			kitty.retransmit_frame(image_id, animation_files[1])
 		end
 
 		-- Set up buffer with placeholder grid
@@ -306,10 +321,10 @@ local function _show_animated(filepath, mode, source_win)
 			if paused then
 				return
 			end
-			frame = (frame % #frame_files) + 1
-			if frame_files[frame] then
+			frame = (frame % #animation_files) + 1
+			if animation_files[frame] then
 				local new_id = kitty.new_id()
-				kitty.retransmit_frame(new_id, frame_files[frame])
+				kitty.retransmit_frame(new_id, animation_files[frame])
 				local old_id = cur_id
 				kitty.delete(old_id)
 				cur_id = new_id
@@ -321,10 +336,10 @@ local function _show_animated(filepath, mode, source_win)
 		anim_timer:start(delay_ms, 0, vim.schedule_wrap(advance))
 
 		local function jump_to_frame(target)
-			frame = math.max(1, math.min(#frame_files, target))
-			if frame_files[frame] then
+			frame = math.max(1, math.min(#animation_files, target))
+			if animation_files[frame] then
 				local new_id = kitty.new_id()
-				kitty.retransmit_frame(new_id, frame_files[frame])
+				kitty.retransmit_frame(new_id, animation_files[frame])
 				local old_id = cur_id
 				kitty.delete(old_id)
 				cur_id = new_id
@@ -335,6 +350,7 @@ local function _show_animated(filepath, mode, source_win)
 
 		-- State machine: play/pause toggle, seek, and cleanup
 		_states[buf] = {
+			source_win = winid,
 			toggle = function()
 				paused = not paused
 				if not paused then

@@ -28,6 +28,7 @@ function M.setup()
 	local glimpse = require('glimpse')
 	local config = glimpse.get_config()
 	local integrations = config.integrations or {}
+	---@type GlimpseOilConfig
 	local oil_config = integrations.oil or {}
 	follow_cwd = oil_config.follow_cwd ~= false
 	local keys = config.keys or {}
