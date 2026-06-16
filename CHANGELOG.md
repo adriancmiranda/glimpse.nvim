@@ -9,6 +9,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - *(ci)* Move merged PRs to Done in GitHub project board
+- *(ci)* Bump github-script to v9 and move IDs to repository variables
 
 
 ## [2.1.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v2.0.0..v2.1.0) - 2026-06-16
