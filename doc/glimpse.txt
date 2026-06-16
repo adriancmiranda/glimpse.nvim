@@ -87,11 +87,29 @@ GlimpseImageConfig                                          *GlimpseImageConfig*
         {formats?}  (string[])  Supported image extensions
 
 
+GlimpseVideoFramesConfig                              *GlimpseVideoFramesConfig*
+
+    Fields: ~
+        {strategy?}    ("auto"|"batch"|"poll")  Frame extraction strategy for inline playback (default: 'auto')
+        {per_second?}  (number)                 Frames per second to extract (default: 10)
+        {limit?}       (integer)                Maximum frames to extract (default: 120)
+
+
+GlimpseVideoKeysConfig                                  *GlimpseVideoKeysConfig*
+
+    Fields: ~
+        {toggle?}         (string)  Keymap to toggle play/pause in an animation buffer (default: '<CR>')
+        {seek_forward?}   (string)  Keymap to seek forward 5 seconds (default: 'l')
+        {seek_backward?}  (string)  Keymap to seek backward 5 seconds (default: 'h')
+
+
 GlimpseVideoConfig                                          *GlimpseVideoConfig*
 
     Fields: ~
         {formats?}  (string[])                     Supported video extensions
         {open?}     (string|fun(filepath:string))  Command or callback for opening videos externally
+        {keys?}     (GlimpseVideoKeysConfig)       Keymaps for inline video playback
+        {frames?}   (GlimpseVideoFramesConfig)     Inline video playback settings
 
 
 GlimpseArchiveConfig                                      *GlimpseArchiveConfig*
@@ -268,6 +286,13 @@ M.get_terminal()                                                *M.get_terminal*
 
 M.supports_inline()                                          *M.supports_inline*
      Check whether the terminal supports inline rendering (Kitty Graphics Protocol).
+     @return boolean
+
+
+M.supports_animation()                                    *M.supports_animation*
+     Check whether the terminal supports Kitty animation protocol (a=f add-frame).
+     Equivalent to supports_inline: every terminal that implements the Kitty
+     Graphics Protocol for images also implements multi-frame animation.
      @return boolean
 
 
