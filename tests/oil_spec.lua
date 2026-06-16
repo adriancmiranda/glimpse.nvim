@@ -33,6 +33,9 @@ describe('oil integration', function()
 			'glimpse.dir',
 			'glimpse.util',
 			'oil',
+			'glimpse.integrations.oil.float',
+			'glimpse.integrations.oil.open',
+			'glimpse.integrations.oil.path',
 			'glimpse.integrations.oil',
 		})
 
@@ -217,6 +220,9 @@ describe('oil integration', function()
 			'glimpse.renderer',
 			'glimpse.util',
 			'oil',
+			'glimpse.integrations.oil.float',
+			'glimpse.integrations.oil.open',
+			'glimpse.integrations.oil.path',
 			'glimpse.integrations.oil',
 		})
 
@@ -402,6 +408,151 @@ describe('oil integration', function()
 		vim.api.nvim_buf_get_option = original_buf_get_option
 		vim.api.nvim_buf_set_option = original_buf_set_option
 		vim.api.nvim_create_buf = original_create_buf
+		restore_package(saved)
+	end)
+
+	it('resolves the float directory from the current file buffer', function()
+		local saved = save_package({
+			'glimpse.integrations.oil.float',
+			'glimpse.integrations.oil.path',
+			'glimpse.integrations.oil',
+		})
+
+		local original_buf = vim.api.nvim_get_current_buf()
+		local image_buf = vim.api.nvim_create_buf(false, true)
+		local filepath = vim.fs.joinpath(vim.fn.tempname(), 'target.png')
+		vim.fn.mkdir(vim.fs.dirname(filepath), 'p')
+		vim.fn.writefile({ 'png' }, filepath)
+
+		vim.api.nvim_set_current_buf(image_buf)
+		vim.bo[image_buf].filetype = 'markdown'
+		vim.api.nvim_buf_set_name(image_buf, filepath)
+
+		local oil = require('glimpse.integrations.oil')
+		local dirpath, cursor = oil.resolve_float_dir()
+
+		assert.equals(vim.uv.fs_realpath(vim.fs.dirname(filepath)), vim.uv.fs_realpath(dirpath))
+		assert.equals(vim.fs.basename(filepath), cursor)
+
+		vim.api.nvim_set_current_buf(original_buf)
+		if vim.api.nvim_buf_is_valid(image_buf) then
+			vim.api.nvim_buf_delete(image_buf, { force = true })
+		end
+		vim.fn.delete(filepath)
+		vim.fn.delete(vim.fs.dirname(filepath), 'd')
+		restore_package(saved)
+	end)
+
+	it('toggles Oil float with resolved dir and restores cursor target', function()
+		local saved = save_package({
+			'oil',
+			'glimpse.integrations.oil.float',
+			'glimpse.integrations.oil.path',
+			'glimpse.integrations.oil',
+		})
+
+		local image_buf = vim.api.nvim_create_buf(false, true)
+		local oil_buf = vim.api.nvim_create_buf(false, true)
+		local filepath = vim.fn.tempname() .. '.png'
+		local original_buf = vim.api.nvim_get_current_buf()
+		local original_win_get_cursor = vim.api.nvim_win_get_cursor
+		local original_win_set_cursor = vim.api.nvim_win_set_cursor
+		local cursor_calls = {}
+		local calls = {}
+
+		package.loaded['oil'] = {
+			toggle_float = function(dirpath, opts, cb)
+				calls.dirpath = dirpath
+				calls.opts = opts
+				vim.api.nvim_set_current_buf(oil_buf)
+				vim.bo[oil_buf].filetype = 'oil'
+				if cb then
+					cb()
+				end
+			end,
+			get_entry_on_line = function(_, lnum)
+				if lnum == 2 then
+					return { name = vim.fs.basename(filepath) }
+				end
+				return { name = 'other.png' }
+			end,
+		}
+
+		vim.fn.mkdir(vim.fs.dirname(filepath), 'p')
+		vim.fn.writefile({ 'png' }, filepath)
+		vim.api.nvim_set_current_buf(image_buf)
+		vim.bo[image_buf].filetype = 'lua'
+		vim.api.nvim_buf_set_name(image_buf, filepath)
+		vim.api.nvim_buf_set_lines(oil_buf, 0, -1, false, { 'other.png', vim.fs.basename(filepath) })
+		vim.api.nvim_win_get_cursor = function()
+			return { 1, 0 }
+		end
+		vim.api.nvim_win_set_cursor = function(_, pos)
+			cursor_calls[#cursor_calls + 1] = pos
+		end
+
+		local oil = require('glimpse.integrations.oil')
+		oil.toggle_float({
+			oil_opts = { border = 'rounded' },
+			cb = function(dirpath, cursor)
+				calls.cb = { dirpath = dirpath, cursor = cursor }
+			end,
+		})
+
+		assert.equals(vim.uv.fs_realpath(vim.fs.dirname(filepath)), vim.uv.fs_realpath(calls.dirpath))
+		assert.are.same({ border = 'rounded' }, calls.opts)
+		assert.are.same({ 2, 0 }, cursor_calls[1])
+		assert.equals(calls.dirpath, calls.cb.dirpath)
+		assert.equals(vim.fs.basename(filepath), calls.cb.cursor)
+
+		vim.api.nvim_win_get_cursor = original_win_get_cursor
+		vim.api.nvim_win_set_cursor = original_win_set_cursor
+		vim.api.nvim_set_current_buf(original_buf)
+		if vim.api.nvim_buf_is_valid(image_buf) then
+			vim.api.nvim_buf_delete(image_buf, { force = true })
+		end
+		if vim.api.nvim_buf_is_valid(oil_buf) then
+			vim.api.nvim_buf_delete(oil_buf, { force = true })
+		end
+		vim.fn.delete(filepath)
+		vim.fn.delete(vim.fs.dirname(filepath), 'd')
+		restore_package(saved)
+	end)
+
+	it('resolves the startup argv path when no file buffer is active', function()
+		local saved = save_package({
+			'glimpse.integrations.oil.float',
+			'glimpse.integrations.oil.path',
+			'glimpse.integrations.oil',
+		})
+
+		local original_buf = vim.api.nvim_get_current_buf()
+		local original_argc = vim.fn.argc
+		local original_argv = vim.fn.argv
+		local temp_dir = vim.fn.tempname()
+		local relative_dir = 'nested/oil'
+		local expected_dir = vim.fs.joinpath(vim.uv.cwd() or vim.fn.getcwd(), relative_dir)
+
+		vim.fn.mkdir(expected_dir, 'p')
+		vim.api.nvim_buf_set_name(original_buf, '')
+		vim.fn.argc = function()
+			return 1
+		end
+		vim.fn.argv = function()
+			return relative_dir
+		end
+
+		local oil = require('glimpse.integrations.oil')
+		local dirpath, cursor = oil.resolve_float_dir()
+
+		assert.equals(vim.fs.normalize(expected_dir), vim.fs.normalize(dirpath))
+		assert.is_nil(cursor)
+
+		vim.fn.argc = original_argc
+		vim.fn.argv = original_argv
+		vim.api.nvim_set_current_buf(original_buf)
+		vim.fn.delete(expected_dir, 'd')
+		vim.fn.delete(temp_dir)
 		restore_package(saved)
 	end)
 end)

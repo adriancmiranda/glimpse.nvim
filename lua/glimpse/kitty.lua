@@ -77,7 +77,7 @@ local function base64(str)
 	if vim.base64 and vim.base64.encode then
 		return vim.base64.encode(str)
 	end
-	return vim.fn.system('printf "%s" ' .. vim.fn.shellescape(str) .. ' | base64'):gsub('%s+', '')
+	return (vim.fn.system('printf "%s" ' .. vim.fn.shellescape(str) .. ' | base64'):gsub('%s+', ''))
 end
 
 --- Send a Kitty Graphics Protocol command to the terminal.

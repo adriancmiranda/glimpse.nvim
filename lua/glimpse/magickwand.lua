@@ -1,5 +1,6 @@
 --- FFI bindings for libMagickWand - in-memory image decoding and resize.
 --- Removes the overhead of spawning the `magick` CLI process (~700ms -> ~0ms).
+---@diagnostic disable: undefined-field, need-check-nil -- FFI cdata fields are not typed
 
 local ffi = require('ffi')
 
