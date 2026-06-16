@@ -164,7 +164,9 @@ local function open_image(filepath, opts)
 
 	local current_buf = vim.api.nvim_get_current_buf()
 	local bufname = filepath
-	if opts.force_fresh or vim.bo[current_buf].filetype == 'image' or should_open_fresh_buffer(filepath) then
+	local use_fresh = open_mode ~= 'tabedit'
+		and (opts.force_fresh or vim.bo[current_buf].filetype == 'image' or should_open_fresh_buffer(filepath))
+	if use_fresh then
 		local fresh_buf = create_fresh_buffer()
 		if not pcall(vim.api.nvim_buf_set_name, fresh_buf, filepath) then
 			bufname = fresh_buffer_name(filepath, fresh_buf)
@@ -250,6 +252,9 @@ function M.setup()
 						if glimpse._should_use_inline() then
 							local existing_buf = existing_image_buffer(fpath)
 							if existing_buf then
+								if should_follow_cwd() then
+									dir.follow(fpath)
+								end
 								oil.close()
 								focus_existing_image(fpath)
 								return

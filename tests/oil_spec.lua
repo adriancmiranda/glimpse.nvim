@@ -30,6 +30,7 @@ describe('oil integration', function()
 		local saved = save_package({
 			'glimpse',
 			'glimpse.renderer',
+			'glimpse.dir',
 			'glimpse.util',
 			'oil',
 			'glimpse.integrations.oil',
@@ -42,6 +43,7 @@ describe('oil integration', function()
 		local render_calls = {}
 		local autocmds = {}
 		local mappings = {}
+		local follow_calls = {}
 		local buf_names = {
 			[oil_buf] = '/tmp/image.png',
 			[image_buf] = '/tmp/image.png',
@@ -71,6 +73,11 @@ describe('oil integration', function()
 			end,
 			is_font = function()
 				return false
+			end,
+		}
+		package.loaded['glimpse.dir'] = {
+			follow = function(filepath)
+				follow_calls[#follow_calls + 1] = filepath
 			end,
 		}
 		package.loaded['glimpse.renderer'] = {
@@ -179,6 +186,8 @@ describe('oil integration', function()
 		mappings.o()
 
 		assert.equals(0, #render_calls)
+		assert.equals(1, #follow_calls)
+		assert.equals('/tmp/image.png', follow_calls[1])
 		assert.equals(image_buf, current_buf)
 		assert.equals(101, current_win)
 
@@ -199,6 +208,200 @@ describe('oil integration', function()
 		vim.api.nvim_buf_set_name = original_buf_set_name
 		vim.api.nvim_buf_get_option = original_buf_get_option
 		vim.api.nvim_buf_set_option = original_buf_set_option
+		restore_package(saved)
+	end)
+
+	it('respects tabedit when opening a fresh image buffer', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.renderer',
+			'glimpse.util',
+			'oil',
+			'glimpse.integrations.oil',
+		})
+
+		local oil_buf = 1
+		local tab_buf = 20
+		local current_buf = oil_buf
+		local current_win = 100
+		local render_calls = {}
+		local autocmds = {}
+		local mappings = {}
+		local cmd_calls = {}
+		local create_buf_calls = 0
+		local buf_names = {
+			[oil_buf] = '',
+			[tab_buf] = '',
+		}
+		local windows = {
+			[100] = oil_buf,
+		}
+
+		package.loaded['oil'] = {
+			close = function()
+				return true
+			end,
+			get_cursor_entry = function()
+				return { type = 'file', name = 'image.png' }
+			end,
+			get_current_dir = function()
+				return '/tmp'
+			end,
+		}
+		package.loaded['glimpse.util'] = {
+			is_video = function()
+				return false
+			end,
+			is_image = function()
+				return true
+			end,
+			is_font = function()
+				return false
+			end,
+		}
+		package.loaded['glimpse.renderer'] = {
+			find_by_filepath = function()
+				return nil
+			end,
+			render = function(buf, filepath)
+				render_calls[#render_calls + 1] = { buf = buf, filepath = filepath }
+			end,
+		}
+		package.loaded['glimpse'] = {
+			get_config = function()
+				return {
+					keys = { preview = 'p', open = 'o', close = 'q' },
+					integrations = {
+						oil = {
+							open = 'tabedit',
+						},
+					},
+					video = { open = nil },
+				}
+			end,
+			_should_use_inline = function()
+				return true
+			end,
+			preview = function()
+				return true
+			end,
+		}
+
+		local original_create_autocmd = vim.api.nvim_create_autocmd
+		local original_create_augroup = vim.api.nvim_create_augroup
+		local original_keymap_set = vim.keymap.set
+		local original_cmd = vim.cmd
+		local original_get_current_buf = vim.api.nvim_get_current_buf
+		local original_get_current_win = vim.api.nvim_get_current_win
+		local original_set_current_buf = vim.api.nvim_set_current_buf
+		local original_set_current_win = vim.api.nvim_set_current_win
+		local original_list_bufs = vim.api.nvim_list_bufs
+		local original_list_wins = vim.api.nvim_list_wins
+		local original_win_get_buf = vim.api.nvim_win_get_buf
+		local original_win_is_valid = vim.api.nvim_win_is_valid
+		local original_buf_is_valid = vim.api.nvim_buf_is_valid
+		local original_buf_get_name = vim.api.nvim_buf_get_name
+		local original_buf_set_name = vim.api.nvim_buf_set_name
+		local original_buf_get_option = vim.api.nvim_buf_get_option
+		local original_buf_set_option = vim.api.nvim_buf_set_option
+		local original_create_buf = vim.api.nvim_create_buf
+
+		vim.api.nvim_create_autocmd = function(event, spec)
+			autocmds[event] = spec
+			return 1
+		end
+		vim.api.nvim_create_augroup = function()
+			return 1
+		end
+		vim.keymap.set = function(_, lhs, cb)
+			mappings[lhs] = cb
+		end
+		vim.cmd = function(cmd)
+			local cmd_str = cmd_to_str(cmd)
+			cmd_calls[#cmd_calls + 1] = cmd_str
+			if cmd_str:match('^tabedit ') then
+				current_buf = tab_buf
+				current_win = 101
+			end
+			return true
+		end
+		vim.api.nvim_get_current_buf = function()
+			return current_buf
+		end
+		vim.api.nvim_get_current_win = function()
+			return current_win
+		end
+		vim.api.nvim_set_current_buf = function(buf)
+			current_buf = buf
+		end
+		vim.api.nvim_set_current_win = function(win)
+			current_win = win
+			current_buf = windows[win] or current_buf
+		end
+		vim.api.nvim_list_bufs = function()
+			return { oil_buf }
+		end
+		vim.api.nvim_list_wins = function()
+			return { 100 }
+		end
+		vim.api.nvim_win_get_buf = function(win)
+			return windows[win]
+		end
+		vim.api.nvim_win_is_valid = function(win)
+			return windows[win] ~= nil
+		end
+		vim.api.nvim_buf_is_valid = function(buf)
+			return buf == oil_buf or buf == tab_buf
+		end
+		vim.api.nvim_buf_get_name = function(buf)
+			return buf_names[buf] or ''
+		end
+		vim.api.nvim_buf_set_name = function(buf, name)
+			buf_names[buf] = name
+		end
+		vim.api.nvim_buf_get_option = function()
+			return ''
+		end
+		vim.api.nvim_buf_set_option = function()
+			return true
+		end
+		vim.api.nvim_create_buf = function()
+			create_buf_calls = create_buf_calls + 1
+			return 99
+		end
+
+		local oil = require('glimpse.integrations.oil')
+		oil.setup()
+		autocmds.FileType.callback({ buf = oil_buf })
+		mappings.o()
+
+		assert.equals(1, #cmd_calls)
+		assert.equals('tabedit /tmp/image.png', cmd_calls[1])
+		assert.equals(0, create_buf_calls)
+		assert.equals(1, #render_calls)
+		assert.equals(tab_buf, render_calls[1].buf)
+		assert.equals('/tmp/image.png', render_calls[1].filepath)
+		assert.equals(tab_buf, current_buf)
+		assert.equals(101, current_win)
+
+		vim.api.nvim_create_autocmd = original_create_autocmd
+		vim.api.nvim_create_augroup = original_create_augroup
+		vim.keymap.set = original_keymap_set
+		vim.cmd = original_cmd
+		vim.api.nvim_get_current_buf = original_get_current_buf
+		vim.api.nvim_get_current_win = original_get_current_win
+		vim.api.nvim_set_current_buf = original_set_current_buf
+		vim.api.nvim_set_current_win = original_set_current_win
+		vim.api.nvim_list_bufs = original_list_bufs
+		vim.api.nvim_list_wins = original_list_wins
+		vim.api.nvim_win_get_buf = original_win_get_buf
+		vim.api.nvim_win_is_valid = original_win_is_valid
+		vim.api.nvim_buf_is_valid = original_buf_is_valid
+		vim.api.nvim_buf_get_name = original_buf_get_name
+		vim.api.nvim_buf_set_name = original_buf_set_name
+		vim.api.nvim_buf_get_option = original_buf_get_option
+		vim.api.nvim_buf_set_option = original_buf_set_option
+		vim.api.nvim_create_buf = original_create_buf
 		restore_package(saved)
 	end)
 end)
