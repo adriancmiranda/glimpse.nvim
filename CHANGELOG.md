@@ -10,6 +10,7 @@
 
 - *(kitty)* Auto-detect terminal cell pixel dimensions
 - *(changelog)* Include commit body in changelog for breaking changes
+- *(preview)* Separate preview state and oil image flow
 
 ### 🐛 Bug Fixes
 
@@ -18,6 +19,7 @@
 - *(telescope)* Scaffold investigation for stale render state (#71)
 - *(telescope)* Close active Kitty render before text preview
 - *(telescope)* Also clear stale image on disabled-kind fallback path
+- *(oil)* Preserve cwd and open modes
 
 ### 🧪 Testing
 
