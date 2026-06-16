@@ -1,0 +1,64 @@
+name: Move merged PR to Done in project
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  move-to-done:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          PROJECT_ID: PVT_kwHOAFLgDs4BakFx
+          STATUS_FIELD_ID: PVTSSF_lAHOAFLgDs4BakFxzhVazZo
+          DONE_OPTION_ID: "98236657"
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const projectId = process.env.PROJECT_ID;
+            const fieldId = process.env.STATUS_FIELD_ID;
+            const doneId = process.env.DONE_OPTION_ID;
+
+            const prNodeId = context.payload.pull_request.node_id;
+
+            const { node } = await github.graphql(`
+              query($pr: ID!) {
+                node(id: $pr) {
+                  ... on PullRequest {
+                    projectItems(first: 10) {
+                      nodes { id project { id } }
+                    }
+                  }
+                }
+              }
+            `, { pr: prNodeId });
+
+            const item = (node.projectItems.nodes || [])
+              .find(i => i.project.id === projectId);
+
+            if (!item) {
+              console.log('PR not linked to project, skipping.');
+              return;
+            }
+
+            await github.graphql(`
+              mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $project
+                  itemId: $item
+                  fieldId: $field
+                  value: { singleSelectOptionId: $value }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `, {
+              project: projectId,
+              item: item.id,
+              field: fieldId,
+              value: doneId,
+            });
+
+            console.log(`Moved item ${item.id} to Done.`);
