@@ -2,7 +2,7 @@ PLENARY_PATH ?= $(firstword $(wildcard $(HOME)/.local/share/nvim/packages/plenar
 MARKDOWNLINT_FILES ?= README.md CONTRIBUTING.md
 MARKDOWNLINT_VERSION ?= 0.48.0
 
-.PHONY: test bench setup-hooks docs lint lint-fix lint-changelog changelog changelog-check release-notes
+.PHONY: test bench setup-hooks docs lint lint-fix lint-types lint-changelog changelog changelog-check release-notes
 
 test:
 	@tmpfile="$$(mktemp)"; \
@@ -34,6 +34,15 @@ lint:
 
 lint-fix:
 	@npx --yes markdownlint-cli@$(MARKDOWNLINT_VERSION) --fix README.md CONTRIBUTING.md
+
+lint-types:
+	@lua-language-server --check . --checklevel=Warning 2>&1 \
+		| grep -v 'undefined-global\|different-requires\|Initializing\|^$$' \
+		| tee /tmp/luals-output.txt; \
+	if grep -q '\[Error\]' /tmp/luals-output.txt; then \
+		echo "❌ lua-language-server: errors found."; exit 1; \
+	fi; \
+	echo "ok lua-language-server"
 
 lint-changelog:
 	@npx --yes markdownlint-cli@$(MARKDOWNLINT_VERSION) CHANGELOG.md

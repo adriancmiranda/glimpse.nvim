@@ -30,7 +30,7 @@ function M.setup()
 	local integrations = config.integrations or {}
 	local oil_config = integrations.oil or {}
 	follow_cwd = oil_config.follow_cwd ~= false
-	local keys = config.keys
+	local keys = config.keys or {}
 
 	vim.api.nvim_create_autocmd('FileType', {
 		pattern = 'oil',

@@ -48,6 +48,7 @@
 ---@field enable? boolean Keymaps in Oil.nvim (default: enabled)
 ---@field open? 'edit'|'tabedit'|fun(filepath: string)
 --- Open images in the current tab, a new tab, or custom logic (default: 'edit')
+---@field follow_cwd? boolean Keep the tab cwd in sync with the opened image (default: true)
 
 ---@class GlimpsePaneConfig
 ---@field position? 'right'|'bottom' External pane position (default: 'right')
@@ -91,6 +92,7 @@
 ---@field pickers? string|string[]|table
 ---@field previewer? table
 ---@field previewer_opts? table
+---@field follow_cwd? boolean Keep the tab cwd in sync with the previewed file (default: false)
 ---@field image? boolean
 ---@field video? boolean
 ---@field archive? boolean
@@ -101,9 +103,9 @@
 ---@field binary? boolean
 
 ---@class GlimpseIntegrationsConfig
----@field oil? {enable?:boolean, open?:'edit'|'tabedit'|fun(filepath: string)} Keymaps in Oil.nvim (default: enabled)
+---@field oil? GlimpseOilConfig Keymaps in Oil.nvim (default: enabled)
 ---@field neotree? {enable?:boolean, auto_preview?:boolean} NeoTree integration config
----@field telescope? {enable?:boolean, pickers?:string|string[]|table} Preview in Telescope (default: enabled)
+---@field telescope? GlimpseTelescopeConfig Preview in Telescope (default: enabled)
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
@@ -345,7 +347,6 @@ local function resolve_kind(filepath)
 	return kind
 end
 
----@private
 function M._should_use_inline()
 	if config.strategy == 'inline' then
 		return true
@@ -446,9 +447,6 @@ function M.preview(filepath)
 	previewer.preview(filepath)
 end
 
---- Show archive contents in a floating buffer.
----@param filepath string
----@private
 --- Close the active preview.
 function M.close()
 	local buf = vim.api.nvim_get_current_buf()
@@ -457,29 +455,26 @@ function M.close()
 	end
 end
 
---- Check whether the file is a supported image.
----@param filepath string File path
----@return boolean
+---@type fun(filepath: string): boolean Check whether the file is a supported image.
 M.is_image = util.is_image
+---@type fun(filepath: string): boolean|nil Check whether the file is a Git LFS pointer.
 M.is_git_lfs_pointer = util.is_git_lfs_pointer
 
---- Check whether the file is a supported video.
----@param filepath string File path
----@return boolean
+---@type fun(filepath: string): boolean Check whether the file is a supported video.
 M.is_video = util.is_video
+---@type fun(filepath: string): boolean
 M.is_archive = util.is_archive
+---@type fun(filepath: string): boolean
 M.is_sqlite = util.is_sqlite
 
---- Check whether the file is previewable (image, video, certificate, etc.).
----@param filepath string File path
----@return boolean
+---@type fun(filepath: string): boolean Check whether the file is previewable.
 M.is_previewable = util.is_previewable
 
---- Check whether the file is an X.509 certificate.
----@param filepath string File path
----@return boolean
+---@type fun(filepath: string): boolean Check whether the file is an X.509 certificate.
 M.is_cert = util.is_cert
+---@type fun(filepath: string): boolean
 M.is_font = util.is_font
+---@type fun(filepath: string): boolean
 M.is_key = util.is_key
 
 --- Return the detected terminal.

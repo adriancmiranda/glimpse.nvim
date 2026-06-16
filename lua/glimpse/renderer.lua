@@ -100,7 +100,7 @@ end
 --- Render an image in the buffer.
 --- @param buf number
 --- @param filepath string
---- @param opts? { listed?: boolean }
+--- @param opts? { listed?: boolean, bufname?: string, winid?: integer }
 --- @param on_done? fun()
 --- @return ImagePlacement
 function M.render(buf, filepath, opts, on_done)

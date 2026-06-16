@@ -1,6 +1,8 @@
 local M = {}
 
+---@type integer|nil
 local preview_win = nil
+---@type integer|nil
 local preview_buf = nil
 
 function M.setup()

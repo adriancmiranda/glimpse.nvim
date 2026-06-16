@@ -7,6 +7,11 @@ local M = {}
 --- @field filepath string
 --- @field closed boolean
 --- @field request_id number|nil
+--- @field signature table|nil File signature used for cache invalidation
+--- @field created_at number|nil Timestamp from vim.uv.hrtime() at creation
+--- @field win_cols number|nil Window width when the image was last rendered
+--- @field win_rows number|nil Window height when the image was last rendered
+--- @field job_id number|nil Active transmit job ID
 
 --- @type table<number, ImagePlacement>
 local placements = {}
