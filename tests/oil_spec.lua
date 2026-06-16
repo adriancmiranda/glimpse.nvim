@@ -518,4 +518,41 @@ describe('oil integration', function()
 		vim.fn.delete(vim.fs.dirname(filepath), 'd')
 		restore_package(saved)
 	end)
+
+	it('resolves the startup argv path when no file buffer is active', function()
+		local saved = save_package({
+			'glimpse.integrations.oil.float',
+			'glimpse.integrations.oil.path',
+			'glimpse.integrations.oil',
+		})
+
+		local original_buf = vim.api.nvim_get_current_buf()
+		local original_argc = vim.fn.argc
+		local original_argv = vim.fn.argv
+		local temp_dir = vim.fn.tempname()
+		local relative_dir = 'nested/oil'
+		local expected_dir = vim.fs.joinpath(vim.uv.cwd() or vim.fn.getcwd(), relative_dir)
+
+		vim.fn.mkdir(expected_dir, 'p')
+		vim.api.nvim_buf_set_name(original_buf, '')
+		vim.fn.argc = function()
+			return 1
+		end
+		vim.fn.argv = function()
+			return relative_dir
+		end
+
+		local oil = require('glimpse.integrations.oil')
+		local dirpath, cursor = oil.resolve_float_dir()
+
+		assert.equals(vim.fs.normalize(expected_dir), vim.fs.normalize(dirpath))
+		assert.is_nil(cursor)
+
+		vim.fn.argc = original_argc
+		vim.fn.argv = original_argv
+		vim.api.nvim_set_current_buf(original_buf)
+		vim.fn.delete(expected_dir, 'd')
+		vim.fn.delete(temp_dir)
+		restore_package(saved)
+	end)
 end)

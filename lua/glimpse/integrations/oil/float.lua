@@ -6,6 +6,10 @@ local function get_process_cwd()
 	return vim.uv.cwd() or vim.fn.getcwd()
 end
 
+local function is_abs_path(pathname)
+	return pathname:sub(1, 1) == '/' or pathname:match('^%a:[/\\]') ~= nil
+end
+
 local function startup_target()
 	local argc = vim.fn.argc and vim.fn.argc() or 0
 	if argc <= 0 then
@@ -18,7 +22,7 @@ local function startup_target()
 	end
 
 	local cwd = get_process_cwd()
-	if not vim.fs.isabspath(arg) then
+	if not is_abs_path(arg) then
 		arg = vim.fs.joinpath(cwd, arg)
 	end
 
