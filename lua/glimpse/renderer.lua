@@ -254,6 +254,7 @@ function M.register(buf, filepath)
 		signature = file_signature(filepath),
 		image_id = nil,
 		closed = false,
+		created_at = vim.uv.hrtime(),
 	})
 end
 
@@ -265,7 +266,8 @@ function M.rerender(buf)
 		return
 	end
 	-- Skip if it was created less than 500ms ago
-	if (vim.uv.hrtime() - placement.created_at) < 500e6 then
+	local created_at = placement.created_at or 0
+	if created_at > 0 and (vim.uv.hrtime() - created_at) < 500e6 then
 		return
 	end
 	local filepath = placement.filepath
@@ -349,9 +351,8 @@ end
 --- @param win_cols number
 --- @param win_rows number
 function M.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_cols, win_rows)
-	if placement_state.get(buf) then
-		M.close(buf)
-	end
+	local existing = placement_state.get(buf)
+	local old_image_id = existing and existing.image_id or nil
 	local name = 'glimpse://video/' .. tostring(image_id)
 	pcall(vim.api.nvim_buf_set_name, buf, name)
 	vim.bo[buf].buftype = 'nofile'
@@ -402,6 +403,11 @@ function M.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_col
 			end_col = #lines[i + 1],
 			hl_group = hl_name,
 		})
+	end
+	if old_image_id and old_image_id ~= image_id then
+		vim.schedule(function()
+			pcall(kitty.delete, old_image_id)
+		end)
 	end
 end
 

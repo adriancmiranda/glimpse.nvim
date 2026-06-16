@@ -89,6 +89,7 @@ local function _set_text_preview(bufnr, lines, highlights, filetype)
 		return
 	end
 
+	pcall(require('glimpse.renderer').close, bufnr)
 	lines = _normalize_lines(lines)
 
 	vim.bo[bufnr].modifiable = true
