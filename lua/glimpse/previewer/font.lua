@@ -4,6 +4,7 @@ local float = require('glimpse.float')
 
 local font_mod = require('glimpse.font')
 local preview_cache = require('glimpse.preview_cache')
+local preview_route = require('glimpse.preview_route')
 
 local function _header_lines(filepath, lines)
 	local header = string.format('  %s', vim.fn.fnamemodify(filepath, ':t'))
@@ -74,15 +75,7 @@ function M.show(filepath)
 		tmp,
 	})
 	if vim.v.shell_error == 0 and vim.uv.fs_stat(tmp) then
-		local glimpse = require('glimpse')
-		if glimpse._should_use_inline() then
-			require('glimpse.strategy.inline').show(tmp)
-		else
-			require('glimpse.strategy.pane').show(tmp, {
-				position = config.pane.position,
-				size = config.pane.size,
-			})
-		end
+		preview_route.show(tmp)
 		return
 	end
 

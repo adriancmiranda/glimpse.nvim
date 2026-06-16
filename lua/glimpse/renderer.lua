@@ -2,6 +2,9 @@
 --- Uses Unicode placeholders via Kitty Graphics Protocol.
 
 local kitty = require('glimpse.kitty')
+local placement_state = require('glimpse.placement_state')
+local preview_state = require('glimpse.preview_state')
+local util = require('glimpse.util')
 
 local M = {}
 
@@ -21,31 +24,7 @@ for k, hex in ipairs(diacritics_hex) do
 	positions[k] = vim.fn.nr2char(tonumber(hex, 16))
 end
 
---- @class ImagePlacement
---- @field buf number
---- @field image_id number|nil
---- @field filepath string
---- @field closed boolean
---- @field request_id number
-
---- @type table<number, ImagePlacement>
-local placements = {}
-
 local request_counter = 0
-
-local function normalize_path(path)
-	return vim.uv.fs_realpath(path) or vim.fn.fnamemodify(path, ':p')
-end
-
-local function same_path(left, right)
-	if left == right then
-		return true
-	end
-	if left == nil or right == nil then
-		return false
-	end
-	return normalize_path(left) == normalize_path(right)
-end
 
 local function file_signature(path)
 	local stat = vim.uv.fs_stat(path)
@@ -126,14 +105,14 @@ end
 --- @return ImagePlacement
 function M.render(buf, filepath, opts, on_done)
 	opts = opts or {}
-	local existing = placements[buf]
+	local existing = placement_state.get(buf)
 	local signature = file_signature(filepath)
 	local buffer_name = opts.bufname or filepath
 	local win = opts.winid or vim.fn.bufwinid(buf)
 	local cols, rows = window_signature(win)
 	if
 		existing
-		and same_path(existing.filepath, filepath)
+		and util.same_path(existing.filepath, filepath)
 		and same_signature(existing.signature, signature)
 		and (cols == nil or rows == nil or (existing.win_cols == cols and existing.win_rows == rows))
 	then
@@ -165,7 +144,7 @@ function M.render(buf, filepath, opts, on_done)
 		win_cols = cols,
 		win_rows = rows,
 	}
-	placements[buf] = placement
+	placement_state.set(buf, placement)
 
 	pcall(vim.api.nvim_buf_set_name, buf, buffer_name)
 	vim.bo[buf].buftype = 'nofile'
@@ -242,33 +221,15 @@ end
 --- @param filepath string
 --- @return number|nil
 function M.find_by_filepath(filepath)
-	for _, win in ipairs(vim.api.nvim_list_wins()) do
-		if vim.api.nvim_win_is_valid(win) then
-			local buf = vim.api.nvim_win_get_buf(win)
-			local placement = placements[buf]
-			if
-				placement
-				and placement.filepath
-				and same_path(placement.filepath, filepath)
-				and vim.api.nvim_buf_is_valid(buf)
-			then
-				return buf
-			end
-		end
-	end
-
-	for buf, placement in pairs(placements) do
-		if placement.filepath and same_path(placement.filepath, filepath) and vim.api.nvim_buf_is_valid(buf) then
-			return buf
-		end
-	end
+	return placement_state.find_by_filepath(filepath)
 end
 
 --- Close and clean up a placement.
 --- @param buf number
 function M.close(buf)
-	local placement = placements[buf]
+	local placement = placement_state.get(buf)
 	if not placement then
+		preview_state.unmark(buf)
 		return
 	end
 	placement.closed = true
@@ -276,29 +237,30 @@ function M.close(buf)
 		kitty.delete(placement.image_id)
 	end
 	vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-	placements[buf] = nil
+	placement_state.remove(buf)
+	preview_state.unmark(buf)
 end
 
 --- Register an existing placement for tracking.
 --- @param buf number
 --- @param filepath string
 function M.register(buf, filepath)
-	if placements[buf] then
+	if placement_state.get(buf) then
 		return
 	end
-	placements[buf] = {
+	placement_state.set(buf, {
 		buf = buf,
 		filepath = filepath,
 		signature = file_signature(filepath),
 		image_id = nil,
 		closed = false,
-	}
+	})
 end
 
 --- Re-render an existing placement (keep the old one until the new one is ready).
 --- @param buf number
 function M.rerender(buf)
-	local placement = placements[buf]
+	local placement = placement_state.get(buf)
 	if not placement then
 		return
 	end
@@ -361,22 +323,14 @@ end
 --- @param buf number
 --- @return boolean
 function M.has_placement(buf)
-	return placements[buf] ~= nil and not placements[buf].closed
+	return placement_state.has(buf)
 end
 
 --- Check whether the placement needs a re-render (the image may have been lost).
 --- @param buf number
 --- @return boolean
 function M.needs_rerender(buf)
-	local placement = placements[buf]
-	if not placement or placement.closed then
-		return false
-	end
-	-- If there is no image_id, it is still loading - do not re-render
-	if not placement.image_id then
-		return false
-	end
-	return true
+	return placement_state.needs_rerender(buf)
 end
 
 return M

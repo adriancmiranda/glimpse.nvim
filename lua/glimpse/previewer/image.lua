@@ -1,34 +1,18 @@
 --- Previewer for images.
 local M = {}
 
---- Show an image inline or in an external pane.
+local preview_route = require('glimpse.preview_route')
+
+--- Show an image through the configured preview route.
 --- @param filepath string
 function M.show(filepath)
-	local glimpse = require('glimpse')
-	local config = glimpse.get_config()
-	if glimpse._should_use_inline() then
-		require('glimpse.strategy.inline').show(filepath)
-	else
-		require('glimpse.strategy.pane').show(filepath, {
-			position = config.pane.position,
-			size = config.pane.size,
-		})
-	end
+	preview_route.show(filepath)
 end
 
---- Image preview (reuses an existing window).
+--- Preview an image in the current preview target.
 --- @param filepath string
 function M.preview(filepath)
-	local glimpse = require('glimpse')
-	local config = glimpse.get_config()
-	if glimpse._should_use_inline() then
-		require('glimpse.strategy.inline').preview(filepath)
-	else
-		require('glimpse.strategy.pane').show(filepath, {
-			position = config.pane.position,
-			size = config.pane.size,
-		})
-	end
+	preview_route.preview(filepath)
 end
 
 return M

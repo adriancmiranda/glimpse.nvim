@@ -1,5 +1,26 @@
 local M = {}
 
+--- Resolve a path to its canonical absolute form.
+--- @param path string
+--- @return string
+function M.normalize_path(path)
+	return vim.uv.fs_realpath(path) or vim.fn.fnamemodify(path, ':p')
+end
+
+--- Return true when two file paths refer to the same file.
+--- @param left string|nil
+--- @param right string|nil
+--- @return boolean
+function M.same_path(left, right)
+	if left == right then
+		return true
+	end
+	if left == nil or right == nil then
+		return false
+	end
+	return M.normalize_path(left) == M.normalize_path(right)
+end
+
 --- Check whether the file is a supported image.
 --- @param filepath string
 --- @return boolean
