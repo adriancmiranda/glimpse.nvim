@@ -88,7 +88,12 @@ local function _show_animated(filepath, mode, source_win)
 	local delay_ms = math.max(1, math.floor(1000 / fps))
 
 	local collected = {}
-	local anim_buf, anim_win
+	local buf, win
+	local anim_buf, anim_win, anim_target_buf
+	local cur_id = nil
+	local cancel_frames = nil
+	local frame_files = {}
+	local anim_timer, paused, resize_timer, resize_group
 
 	-- Find or create the image window; memoized so preview and full animation
 	-- share the same buf/win without opening a second split.
@@ -124,6 +129,7 @@ local function _show_animated(filepath, mode, source_win)
 		if restore_win and vim.api.nvim_win_is_valid(current_win) then
 			vim.api.nvim_set_current_win(current_win)
 		end
+		anim_target_buf = anim_buf
 		return anim_buf, anim_win
 	end
 
@@ -132,6 +138,7 @@ local function _show_animated(filepath, mode, source_win)
 		if not b or not w then
 			return
 		end
+		anim_target_buf = b
 		local w_px, h_px = kitty.png_dimensions_from_data(data)
 		if not w_px or not h_px then
 			return
@@ -143,6 +150,7 @@ local function _show_animated(filepath, mode, source_win)
 		local gc = math.min(wc, math.ceil(w_px / cell_w))
 		local gr = math.min(wr, math.ceil(h_px / cell_h))
 		local tmp = vim.fn.tempname() .. '.png'
+		_register_temps({ tmp })
 		local fh = io.open(tmp, 'wb')
 		if fh then
 			fh:write(data)
@@ -153,9 +161,55 @@ local function _show_animated(filepath, mode, source_win)
 		renderer.setup_animation_buf(b, w, id, gc, gr, wc, wr)
 		vim.cmd('redraw')
 		os.remove(tmp)
+		_unregister_temps({ tmp })
 	end
 
-	frames_mod.extract_frames_async(filepath, {}, function(data, _index, is_preview)
+	local function cleanup_anim(full_cleanup)
+		full_cleanup = full_cleanup ~= false
+		if cancel_frames then
+			pcall(cancel_frames)
+			cancel_frames = nil
+		end
+		if anim_timer then
+			anim_timer:stop()
+			if not anim_timer:is_closing() then
+				anim_timer:close()
+			end
+			anim_timer = nil
+		end
+		if resize_timer then
+			resize_timer:stop()
+			if not resize_timer:is_closing() then
+				resize_timer:close()
+			end
+			resize_timer = nil
+		end
+		if resize_group then
+			pcall(vim.api.nvim_del_augroup_by_id, resize_group)
+			resize_group = nil
+		end
+		if full_cleanup then
+			if cur_id then
+				kitty.delete(cur_id)
+				cur_id = nil
+			end
+			if anim_target_buf and vim.api.nvim_buf_is_valid(anim_target_buf) then
+				renderer.close(anim_target_buf)
+				anim_target_buf = nil
+			end
+		end
+		for _, fp in ipairs(frame_files) do
+			os.remove(fp)
+		end
+		_unregister_temps(frame_files)
+		frame_files = {}
+		_tokens[winid] = nil
+		if buf then
+			_states[buf] = nil
+		end
+	end
+
+	cancel_frames = frames_mod.extract_frames_async(filepath, {}, function(data, _index, is_preview)
 		if _tokens[winid] ~= token then
 			return
 		end
@@ -170,6 +224,8 @@ local function _show_animated(filepath, mode, source_win)
 		end
 
 		if err or #collected == 0 then
+			cleanup_anim()
+			_show_thumbnail(filepath, mode)
 			vim.notify('[glimpse] ' .. (err or 'no frames extracted'), vim.log.levels.WARN)
 			return
 		end
@@ -181,7 +237,7 @@ local function _show_animated(filepath, mode, source_win)
 			return
 		end
 
-		local buf, win = ensure_window()
+		buf, win = ensure_window()
 		if not buf or not win then
 			return
 		end
@@ -194,7 +250,6 @@ local function _show_animated(filepath, mode, source_win)
 		local grid_rows = math.min(win_rows, math.ceil(h_px / cell_h))
 
 		-- Pre-write all frames to temp files
-		local frame_files = {}
 		for i, data in ipairs(collected) do
 			local tmp = vim.fn.tempname() .. '.png'
 			local fh = io.open(tmp, 'wb')
@@ -218,31 +273,11 @@ local function _show_animated(filepath, mode, source_win)
 
 		-- Retransmit each frame on a timer (uses same a=T,t=f path as frame 1)
 		local frame = 1
-		local cur_id = image_id
-		local anim_timer = vim.uv.new_timer()
-		local paused = false
-		local resize_timer = vim.uv.new_timer()
-		local resize_group -- set after cleanup_anim is defined
-
-		local function cleanup_anim()
-			anim_timer:stop()
-			if not anim_timer:is_closing() then
-				anim_timer:close()
-			end
-			resize_timer:stop()
-			if not resize_timer:is_closing() then
-				resize_timer:close()
-			end
-			if resize_group then
-				pcall(vim.api.nvim_del_augroup_by_id, resize_group)
-				resize_group = nil
-			end
-			for _, fp in ipairs(frame_files) do
-				os.remove(fp)
-			end
-			_unregister_temps(frame_files)
-			_states[buf] = nil
-		end
+		cur_id = image_id
+		anim_timer = vim.uv.new_timer()
+		paused = false
+		resize_timer = vim.uv.new_timer()
+		resize_group = nil
 
 		local function advance()
 			if _tokens[winid] ~= token or not vim.api.nvim_buf_is_valid(buf) then
@@ -290,7 +325,9 @@ local function _show_animated(filepath, mode, source_win)
 			seek = function(delta_seconds)
 				jump_to_frame(frame + math.floor(fps * delta_seconds))
 			end,
-			stop = cleanup_anim,
+			stop = function(final)
+				cleanup_anim(final)
+			end,
 		}
 
 		local keys = (config.video and config.video.keys) or {}
@@ -346,7 +383,7 @@ local function _show_animated(filepath, mode, source_win)
 						end
 						local s = _states[buf]
 						if s then
-							s.stop()
+							s.stop(false)
 						end
 						_show_animated(filepath, mode, winid)
 					end)
