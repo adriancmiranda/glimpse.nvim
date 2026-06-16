@@ -6,6 +6,14 @@
 
 ## [unreleased]
 
+### ⚡ Performance
+
+- *(renderer)* Coalesce rapid rerender requests with a one-deep pending slot
+
+### 🧪 Testing
+
+- *(renderer)* Verify pending slot coalesces rapid rerenders to 2 spawns
+
 ### ⚙️ Miscellaneous Tasks
 
 - *(ci)* Move merged PRs to Done in GitHub project board
