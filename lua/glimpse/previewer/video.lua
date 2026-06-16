@@ -102,6 +102,7 @@ local function _show_animated(filepath, mode, source_win)
 	local cancel_frames = nil
 	local frame_files = {}
 	local anim_timer, paused, resize_timer, resize_group
+	local cleanup_anim
 
 	-- Find or create the image window; memoized so preview and full animation
 	-- share the same buf/win without opening a second split.
@@ -186,9 +187,19 @@ local function _show_animated(filepath, mode, source_win)
 		-- asynchronously (especially through tmux buffering) and may open it
 		-- after the redraw call returns.
 		frame_files[#frame_files + 1] = tmp
+		-- Guard against the user closing the preview split before on_done
+		-- installs the full BufDelete + _states cleanup. Without this, the
+		-- token stays valid and on_done would re-open the split after close.
+		vim.api.nvim_create_autocmd('BufDelete', {
+			buffer = b,
+			once = true,
+			callback = function()
+				cleanup_anim(false)
+			end,
+		})
 	end
 
-	local function cleanup_anim(full_cleanup)
+	cleanup_anim = function(full_cleanup)
 		full_cleanup = full_cleanup ~= false
 		if cancel_frames then
 			pcall(cancel_frames)
