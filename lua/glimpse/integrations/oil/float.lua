@@ -31,6 +31,17 @@ end
 
 local function current_buffer_selection()
 	local current_buf = vim.api.nvim_get_current_buf()
+
+	if vim.bo[current_buf].filetype == 'oil' then
+		local ok, oil = pcall(require, 'oil')
+		if ok then
+			local oil_dir = oil.get_current_dir(current_buf)
+			if oil_dir then
+				return oil_dir, nil
+			end
+		end
+	end
+
 	local filepath = path.buffer_filepath(current_buf)
 	if not filepath then
 		return nil, nil
@@ -56,7 +67,7 @@ end
 
 function M.resolve_float_dir()
 	local current_dir, current_name = current_buffer_selection()
-	if current_dir and current_name then
+	if current_dir then
 		return current_dir, current_name
 	end
 
