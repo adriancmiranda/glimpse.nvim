@@ -23,6 +23,7 @@
 - Move oil float context into glimpse
 - Avoid vim.fs.isabspath in oil float
 - *(types)* Resolve lua_ls diagnostic warnings across the codebase
+- *(oil)* Resolve float dir from oil buffer state instead of process cwd
 
 ### 🧪 Testing
 
