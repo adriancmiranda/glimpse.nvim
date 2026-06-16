@@ -2,6 +2,7 @@
 local M = {}
 
 local thumbnail = require('glimpse.thumbnail')
+local preview_route = require('glimpse.preview_route')
 
 local _tokens = {}
 
@@ -19,24 +20,15 @@ local function _show_thumbnail(filepath, mode)
 			return
 		end
 
-		local glimpse = require('glimpse')
-		local config = glimpse.get_config()
 		local current_win = vim.api.nvim_get_current_win()
 		local restore_win = current_win ~= winid and vim.api.nvim_win_is_valid(winid)
 		if restore_win then
 			vim.api.nvim_set_current_win(winid)
 		end
-		if glimpse._should_use_inline() then
-			if mode == 'preview' then
-				require('glimpse.strategy.inline').preview(thumb)
-			else
-				require('glimpse.strategy.inline').show(thumb)
-			end
+		if mode == 'preview' then
+			preview_route.preview(thumb)
 		else
-			require('glimpse.strategy.pane').show(thumb, {
-				position = config.pane.position,
-				size = config.pane.size,
-			})
+			preview_route.show(thumb)
 		end
 		if restore_win and vim.api.nvim_win_is_valid(current_win) then
 			vim.api.nvim_set_current_win(current_win)

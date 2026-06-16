@@ -8,7 +8,9 @@ function M.follow(filepath)
 		return
 	end
 
-	pcall(vim.cmd, 'silent keepalt tcd ' .. vim.fn.fnameescape(dir))
+	pcall(function()
+		vim.cmd({ cmd = 'tcd', args = { dir }, mods = { silent = true, keepalt = true } })
+	end)
 end
 
 return M

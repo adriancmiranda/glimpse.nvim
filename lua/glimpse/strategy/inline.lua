@@ -2,8 +2,31 @@
 --- Inline rendering via Kitty Graphics Protocol (custom implementation).
 
 local renderer = require('glimpse.renderer')
+local preview_state = require('glimpse.preview_state')
 
 local M = {}
+
+local function preview_bufname(filepath, buf)
+	return string.format('glimpse://inline/%s/%d', vim.fn.sha256(vim.fs.normalize(filepath)), buf)
+end
+
+local function debug_log(message)
+	if not vim.g.glimpse_debug then
+		return
+	end
+
+	vim.schedule(function()
+		vim.notify('[glimpse.inline] ' .. message, vim.log.levels.DEBUG)
+	end)
+end
+
+local function window_col(win)
+	local ok, pos = pcall(vim.api.nvim_win_get_position, win)
+	if not ok or type(pos) ~= 'table' then
+		return nil
+	end
+	return pos[2]
+end
 
 local function _render_existing_buffer(buf)
 	local util = require('glimpse.util')
@@ -40,29 +63,68 @@ function M.preview(filepath)
 	local existing_buf = renderer.find_by_filepath(filepath)
 	local target_win = nil
 	local target_buf = nil
+	local target_col = nil
+	debug_log(
+		string.format(
+			'preview filepath=%s oil_win=%d current_win=%d existing_buf=%s',
+			filepath,
+			oil_win,
+			vim.api.nvim_get_current_win(),
+			tostring(existing_buf)
+		)
+	)
+
+	-- Single pass:
+	--   (1) Prefer a window showing the same file that is also a preview —
+	--       same file opened via keys.open (not marked) is NOT reused so
+	--       that buffer stays untouched and a fresh preview split is created.
+	--   (2) Otherwise pick the rightmost marked preview window.
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
 		if win ~= oil_win and vim.bo[vim.api.nvim_win_get_buf(win)].filetype == 'image' then
 			local buf = vim.api.nvim_win_get_buf(win)
-			if existing_buf == buf or target_win == nil then
+			local marked = preview_state.is_marked(buf)
+			debug_log(
+				string.format(
+					'preview inspect win=%d buf=%d ft=%s marked=%s same=%s',
+					win,
+					buf,
+					vim.bo[buf].filetype,
+					tostring(marked),
+					tostring(existing_buf == buf)
+				)
+			)
+			if existing_buf == buf and marked then
 				target_win = win
 				target_buf = buf
-				if existing_buf == buf then
-					break
+				break
+			end
+			if marked then
+				local col = window_col(win)
+				if target_win == nil or (col ~= nil and (target_col == nil or col > target_col)) then
+					target_win = win
+					target_buf = buf
+					target_col = col
 				end
 			end
 		end
 	end
+
 	if target_win and target_buf then
+		debug_log(string.format('preview reuse win=%d buf=%d', target_win, target_buf))
 		vim.api.nvim_set_current_win(target_win)
-		renderer.render(target_buf, filepath)
+		renderer.render(target_buf, filepath, { bufname = preview_bufname(filepath, target_buf) })
+		preview_state.mark(target_buf)
 		vim.api.nvim_set_current_win(oil_win)
 		return
 	end
+
 	-- Create a vsplit with a new buffer
+	debug_log('preview create new split')
 	vim.cmd('vsplit')
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_win_set_buf(0, buf)
-	renderer.render(buf, filepath)
+	renderer.render(buf, filepath, { bufname = preview_bufname(filepath, buf) })
+	preview_state.mark(buf)
 	vim.api.nvim_set_current_win(oil_win)
 end
 
