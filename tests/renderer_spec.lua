@@ -479,4 +479,78 @@ describe('renderer animation helpers', function()
 		assert.equals(20, placement.image_id)
 		pcall(vim.api.nvim_buf_delete, buf, { force = true })
 	end)
+
+	it('coalesces rapid rerender calls into at most 2 spawns', function()
+		local saved_kitty = package.loaded['glimpse.kitty']
+		local saved_renderer = package.loaded['glimpse.renderer']
+		local saved_glimpse = package.loaded['glimpse']
+		local original_win = vim.api.nvim_get_current_win()
+		local original_buf = vim.api.nvim_get_current_buf()
+
+		local spawn_count = 0
+		local pending_cb = nil
+		local next_job = 100
+
+		restore_package('glimpse', {
+			get_config = function()
+				return { cell_size = { width = 20, height = 40 }, loading = { text = '...' } }
+			end,
+		})
+		restore_package('glimpse.kitty', {
+			transmit_async = function(_, _, cb)
+				spawn_count = spawn_count + 1
+				next_job = next_job + 1
+				pending_cb = cb
+				return next_job
+			end,
+			delete = function() end,
+		})
+		restore_package('glimpse.renderer', nil)
+
+		local renderer = require('glimpse.renderer')
+		local buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_win_set_buf(original_win, buf)
+
+		local tmp = vim.fn.tempname() .. '.png'
+		vim.fn.writefile({ 'x' }, tmp)
+
+		-- Complete the initial render so the placement is fully set up.
+		-- render()'s callback does not have dispatch_pending, so we finish it
+		-- before the pending-slot test begins.
+		renderer.render(buf, tmp)
+		pending_cb(1, nil, 100, 100)
+
+		-- Reset the counter and backdate created_at to bypass the 500ms guard.
+		spawn_count = 0
+		local placement = renderer.get_placement(buf)
+		placement.created_at = 0
+
+		-- First rerender: starts conversion #1 (in-flight, cb stored).
+		renderer.rerender(buf)
+		assert.equals(1, spawn_count)
+
+		-- Three rapid rerenders while #1 is in-flight: no new spawns.
+		renderer.rerender(buf)
+		renderer.rerender(buf)
+		renderer.rerender(buf)
+		assert.equals(1, spawn_count)
+
+		-- Complete conversion #1 (stale: request_id changed by rapid calls).
+		-- dispatch_pending schedules exactly one follow-up rerender.
+		pending_cb(1, nil, 100, 100)
+
+		vim.wait(100, function()
+			return spawn_count >= 2
+		end)
+
+		-- Exactly 2 spawns for 4 rerender calls: the rapid ones were coalesced.
+		assert.equals(2, spawn_count)
+
+		os.remove(tmp)
+		pcall(vim.api.nvim_buf_delete, buf, { force = true })
+		pcall(vim.api.nvim_win_set_buf, original_win, original_buf)
+		restore_package('glimpse.kitty', saved_kitty)
+		restore_package('glimpse.renderer', saved_renderer)
+		restore_package('glimpse', saved_glimpse)
+	end)
 end)
