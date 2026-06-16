@@ -32,6 +32,7 @@ function M.extract(filepath, opts, on_frame, on_done)
 	local next_frame = 1
 	local ffmpeg_done = false
 	local ffmpeg_ok = true
+	local seen_stats = {}
 
 	local function cleanup()
 		vim.fn.delete(tmp_dir, 'rf')
@@ -40,6 +41,11 @@ function M.extract(filepath, opts, on_frame, on_done)
 	-- Use uv timer directly for full lifecycle control
 	local timer = vim.uv.new_timer()
 
+	local function stat_signature(stat)
+		local mtime = stat.mtime or {}
+		return string.format('%s:%s:%s', stat.size or 0, mtime.sec or 0, mtime.nsec or 0)
+	end
+
 	local function poll()
 		if cancelled then
 			return
@@ -47,7 +53,13 @@ function M.extract(filepath, opts, on_frame, on_done)
 
 		while next_frame <= max_frames do
 			local path = string.format(tmp_dir .. '/frame_%04d.png', next_frame)
-			if not vim.uv.fs_stat(path) then
+			local stat = vim.uv.fs_stat(path)
+			if not stat then
+				break
+			end
+			local signature = stat_signature(stat)
+			if not ffmpeg_done and seen_stats[path] ~= signature then
+				seen_stats[path] = signature
 				break
 			end
 			local f = io.open(path, 'rb')

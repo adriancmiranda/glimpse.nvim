@@ -24,7 +24,13 @@ function M.extract_frames_async(filepath, opts, on_frame, on_done)
 	opts = opts or {}
 	local frames_cfg = ((require('glimpse').get_config().video or {}).frames or {})
 	local name = opts.strategy or frames_cfg.strategy or 'auto'
-	local strategy = strategies[name] or strategies.poll
+	local strategy = strategies[name]
+	if not strategy then
+		vim.schedule(function()
+			on_done(nil, string.format("unsupported frame strategy '%s'", tostring(name)))
+		end)
+		return function() end
+	end
 	return strategy.extract(filepath, opts, on_frame, on_done)
 end
 

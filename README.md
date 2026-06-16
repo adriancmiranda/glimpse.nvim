@@ -153,11 +153,10 @@ xxd -h
                               -- function: fun(filepath) for custom logic
                               -- nil: plays inline (Kitty/Ghostty) or shows thumbnail
       frames = {
-        strategy   = 'auto', -- 'auto' | 'batch' | 'poll' | 'pipe'
+        strategy   = 'auto', -- 'auto' | 'batch' | 'poll'
                               -- auto: selects poll when ffmpeg is available
                               -- batch: low-res preview immediately, full-res when done
                               -- poll: frames delivered progressively as ffmpeg writes them
-                              -- pipe: binary stream via image2pipe (no temp files)
         per_second = 10,     -- frames per second to extract
         limit      = 120,    -- maximum frames to extract per video
       },

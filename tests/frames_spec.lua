@@ -104,5 +104,141 @@ describe('frames', function()
 			local cancel = frames.extract_frames_async('/tmp/test.mp4', {}, function() end, function() end)
 			assert.is_function(cancel)
 		end)
+
+		it('rejects unsupported strategies', function()
+			local err = nil
+			local original_schedule = vim.schedule
+			vim.schedule = function(fn)
+				fn()
+			end
+			package.loaded['glimpse'] = {
+				get_config = function()
+					return { video = { frames = { strategy = 'pipe' } } }
+				end,
+			}
+			package.loaded['glimpse.frames'] = nil
+			local frames = require('glimpse.frames')
+			local cancel = frames.extract_frames_async('/tmp/test.mp4', {}, function() end, function(_count, done_err)
+				err = done_err
+			end)
+
+			assert.is_function(cancel)
+			assert.equals("unsupported frame strategy 'pipe'", err)
+
+			vim.schedule = original_schedule
+		end)
+	end)
+
+	describe('poll strategy', function()
+		local saved
+
+		before_each(function()
+			saved = save_package({
+				'glimpse',
+				'glimpse.frames.poll',
+			})
+		end)
+
+		after_each(function()
+			restore_package(saved)
+		end)
+
+		it('waits for a frame file to stabilize before reading it', function()
+			local calls = {}
+			local timer = {}
+			local stats = {
+				{ size = 1, mtime = { sec = 1, nsec = 1 } },
+				{ size = 2, mtime = { sec = 1, nsec = 2 } },
+				{ size = 2, mtime = { sec = 1, nsec = 2 } },
+			}
+			local original_executable = vim.fn.executable
+			local original_tempname = vim.fn.tempname
+			local original_mkdir = vim.fn.mkdir
+			local original_delete = vim.fn.delete
+			local original_jobstart = vim.fn.jobstart
+			local original_new_timer = vim.uv.new_timer
+			local original_fs_stat = vim.uv.fs_stat
+			local original_schedule_wrap = vim.schedule_wrap
+			local original_open = rawget(io, 'open')
+
+			package.loaded['glimpse'] = {
+				get_config = function()
+					return { video = { frames = { per_second = 10, limit = 1 } } }
+				end,
+			}
+			vim.fn.executable = function()
+				return 1
+			end
+			vim.fn.tempname = function()
+				return '/tmp/glimpse-test-frames'
+			end
+			vim.fn.mkdir = function(path)
+				calls.mkdir = path
+				return 1
+			end
+			vim.fn.delete = function(path)
+				calls.deleted = path
+				return 0
+			end
+			vim.fn.jobstart = function()
+				return 42
+			end
+			vim.uv.new_timer = function()
+				function timer.start(_, _timeout, _repeat, callback)
+					timer.callback = callback
+				end
+				function timer.stop() end
+				function timer.close()
+					timer.closed = true
+				end
+				function timer.is_closing()
+					return timer.closed == true
+				end
+				return timer
+			end
+			vim.uv.fs_stat = function()
+				calls.stat = (calls.stat or 0) + 1
+				return stats[calls.stat] or stats[#stats]
+			end
+			vim.schedule_wrap = function(fn)
+				return fn
+			end
+			rawset(io, 'open', function(path)
+				calls.opened = path
+				return {
+					read = function()
+						return 'complete-frame'
+					end,
+					close = function() end,
+				}
+			end)
+
+			package.loaded['glimpse.frames.poll'] = nil
+			local poll = require('glimpse.frames.poll')
+			poll.extract('/tmp/test.mp4', { max_frames = 1, poll_ms = 1 }, function(data, index)
+				calls.frame = { data = data, index = index }
+			end, function() end)
+
+			timer.callback()
+			assert.is_nil(calls.frame)
+			assert.is_nil(calls.opened)
+
+			timer.callback()
+			assert.is_nil(calls.frame)
+			assert.is_nil(calls.opened)
+
+			timer.callback()
+			assert.are.same({ data = 'complete-frame', index = 1 }, calls.frame)
+
+			vim.fn.executable = original_executable
+			vim.fn.tempname = original_tempname
+			vim.fn.mkdir = original_mkdir
+			vim.fn.delete = original_delete
+			vim.fn.jobstart = original_jobstart
+			vim.uv.new_timer = original_new_timer
+			vim.uv.fs_stat = original_fs_stat
+			vim.schedule_wrap = original_schedule_wrap
+			rawset(io, 'open', original_open)
+		end)
 	end)
 end)
