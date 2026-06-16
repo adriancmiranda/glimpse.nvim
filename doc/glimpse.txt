@@ -213,6 +213,19 @@ M.in_tmux()                                                          *M.in_tmux*
      @return boolean
 
 
+M.normalize_path()                                            *M.normalize_path*
+     Resolve a path to its canonical absolute form.
+     @param path string
+     @return string
+
+
+M.same_path()                                                      *M.same_path*
+     Return true when two file paths refer to the same file.
+     @param left string|nil
+     @param right string|nil
+     @return boolean
+
+
 M.is_image()                                                        *M.is_image*
      Check whether the file is a supported image.
      @param filepath string
