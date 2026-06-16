@@ -440,6 +440,7 @@ describe('video preview', function()
 			'glimpse.frames',
 			'glimpse.kitty',
 			'glimpse.renderer',
+			'glimpse.thumbnail',
 			'glimpse.previewer.video',
 		})
 
@@ -490,13 +491,17 @@ describe('video preview', function()
 			end,
 		})
 		stub_package('glimpse.frames', {
-			extract_frames_async = function(filepath, _, on_frame)
+			extract_frames_async = function(filepath, _, on_frame, on_done)
 				calls.extract = filepath
 				calls.on_frame = on_frame
+				calls.on_done = on_done
 				return function()
 					calls.cancelled = true
 				end
 			end,
+		})
+		stub_package('glimpse.thumbnail', {
+			extract_async = function() end,
 		})
 		stub_package('glimpse.kitty', {
 			new_id = function()
@@ -596,21 +601,26 @@ describe('video preview', function()
 			return temp_path:gsub('%.png$', '')
 		end
 		rawset(os, 'remove', function(path)
-			assert.equals(temp_path, path)
-			assert.is_true(calls.video._temp_registry[temp_path])
 			calls.removed = path
 			return true
 		end)
 
 		local video = require('glimpse.previewer.video')
-		calls.video = video
 		video.show('/tmp/example.mp4')
 		calls.on_frame('frame-one', 1, true)
 
+		-- Preview frame must NOT be deleted immediately: the Kitty terminal
+		-- reads the file asynchronously (buffered through tmux or similar) and
+		-- may open it after the redraw call returns.
 		assert.equals('/tmp/example.mp4', calls.extract)
+		assert.is_nil(calls.removed)
+		assert.is_true(video._temp_registry[temp_path])
+		assert.equals(1, calls.setup.buf)
+
+		-- Simulate extraction failure so cleanup_anim runs and removes the file.
+		calls.on_done(nil, 'extraction error')
 		assert.equals(temp_path, calls.removed)
 		assert.is_nil(video._temp_registry[temp_path])
-		assert.equals(1, calls.setup.buf)
 
 		vim.fn.has = original_has
 		vim.fn.tempname = original_tempname

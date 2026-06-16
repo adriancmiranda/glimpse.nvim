@@ -169,8 +169,10 @@ local function _show_animated(filepath, mode, source_win)
 		kitty.retransmit_frame(id, tmp)
 		renderer.setup_animation_buf(b, w, id, gc, gr, wc, wr)
 		vim.cmd('redraw')
-		os.remove(tmp)
-		_unregister_temps({ tmp })
+		-- Keep the file alive until cleanup_anim — the terminal reads it
+		-- asynchronously (especially through tmux buffering) and may open it
+		-- after the redraw call returns.
+		frame_files[#frame_files + 1] = tmp
 	end
 
 	local function cleanup_anim(full_cleanup)
@@ -197,12 +199,17 @@ local function _show_animated(filepath, mode, source_win)
 			pcall(vim.api.nvim_del_augroup_by_id, resize_group)
 			resize_group = nil
 		end
+		-- Only touch shared state when this animation still owns the window
+		-- token. A newer _show_animated call may have already replaced it, and
+		-- its cleanup_anim would otherwise clobber the new token and close the
+		-- reused preview buffer.
+		local is_owner = _tokens[winid] == token
 		if full_cleanup then
 			if cur_id then
 				kitty.delete(cur_id)
 				cur_id = nil
 			end
-			if anim_target_buf and vim.api.nvim_buf_is_valid(anim_target_buf) then
+			if is_owner and anim_target_buf and vim.api.nvim_buf_is_valid(anim_target_buf) then
 				renderer.close(anim_target_buf)
 				anim_target_buf = nil
 			end
@@ -212,9 +219,11 @@ local function _show_animated(filepath, mode, source_win)
 		end
 		_unregister_temps(frame_files)
 		frame_files = {}
-		_tokens[winid] = nil
-		if buf then
-			_states[buf] = nil
+		if is_owner then
+			_tokens[winid] = nil
+			if buf then
+				_states[buf] = nil
+			end
 		end
 	end
 
