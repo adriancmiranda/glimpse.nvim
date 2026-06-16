@@ -49,12 +49,13 @@ GlimpseInlineConfig                                        *GlimpseInlineConfig*
 GlimpseOilConfig                                              *GlimpseOilConfig*
 
     Fields: ~
-        {enable?}  (boolean)                                Keymaps in Oil.nvim (default: enabled)
-        {open?}    ("edit"|"tabedit"|fun(filepath:string))
+        {enable?}      (boolean)                                Keymaps in Oil.nvim (default: enabled)
+        {open?}        ("edit"|"tabedit"|fun(filepath:string))
+        {follow_cwd?}  (boolean)                                Keep the tab cwd in sync with the opened image (default: true)
+                                                                 Open images in the current tab, a new tab, or custom logic (default: 'edit')
 
 
 GlimpsePaneConfig                                            *GlimpsePaneConfig*
-     Open images in the current tab, a new tab, or custom logic (default: 'edit')
 
     Fields: ~
         {position?}  ("right"|"bottom")  External pane position (default: 'right')
@@ -128,6 +129,7 @@ GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
         {pickers?}         (string|string[]|table)
         {previewer?}       (table)
         {previewer_opts?}  (table)
+        {follow_cwd?}      (boolean)                Keep the tab cwd in sync with the previewed file (default: false)
         {image?}           (boolean)
         {video?}           (boolean)
         {archive?}         (boolean)
@@ -141,9 +143,9 @@ GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
 GlimpseIntegrationsConfig                            *GlimpseIntegrationsConfig*
 
     Fields: ~
-        {oil?}        ({enable?:boolean,open?:"edit"|"tabedit"|fun(filepath:string)})  Keymaps in Oil.nvim (default: enabled)
-        {neotree?}    ({enable?:boolean,auto_preview?:boolean})                        NeoTree integration config
-        {telescope?}  ({enable?:boolean,pickers?:string|string[]|table})               Preview in Telescope (default: enabled)
+        {oil?}        (GlimpseOilConfig)                         Keymaps in Oil.nvim (default: enabled)
+        {neotree?}    ({enable?:boolean,auto_preview?:boolean})  NeoTree integration config
+        {telescope?}  (GlimpseTelescopeConfig)                   Preview in Telescope (default: enabled)
 
 
 Glimpse                                                                *Glimpse*
@@ -154,6 +156,9 @@ M.setup({opts?})                                                       *M.setup*
 
     Parameters: ~
         {opts?}  (GlimpseConfig)  Configuration options (merged with defaults)
+
+
+M._should_use_inline()                                    *M._should_use_inline*
 
 
 M.can_preview({filepath})                                        *M.can_preview*
@@ -188,6 +193,64 @@ M.preview({filepath})                                                *M.preview*
 
     Parameters: ~
         {filepath}  (string)  Absolute file path
+
+
+M.close()                                                              *M.close*
+     Close the active preview.
+
+
+M.is_image                                                          *M.is_image*
+
+    Type: ~
+        (fun(filepath:string):boolean)  Check whether the file is a supported image.
+
+
+M.is_git_lfs_pointer                                      *M.is_git_lfs_pointer*
+
+    Type: ~
+        (fun(filepath:string):boolean|nil)  Check whether the file is a Git LFS pointer.
+
+
+M.is_video                                                          *M.is_video*
+
+    Type: ~
+        (fun(filepath:string):boolean)  Check whether the file is a supported video.
+
+
+M.is_archive                                                      *M.is_archive*
+
+    Type: ~
+        (fun(filepath:string):boolean)
+
+
+M.is_sqlite                                                        *M.is_sqlite*
+
+    Type: ~
+        (fun(filepath:string):boolean)
+
+
+M.is_previewable                                              *M.is_previewable*
+
+    Type: ~
+        (fun(filepath:string):boolean)  Check whether the file is previewable.
+
+
+M.is_cert                                                            *M.is_cert*
+
+    Type: ~
+        (fun(filepath:string):boolean)  Check whether the file is an X.509 certificate.
+
+
+M.is_font                                                            *M.is_font*
+
+    Type: ~
+        (fun(filepath:string):boolean)
+
+
+M.is_key                                                              *M.is_key*
+
+    Type: ~
+        (fun(filepath:string):boolean)
 
 
 M.get_config()                                                    *M.get_config*
