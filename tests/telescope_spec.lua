@@ -216,6 +216,147 @@ describe('telescope integration', function()
 		restore_package(saved)
 	end)
 
+	it('clears the previous Kitty placement before writing text previews', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.renderer',
+			'glimpse.previewer.archive',
+			'telescope.previewers',
+			'telescope.from_entry',
+			'telescope.config',
+			'glimpse.integrations.telescope',
+		})
+
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = vim.api.nvim_get_current_win()
+		local render_calls = {}
+		local close_calls = {}
+
+		stub_package('telescope.previewers', {
+			buffer_previewer_maker = function()
+				error('fallback previewer should not be called for Glimpse kinds')
+			end,
+			new_buffer_previewer = function(spec)
+				return spec
+			end,
+		})
+		stub_package('telescope.from_entry', {
+			path = function(entry)
+				return entry.path
+			end,
+		})
+		stub_package('telescope.config', {
+			pickers = {},
+			set_pickers = function()
+				return true
+			end,
+		})
+		stub_package('glimpse.renderer', {
+			render = function(target_buf, filepath, opts)
+				render_calls[#render_calls + 1] = { target_buf = target_buf, filepath = filepath, opts = opts }
+				vim.bo[target_buf].modifiable = true
+				vim.api.nvim_buf_set_lines(target_buf, 0, -1, false, { 'image:' .. filepath })
+				vim.bo[target_buf].modifiable = false
+				vim.bo[target_buf].filetype = 'image'
+			end,
+			close = function(target_buf)
+				close_calls[#close_calls + 1] = target_buf
+			end,
+		})
+		stub_package('glimpse.previewer.archive', {
+			preview_data = function(filepath)
+				return { 'archive:' .. filepath }, {}
+			end,
+		})
+		stub_package('glimpse', {
+			get_preview_kind = function(filepath)
+				if filepath:match('%.png$') then
+					return 'image'
+				end
+				return 'archive'
+			end,
+		})
+
+		local telescope = require('glimpse.integrations.telescope')
+		telescope.buffer_previewer_maker('/tmp/example.png', buf, { winid = win })
+		assert.is_true(wait_for(function()
+			return render_calls[1] ~= nil
+		end))
+
+		telescope.buffer_previewer_maker('/tmp/example.zip', buf, { winid = win })
+		assert.is_true(wait_for(function()
+			return close_calls[1] == buf and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'archive:/tmp/example.zip'
+		end))
+		assert.equals(buf, close_calls[1])
+		assert.equals('glimpse_archive', vim.bo[buf].filetype)
+
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+		restore_package(saved)
+	end)
+
+	it('clears the previous Kitty placement before falling back to Telescope', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.renderer',
+			'telescope.previewers',
+			'telescope.from_entry',
+			'telescope.config',
+			'glimpse.integrations.telescope',
+		})
+
+		local buf = vim.api.nvim_create_buf(false, true)
+		local close_calls = {}
+		local fallback_calls = {}
+
+		stub_package('telescope.previewers', {
+			buffer_previewer_maker = function(filepath, bufnr, opts)
+				fallback_calls[#fallback_calls + 1] = { filepath = filepath, bufnr = bufnr, opts = opts }
+			end,
+			new_buffer_previewer = function(spec)
+				return spec
+			end,
+		})
+		stub_package('telescope.from_entry', {
+			path = function(entry)
+				return entry.path
+			end,
+		})
+		stub_package('telescope.config', {
+			pickers = {},
+			set_pickers = function()
+				return true
+			end,
+		})
+		stub_package('glimpse.renderer', {
+			close = function(target_buf)
+				close_calls[#close_calls + 1] = target_buf
+			end,
+		})
+		stub_package('glimpse', {
+			get_preview_kind = function()
+				return 'binary'
+			end,
+		})
+
+		local telescope = require('glimpse.integrations.telescope')
+		telescope.setup({ binary = false })
+		telescope.buffer_previewer_maker('/tmp/example.bin', buf, {})
+		assert.is_true(wait_for(function()
+			return close_calls[1] == buf and fallback_calls[1] ~= nil
+		end))
+
+		assert.equals(buf, close_calls[1])
+		assert.equals('/tmp/example.bin', fallback_calls[1].filepath)
+		assert.equals(buf, fallback_calls[1].bufnr)
+
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+		restore_package(saved)
+	end)
+
 	it('ignores stale video thumbnails after the preview window closes', function()
 		local saved = save_package({
 			'glimpse',
@@ -862,76 +1003,6 @@ describe('telescope integration', function()
 		assert.is_true(wait_for(function()
 			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'rendered:/tmp/second-thumb.png'
 		end))
-
-		if vim.api.nvim_buf_is_valid(buf) then
-			vim.api.nvim_buf_delete(buf, { force = true })
-		end
-		restore_package(saved)
-	end)
-
-	it('clears a previous Kitty image when switching to a text preview', function()
-		local saved = save_package({
-			'glimpse',
-			'glimpse.renderer',
-			'glimpse.previewer.archive',
-			'telescope.previewers',
-			'telescope.from_entry',
-			'telescope.config',
-			'glimpse.integrations.telescope',
-		})
-
-		local buf = vim.api.nvim_create_buf(false, true)
-		local win = vim.api.nvim_get_current_win()
-		local close_calls = {}
-
-		stub_package('telescope.previewers', {
-			buffer_previewer_maker = function() end,
-			new_buffer_previewer = function(spec)
-				return spec
-			end,
-		})
-		stub_package('telescope.from_entry', {
-			path = function(e)
-				return e.path
-			end,
-		})
-		stub_package('telescope.config', { pickers = {}, set_pickers = function() end })
-		stub_package('glimpse.renderer', {
-			render = function() end,
-			close = function(target_buf)
-				close_calls[#close_calls + 1] = target_buf
-			end,
-			has_placement = function()
-				return false
-			end,
-			find_by_filepath = function()
-				return nil
-			end,
-		})
-		stub_package('glimpse.previewer.archive', {
-			preview_data = function()
-				return { 'file1.txt', 'file2.txt' }, nil, nil
-			end,
-		})
-		stub_package('glimpse', {
-			get_preview_kind = function(path)
-				return path:match('%.zip$') and 'archive' or 'image'
-			end,
-		})
-
-		stub_package('glimpse.integrations.telescope', nil)
-		local telescope = require('glimpse.integrations.telescope')
-		telescope.setup({ enable = true })
-
-		telescope.buffer_previewer_maker('/tmp/photo.zip', buf, { winid = win })
-
-		assert.is_true(wait_for(function()
-			return vim.bo[buf].filetype == 'glimpse_archive'
-		end))
-
-		-- renderer.close must have been called exactly once with the correct buffer
-		assert.equals(1, #close_calls)
-		assert.equals(buf, close_calls[1])
 
 		if vim.api.nvim_buf_is_valid(buf) then
 			vim.api.nvim_buf_delete(buf, { force = true })

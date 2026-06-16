@@ -10,7 +10,7 @@
 ## Features
 
 - 🖼️ Inline rendering via **Kitty Graphics Protocol** (Kitty, Ghostty)
-- 🎬 **Video preview** via ffmpeg thumbnail extraction (cached)
+- 🎬 **Inline video playback** via Kitty Animation Protocol (play/pause, seek); thumbnail fallback for other terminals
 - 📦 **Archive preview** - list contents of zip/tar without extraction
 - 🗄️ **SQLite preview** - show tables and columns without modifying the database
 - 💾 **Binary preview** - detect binaries with `file` and show a short `xxd` hexdump
@@ -151,7 +151,20 @@ xxd -h
       open = nil,            -- command or function to open videos externally
                               -- string: 'open' (macOS), 'xdg-open' (Linux)
                               -- function: fun(filepath) for custom logic
-                              -- nil: opens as buffer in Neovim
+                              -- nil: plays inline (Kitty/Ghostty) or shows thumbnail
+      frames = {
+        strategy   = 'auto', -- 'auto' | 'batch' | 'poll'
+                              -- auto: selects poll when ffmpeg is available
+                              -- batch: low-res preview immediately, full-res when done
+                              -- poll: frames delivered progressively as ffmpeg writes them
+        per_second = 10,     -- frames per second to extract
+        limit      = 120,    -- maximum frames to extract per video
+      },
+      keys = {
+        toggle        = '<CR>', -- play / pause inline animation
+        seek_forward  = 'l',   -- seek forward 5 seconds
+        seek_backward = 'h',   -- seek backward 5 seconds
+      },
     },
     archive = {
       formats = {            -- supported archive extensions (preview only, no extraction)

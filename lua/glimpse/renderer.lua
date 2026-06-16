@@ -254,6 +254,7 @@ function M.register(buf, filepath)
 		signature = file_signature(filepath),
 		image_id = nil,
 		closed = false,
+		created_at = vim.uv.hrtime(),
 	})
 end
 
@@ -265,10 +266,17 @@ function M.rerender(buf)
 		return
 	end
 	-- Skip if it was created less than 500ms ago
-	if (vim.uv.hrtime() - placement.created_at) < 500e6 then
+	local created_at = placement.created_at or 0
+	if created_at > 0 and (vim.uv.hrtime() - created_at) < 500e6 then
 		return
 	end
 	local filepath = placement.filepath
+
+	-- Animation buffers use virtual paths; rerender is not supported yet
+	if filepath and filepath:match('^glimpse://video/') then
+		return
+	end
+
 	local old_id = placement.image_id
 
 	request_counter = request_counter + 1
@@ -331,6 +339,99 @@ end
 --- @return boolean
 function M.needs_rerender(buf)
 	return placement_state.needs_rerender(buf)
+end
+
+--- Set up a buffer for animation: apply window options and write placeholder grid.
+--- Used by callers that manage frame transmission directly (e.g. video animation).
+--- @param buf number
+--- @param win number
+--- @param image_id number
+--- @param grid_cols number
+--- @param grid_rows number
+--- @param win_cols number
+--- @param win_rows number
+function M.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_cols, win_rows)
+	local existing = placement_state.get(buf)
+	local old_image_id = existing and existing.image_id or nil
+	local name = 'glimpse://video/' .. tostring(image_id)
+	pcall(vim.api.nvim_buf_set_name, buf, name)
+	vim.bo[buf].buftype = 'nofile'
+	vim.bo[buf].swapfile = false
+	vim.bo[buf].filetype = 'image'
+	vim.bo[buf].buflisted = false
+	if vim.api.nvim_win_is_valid(win) then
+		vim.wo[win].number = false
+		vim.wo[win].relativenumber = false
+		vim.wo[win].signcolumn = 'no'
+		vim.wo[win].foldcolumn = '0'
+		vim.wo[win].wrap = false
+		vim.wo[win].statuscolumn = ''
+		vim.wo[win].list = false
+		vim.wo[win].spell = false
+	end
+	request_counter = request_counter + 1
+	placement_state.set(buf, {
+		buf = buf,
+		filepath = name,
+		signature = nil,
+		image_id = image_id,
+		closed = false,
+		created_at = vim.uv.hrtime(),
+		request_id = request_counter,
+		win_cols = win_cols,
+		win_rows = win_rows,
+	})
+	-- Plain grid; reuse a single per-buffer group to avoid highlight exhaustion
+	local hl_name = 'GlimpseAnim' .. tostring(buf)
+	vim.api.nvim_set_hl(0, hl_name, { fg = image_id, nocombine = true })
+	local height = math.min(#positions, grid_rows)
+	local width = math.min(#positions, grid_cols)
+	local lines = {}
+	for r = 1, height do
+		local line = {}
+		for c = 1, width do
+			line[#line + 1] = PLACEHOLDER .. positions[r] .. positions[c]
+		end
+		lines[r] = table.concat(line)
+	end
+	vim.bo[buf].modifiable = true
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].modified = false
+	for i = 0, #lines - 1 do
+		vim.api.nvim_buf_set_extmark(buf, ns, i, 0, {
+			end_col = #lines[i + 1],
+			hl_group = hl_name,
+		})
+	end
+	if old_image_id and old_image_id ~= image_id then
+		vim.schedule(function()
+			pcall(kitty.delete, old_image_id)
+		end)
+	end
+end
+
+--- Update the fg color of the animation highlight group for this buffer.
+--- Reuses the same group (GlimpseAnim<buf>) to avoid the "too many highlight
+--- groups" error. Neovim sends updated fg codes on the next redraw, which
+--- triggers Kitty to re-render the image at the placeholder positions.
+--- @param buf number
+--- @param new_id number New image ID to display
+function M.update_animation_highlight(buf, new_id)
+	local hl_name = 'GlimpseAnim' .. tostring(buf)
+	vim.api.nvim_set_hl(0, hl_name, { fg = new_id, nocombine = true })
+	local placement = placement_state.get(buf)
+	if placement then
+		placement.image_id = new_id
+	end
+end
+
+--- Return the active placement for a buffer, or nil.
+--- Exposes image_id so callers can add animation frames to an existing render.
+--- @param buf number
+--- @return ImagePlacement|nil
+function M.get_placement(buf)
+	return placement_state.get(buf)
 end
 
 return M

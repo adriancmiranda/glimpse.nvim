@@ -89,6 +89,7 @@ local function _set_text_preview(bufnr, lines, highlights, filetype)
 		return
 	end
 
+	pcall(require('glimpse.renderer').close, bufnr)
 	lines = _normalize_lines(lines)
 
 	vim.bo[bufnr].modifiable = true
@@ -213,12 +214,9 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 		binary = require('glimpse.previewer.binary'),
 	}
 
-	-- Clear any active Kitty image render before writing text content,
-	-- otherwise the previous image persists over the new text preview.
-	pcall(require('glimpse.renderer').close, bufnr)
-
 	local previewer = kind and previewers[kind] or nil
 	if not previewer or not previewer.preview_data then
+		pcall(require('glimpse.renderer').close, bufnr)
 		_fallback_buffer_previewer(filepath, bufnr, opts)
 		return
 	end

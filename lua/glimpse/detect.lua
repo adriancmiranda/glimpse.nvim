@@ -56,6 +56,14 @@ function M.supports_inline()
 	return supports_inline[term] or false
 end
 
+--- Check whether the terminal supports Kitty animation protocol (a=f add-frame).
+--- Equivalent to supports_inline: every terminal that implements the Kitty
+--- Graphics Protocol for images also implements multi-frame animation.
+--- @return boolean
+function M.supports_animation()
+	return M.supports_inline()
+end
+
 --- Check whether we are inside tmux.
 --- @return boolean
 function M.in_tmux()
