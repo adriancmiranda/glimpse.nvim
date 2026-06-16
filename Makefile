@@ -30,9 +30,12 @@ docs:
 	@echo "doc/glimpse.txt generated"
 
 lint:
+	@stylua --check lua/ tests/
+	@luacheck lua/ tests/
 	@npx --yes markdownlint-cli@$(MARKDOWNLINT_VERSION) $(MARKDOWNLINT_FILES)
 
 lint-fix:
+	@stylua lua/ tests/
 	@npx --yes markdownlint-cli@$(MARKDOWNLINT_VERSION) --fix README.md CONTRIBUTING.md
 
 lint-types:
