@@ -26,6 +26,12 @@ end
 
 local request_counter = 0
 
+-- One-deep pending slot: when a conversion is already in-flight for a buf,
+-- subsequent rerender calls store a flag here instead of killing + respawning.
+-- The completion callback dispatches exactly one follow-up if the flag is set,
+-- capping N rapid resize events at 2 spawns regardless of N.
+local _pending_rerender = {}
+
 local function file_signature(path)
 	local stat = vim.uv.fs_stat(path)
 	if not stat then
@@ -227,6 +233,7 @@ end
 --- Close and clean up a placement.
 --- @param buf number
 function M.close(buf)
+	_pending_rerender[buf] = nil
 	local placement = placement_state.get(buf)
 	if not placement then
 		preview_state.unmark(buf)
@@ -279,6 +286,16 @@ function M.rerender(buf)
 
 	local old_id = placement.image_id
 
+	-- If a conversion is already in-flight, invalidate it and store a pending
+	-- flag instead of kill+respawn. The completion callback will fire exactly
+	-- one follow-up render with the latest window dimensions.
+	if placement.job_id then
+		request_counter = request_counter + 1
+		placement.request_id = request_counter
+		_pending_rerender[buf] = true
+		return
+	end
+
 	request_counter = request_counter + 1
 	local req_id = request_counter
 	placement.request_id = req_id
@@ -290,19 +307,24 @@ function M.rerender(buf)
 	local cols = vim.api.nvim_win_get_width(win)
 	local rows = vim.api.nvim_win_get_height(win)
 
-	-- Cancel the previous conversion job if it is still running
-	if placement.job_id then
-		pcall(vim.fn.jobstop, placement.job_id)
-		placement.job_id = nil
+	local function dispatch_pending()
+		if _pending_rerender[buf] and not placement.closed and vim.api.nvim_buf_is_valid(buf) then
+			_pending_rerender[buf] = nil
+			vim.schedule(function()
+				M.rerender(buf)
+			end)
+		end
 	end
 
 	placement.job_id = kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
 		placement.job_id = nil
 		if err or not id then
+			dispatch_pending()
 			return
 		end
 		if placement.closed or placement.request_id ~= req_id then
 			kitty.delete(id)
+			dispatch_pending()
 			return
 		end
 		if not vim.api.nvim_buf_is_valid(buf) then
@@ -316,6 +338,7 @@ function M.rerender(buf)
 		vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
 		-- Apply the new one
 		if not w_px or not h_px then
+			dispatch_pending()
 			return
 		end
 		placement.image_id = id
@@ -324,6 +347,7 @@ function M.rerender(buf)
 		local grid_cols = math.min(cols, math.ceil(w_px / require('glimpse').get_config().cell_size.width))
 		local grid_rows = math.min(rows, math.ceil(h_px / require('glimpse').get_config().cell_size.height))
 		render_grid(buf, id, grid_cols, grid_rows)
+		dispatch_pending()
 	end)
 end
 
