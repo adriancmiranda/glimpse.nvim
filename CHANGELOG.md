@@ -20,10 +20,17 @@
 - *(telescope)* Close active Kitty render before text preview
 - *(telescope)* Also clear stale image on disabled-kind fallback path
 - *(oil)* Preserve cwd and open modes
+- Move oil float context into glimpse
+- Avoid vim.fs.isabspath in oil float
+- *(types)* Resolve lua_ls diagnostic warnings across the codebase
 
 ### 🧪 Testing
 
 - *(telescope)* Add regression for stale Kitty image on text preview
+
+### ⚙️ Miscellaneous Tasks
+
+- Add stylua and luacheck to lint targets (from PR #67)
 
 
 ## [2.0.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.16.0..v2.0.0) - 2026-06-09
