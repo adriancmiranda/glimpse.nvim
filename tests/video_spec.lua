@@ -235,6 +235,7 @@ describe('video preview', function()
 			'glimpse.detect',
 			'glimpse.frames',
 			'glimpse.kitty',
+			'glimpse.preview_state',
 			'glimpse.renderer',
 			'glimpse.previewer.video',
 		})
@@ -306,6 +307,17 @@ describe('video preview', function()
 			end,
 			png_dimensions_from_data = function()
 				return 200, 120
+			end,
+		})
+		stub_package('glimpse.preview_state', {
+			mark = function(buf)
+				calls.marked = buf
+			end,
+			unmark = function()
+				return true
+			end,
+			is_marked = function()
+				return false
 			end,
 		})
 		stub_package('glimpse.renderer', {
@@ -397,6 +409,7 @@ describe('video preview', function()
 
 		assert.is_not_nil(autocmds.BufDelete)
 		assert.equals(20, calls.setup.buf)
+		assert.equals(20, calls.marked)
 		autocmds.BufDelete[1].callback()
 		assert.is_true(calls.cancelled)
 		assert.equals(20, calls.closed)
@@ -780,7 +793,7 @@ describe('video preview', function()
 			local timer = {
 				closed = false,
 			}
-			function timer.start(_, _, cb)
+			function timer.start(_, _, _, cb)
 				timer.cb = cb
 				timers[#timers + 1] = timer
 				return true

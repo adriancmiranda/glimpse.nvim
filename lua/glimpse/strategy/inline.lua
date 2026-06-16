@@ -112,6 +112,10 @@ function M.preview(filepath)
 	if target_win and target_buf then
 		debug_log(string.format('preview reuse win=%d buf=%d', target_win, target_buf))
 		vim.api.nvim_set_current_win(target_win)
+		local placement = renderer.get_placement(target_buf)
+		if placement and placement.filepath and placement.filepath:match('^glimpse://video/') then
+			require('glimpse.previewer.video').stop(target_buf)
+		end
 		renderer.render(target_buf, filepath, { bufname = preview_bufname(filepath, target_buf) })
 		preview_state.mark(target_buf)
 		vim.api.nvim_set_current_win(oil_win)

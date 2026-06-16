@@ -3,6 +3,7 @@ local M = {}
 
 local thumbnail = require('glimpse.thumbnail')
 local preview_route = require('glimpse.preview_route')
+local preview_state = require('glimpse.preview_state')
 
 local _tokens = {}
 
@@ -138,6 +139,7 @@ local function _show_animated(filepath, mode, source_win)
 		if not b or not w then
 			return
 		end
+		preview_state.mark(b)
 		anim_target_buf = b
 		local w_px, h_px = kitty.png_dimensions_from_data(data)
 		if not w_px or not h_px then
@@ -269,6 +271,7 @@ local function _show_animated(filepath, mode, source_win)
 
 		-- Set up buffer with placeholder grid
 		renderer.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_cols, win_rows)
+		preview_state.mark(buf)
 		vim.cmd('redraw')
 
 		-- Retransmit each frame on a timer (uses same a=T,t=f path as frame 1)
@@ -403,6 +406,16 @@ local function _show_animated(filepath, mode, source_win)
 			end,
 		})
 	end)
+end
+
+--- Stop an active video preview tracked by buffer.
+--- @param buf number
+--- @param full_cleanup? boolean
+function M.stop(buf, full_cleanup)
+	local s = _states[buf]
+	if s then
+		s.stop(full_cleanup ~= false)
+	end
 end
 
 --- Show a video using inline animation when supported, thumbnail otherwise.
