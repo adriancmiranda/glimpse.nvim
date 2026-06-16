@@ -11,6 +11,7 @@
 - *(kitty)* Auto-detect terminal cell pixel dimensions
 - *(changelog)* Include commit body in changelog for breaking changes
 - *(preview)* Separate preview state and oil image flow
+- *(video)* Inline video playback via Kitty Animation Protocol
 
 ### 🐛 Bug Fixes
 
@@ -24,6 +25,19 @@
 - Avoid vim.fs.isabspath in oil float
 - *(types)* Resolve lua_ls diagnostic warnings across the codebase
 - *(oil)* Resolve float dir from oil buffer state instead of process cwd
+- Align animation state with placement_state
+- Keep telescope text previews and renderer state consistent
+- *(video)* Keep resize restarts from flashing
+- *(video)* Reuse preview window across media kinds
+- Scope media preview reuse to preview targets
+- *(video)* Prevent stale animation from clobbering new preview state
+- *(video)* Fix window ownership, thumbnail fallback target, and frame file tracking
+- Harden video frame extraction
+- *(video)* Cancel batch extraction when preview split is closed early
+
+### 📚 Documentation
+
+- Update README feature line and drop manual CHANGELOG entry
 
 ### 🧪 Testing
 
@@ -32,6 +46,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Add stylua and luacheck to lint targets (from PR #67)
+- Remove pipe strategy stub (will be implemented in a separate PR)
 
 
 ## [2.0.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v1.16.0..v2.0.0) - 2026-06-09
