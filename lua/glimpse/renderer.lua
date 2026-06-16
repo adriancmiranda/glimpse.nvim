@@ -349,7 +349,7 @@ end
 --- @param win_cols number
 --- @param win_rows number
 function M.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_cols, win_rows)
-	if placements[buf] then
+	if placement_state.get(buf) then
 		M.close(buf)
 	end
 	local name = 'glimpse://video/' .. tostring(image_id)
@@ -369,7 +369,7 @@ function M.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_col
 		vim.wo[win].spell = false
 	end
 	request_counter = request_counter + 1
-	placements[buf] = {
+	placement_state.set(buf, {
 		buf = buf,
 		filepath = name,
 		signature = nil,
@@ -379,7 +379,7 @@ function M.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_col
 		request_id = request_counter,
 		win_cols = win_cols,
 		win_rows = win_rows,
-	}
+	})
 	-- Plain grid; reuse a single per-buffer group to avoid highlight exhaustion
 	local hl_name = 'GlimpseAnim' .. tostring(buf)
 	vim.api.nvim_set_hl(0, hl_name, { fg = image_id, nocombine = true })
@@ -414,8 +414,9 @@ end
 function M.update_animation_highlight(buf, new_id)
 	local hl_name = 'GlimpseAnim' .. tostring(buf)
 	vim.api.nvim_set_hl(0, hl_name, { fg = new_id, nocombine = true })
-	if placements[buf] then
-		placements[buf].image_id = new_id
+	local placement = placement_state.get(buf)
+	if placement then
+		placement.image_id = new_id
 	end
 end
 
@@ -424,7 +425,7 @@ end
 --- @param buf number
 --- @return ImagePlacement|nil
 function M.get_placement(buf)
-	return placements[buf]
+	return placement_state.get(buf)
 end
 
 return M
