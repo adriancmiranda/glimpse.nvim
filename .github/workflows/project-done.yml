@@ -9,17 +9,13 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v7
-        env:
-          PROJECT_ID: PVT_kwHOAFLgDs4BakFx
-          STATUS_FIELD_ID: PVTSSF_lAHOAFLgDs4BakFxzhVazZo
-          DONE_OPTION_ID: "98236657"
+      - uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
-            const projectId = process.env.PROJECT_ID;
-            const fieldId = process.env.STATUS_FIELD_ID;
-            const doneId = process.env.DONE_OPTION_ID;
+            const projectId = '${{ vars.PROJECT_ID }}';
+            const fieldId = '${{ vars.STATUS_FIELD_ID }}';
+            const doneId = '${{ vars.DONE_OPTION_ID }}';
 
             const prNodeId = context.payload.pull_request.node_id;
 
