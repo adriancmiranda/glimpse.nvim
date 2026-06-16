@@ -6,14 +6,12 @@
 ---   'auto'  - selects the best strategy automatically (default)
 ---   'batch' - preview frame immediately, full frames after ffmpeg finishes
 ---   'poll'  - incremental delivery as ffmpeg writes files
----   'pipe'  - binary stream via image2pipe with PNG boundary detection
 local M = {}
 
 local strategies = {
 	auto = require('glimpse.frames.auto'),
 	batch = require('glimpse.frames.batch'),
 	poll = require('glimpse.frames.poll'),
-	pipe = require('glimpse.frames.pipe'),
 }
 
 --- Extract frames from a video file using the configured strategy.

@@ -68,7 +68,7 @@
 ---@field formats? string[] Supported image extensions
 
 ---@class GlimpseVideoFramesConfig
----@field strategy? 'auto'|'batch'|'poll'|'pipe' Frame extraction strategy for inline playback (default: 'auto')
+---@field strategy? 'auto'|'batch'|'poll' Frame extraction strategy for inline playback (default: 'auto')
 ---@field per_second? number Frames per second to extract (default: 10)
 ---@field limit? integer Maximum frames to extract (default: 120)
 
