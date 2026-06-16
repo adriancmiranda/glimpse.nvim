@@ -296,6 +296,67 @@ describe('telescope integration', function()
 		restore_package(saved)
 	end)
 
+	it('clears the previous Kitty placement before falling back to Telescope', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.renderer',
+			'telescope.previewers',
+			'telescope.from_entry',
+			'telescope.config',
+			'glimpse.integrations.telescope',
+		})
+
+		local buf = vim.api.nvim_create_buf(false, true)
+		local close_calls = {}
+		local fallback_calls = {}
+
+		stub_package('telescope.previewers', {
+			buffer_previewer_maker = function(filepath, bufnr, opts)
+				fallback_calls[#fallback_calls + 1] = { filepath = filepath, bufnr = bufnr, opts = opts }
+			end,
+			new_buffer_previewer = function(spec)
+				return spec
+			end,
+		})
+		stub_package('telescope.from_entry', {
+			path = function(entry)
+				return entry.path
+			end,
+		})
+		stub_package('telescope.config', {
+			pickers = {},
+			set_pickers = function()
+				return true
+			end,
+		})
+		stub_package('glimpse.renderer', {
+			close = function(target_buf)
+				close_calls[#close_calls + 1] = target_buf
+			end,
+		})
+		stub_package('glimpse', {
+			get_preview_kind = function()
+				return 'binary'
+			end,
+		})
+
+		local telescope = require('glimpse.integrations.telescope')
+		telescope.setup({ binary = false })
+		telescope.buffer_previewer_maker('/tmp/example.bin', buf, {})
+		assert.is_true(wait_for(function()
+			return close_calls[1] == buf and fallback_calls[1] ~= nil
+		end))
+
+		assert.equals(buf, close_calls[1])
+		assert.equals('/tmp/example.bin', fallback_calls[1].filepath)
+		assert.equals(buf, fallback_calls[1].bufnr)
+
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+		restore_package(saved)
+	end)
+
 	it('ignores stale video thumbnails after the preview window closes', function()
 		local saved = save_package({
 			'glimpse',

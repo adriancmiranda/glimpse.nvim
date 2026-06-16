@@ -102,12 +102,19 @@ local function _show_animated(filepath, mode, source_win)
 		if anim_buf and vim.api.nvim_buf_is_valid(anim_buf) then
 			return anim_buf, anim_win
 		end
+		if mode ~= 'preview' then
+			anim_win = winid
+			anim_buf = vim.api.nvim_win_get_buf(winid)
+			anim_target_buf = anim_buf
+			return anim_buf, anim_win
+		end
 		local oil_win = winid
 		local target_win, target_buf = nil, nil
 		for _, w in ipairs(vim.api.nvim_list_wins()) do
-			if w ~= oil_win and vim.bo[vim.api.nvim_win_get_buf(w)].filetype == 'image' then
+			local candidate_buf = vim.api.nvim_win_get_buf(w)
+			if w ~= oil_win and vim.bo[candidate_buf].filetype == 'image' and preview_state.is_marked(candidate_buf) then
 				target_win = w
-				target_buf = vim.api.nvim_win_get_buf(w)
+				target_buf = candidate_buf
 				break
 			end
 		end

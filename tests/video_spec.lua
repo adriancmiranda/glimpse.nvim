@@ -408,11 +408,11 @@ describe('video preview', function()
 		calls.on_done(1, nil)
 
 		assert.is_not_nil(autocmds.BufDelete)
-		assert.equals(20, calls.setup.buf)
-		assert.equals(20, calls.marked)
+		assert.equals(1, calls.setup.buf)
+		assert.equals(1, calls.marked)
 		autocmds.BufDelete[1].callback()
 		assert.is_true(calls.cancelled)
-		assert.equals(20, calls.closed)
+		assert.equals(1, calls.closed)
 
 		vim.fn.has = original_has
 		vim.api.nvim_get_current_win = original_get_current_win
@@ -610,7 +610,7 @@ describe('video preview', function()
 		assert.equals('/tmp/example.mp4', calls.extract)
 		assert.equals(temp_path, calls.removed)
 		assert.is_nil(video._temp_registry[temp_path])
-		assert.equals(20, calls.setup.buf)
+		assert.equals(1, calls.setup.buf)
 
 		vim.fn.has = original_has
 		vim.fn.tempname = original_tempname
@@ -942,8 +942,8 @@ describe('video preview', function()
 		assert.equals(1, vim.fn.filereadable(tmp1))
 
 		-- simulate what cleanup_anim does on normal stop
-		os.remove(tmp1)
-		os.remove(tmp2)
+		vim.fn.delete(tmp1)
+		vim.fn.delete(tmp2)
 		registry[tmp1] = nil
 		registry[tmp2] = nil
 
@@ -1037,6 +1037,182 @@ describe('video preview', function()
 		vim.api.nvim_get_current_win = original_get_current_win
 		vim.api.nvim_set_current_win = original_set_current_win
 		vim.api.nvim_win_is_valid = original_win_is_valid
+		restore_package(saved)
+	end)
+
+	it('does not reuse unrelated image windows for animated show', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.detect',
+			'glimpse.frames',
+			'glimpse.kitty',
+			'glimpse.preview_state',
+			'glimpse.renderer',
+			'glimpse.previewer.video',
+		})
+
+		local calls = {}
+		local current_win = 11
+		local current_buf = 1
+		local unrelated_buf = vim.api.nvim_create_buf(false, true)
+		local windows = { [11] = current_buf, [22] = unrelated_buf }
+		local bufs = { [1] = true, [unrelated_buf] = true }
+		local original_has = stub_fn(vim.fn, 'has', function(feature)
+			return feature == 'ttyin' and 1 or 0
+		end)
+		local original_get_current_win = vim.api.nvim_get_current_win
+		local original_set_current_win = vim.api.nvim_set_current_win
+		local original_list_wins = vim.api.nvim_list_wins
+		local original_win_get_buf = vim.api.nvim_win_get_buf
+		local original_win_is_valid = vim.api.nvim_win_is_valid
+		local original_buf_is_valid = vim.api.nvim_buf_is_valid
+		local original_win_set_buf = vim.api.nvim_win_set_buf
+		local original_win_get_width = vim.api.nvim_win_get_width
+		local original_win_get_height = vim.api.nvim_win_get_height
+		local original_create_autocmd = vim.api.nvim_create_autocmd
+		local original_create_augroup = vim.api.nvim_create_augroup
+		local original_keymap_set = vim.keymap.set
+		local original_cmd = vim.cmd
+		local original_timer = vim.uv.new_timer
+
+		stub_package('glimpse', {
+			_should_use_inline = function()
+				return true
+			end,
+			get_config = function()
+				return {
+					video = {
+						frames = { per_second = 10 },
+					},
+					cell_size = { width = 20, height = 40 },
+				}
+			end,
+		})
+		stub_package('glimpse.detect', {
+			supports_animation = function()
+				return true
+			end,
+		})
+		stub_package('glimpse.frames', {
+			extract_frames_async = function(_, _, on_frame, on_done)
+				calls.on_frame = on_frame
+				calls.on_done = on_done
+				return function() end
+			end,
+		})
+		stub_package('glimpse.kitty', {
+			new_id = function()
+				calls.next_id = (calls.next_id or 100) + 1
+				return calls.next_id
+			end,
+			retransmit_frame = function()
+				return true
+			end,
+			delete = function()
+				return true
+			end,
+			png_dimensions_from_data = function()
+				return 200, 120
+			end,
+		})
+		stub_package('glimpse.preview_state', {
+			mark = function() end,
+			unmark = function() end,
+			is_marked = function(buf)
+				return buf == unrelated_buf
+			end,
+		})
+		stub_package('glimpse.renderer', {
+			setup_animation_buf = function(buf, win, image_id)
+				calls.setup = { buf = buf, win = win, image_id = image_id }
+			end,
+			update_animation_highlight = function() end,
+			close = function() end,
+		})
+
+		vim.api.nvim_get_current_win = function()
+			return current_win
+		end
+		vim.api.nvim_set_current_win = function(win)
+			current_win = win
+			current_buf = windows[win] or current_buf
+		end
+		vim.api.nvim_list_wins = function()
+			return { 11, 22 }
+		end
+		vim.api.nvim_win_get_buf = function(win)
+			return windows[win]
+		end
+		vim.api.nvim_win_is_valid = function(win)
+			return windows[win] ~= nil
+		end
+		vim.api.nvim_buf_is_valid = function(buf)
+			return bufs[buf] or false
+		end
+		vim.api.nvim_win_set_buf = function(win, buf)
+			windows[win] = buf
+			current_buf = buf
+		end
+		vim.api.nvim_win_get_width = function()
+			return 80
+		end
+		vim.api.nvim_win_get_height = function()
+			return 24
+		end
+		vim.api.nvim_create_autocmd = function()
+			return 1
+		end
+		vim.api.nvim_create_augroup = function()
+			return 1
+		end
+		vim.keymap.set = function() end
+		vim.cmd = function()
+			return true
+		end
+		vim.uv.new_timer = function()
+			local timer = { closed = false }
+			function timer.start()
+				return true
+			end
+			function timer.stop()
+				return true
+			end
+			function timer.close()
+				timer.closed = true
+				return true
+			end
+			function timer.is_closing()
+				return timer.closed
+			end
+			return timer
+		end
+		vim.bo[1].filetype = ''
+		vim.bo[unrelated_buf].filetype = 'image'
+
+		local video = require('glimpse.previewer.video')
+		video.show('/tmp/example.mp4')
+		calls.on_frame('frame-one', 1, false)
+		calls.on_done(1, nil)
+
+		assert.is_not_nil(calls.setup)
+		assert.equals(1, calls.setup.buf)
+		assert.equals(11, calls.setup.win)
+
+		vim.fn.has = original_has
+		vim.api.nvim_get_current_win = original_get_current_win
+		vim.api.nvim_set_current_win = original_set_current_win
+		vim.api.nvim_list_wins = original_list_wins
+		vim.api.nvim_win_get_buf = original_win_get_buf
+		vim.api.nvim_win_is_valid = original_win_is_valid
+		vim.api.nvim_buf_is_valid = original_buf_is_valid
+		vim.api.nvim_win_set_buf = original_win_set_buf
+		vim.api.nvim_win_get_width = original_win_get_width
+		vim.api.nvim_win_get_height = original_win_get_height
+		vim.api.nvim_create_autocmd = original_create_autocmd
+		vim.api.nvim_create_augroup = original_create_augroup
+		vim.keymap.set = original_keymap_set
+		vim.cmd = original_cmd
+		vim.uv.new_timer = original_timer
 		restore_package(saved)
 	end)
 end)

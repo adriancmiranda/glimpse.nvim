@@ -159,6 +159,7 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 	local win = (opts.winid and opts.winid ~= -1) and opts.winid or vim.fn.bufwinid(bufnr)
 
 	if kind and not _kind_enabled(kind) then
+		pcall(require('glimpse.renderer').close, bufnr)
 		_fallback_buffer_previewer(filepath, bufnr, opts)
 		return
 	end
@@ -215,6 +216,7 @@ local function _render_preview(filepath, bufnr, opts, request_id)
 
 	local previewer = kind and previewers[kind] or nil
 	if not previewer or not previewer.preview_data then
+		pcall(require('glimpse.renderer').close, bufnr)
 		_fallback_buffer_previewer(filepath, bufnr, opts)
 		return
 	end
