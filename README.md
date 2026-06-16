@@ -10,7 +10,7 @@
 ## Features
 
 - 🖼️ Inline rendering via **Kitty Graphics Protocol** (Kitty, Ghostty)
-- 🎬 **Video preview** via ffmpeg thumbnail extraction (cached)
+- 🎬 **Inline video playback** via Kitty Animation Protocol (play/pause, seek); thumbnail fallback for other terminals
 - 📦 **Archive preview** - list contents of zip/tar without extraction
 - 🗄️ **SQLite preview** - show tables and columns without modifying the database
 - 💾 **Binary preview** - detect binaries with `file` and show a short `xxd` hexdump

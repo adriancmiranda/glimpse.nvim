@@ -11,7 +11,6 @@
 - *(kitty)* Auto-detect terminal cell pixel dimensions
 - *(changelog)* Include commit body in changelog for breaking changes
 - *(preview)* Separate preview state and oil image flow
-- *(video)* Inline video playback via Kitty Animation Protocol
 
 ### 🐛 Bug Fixes
 
@@ -381,3 +380,4 @@
 ### 📚 Documentation
 
 - Add WezTerm + tmux troubleshooting to README
+
