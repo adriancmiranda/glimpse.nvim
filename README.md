@@ -159,6 +159,7 @@ xxd -h
                               -- poll: frames delivered progressively as ffmpeg writes them
         per_second = 10,     -- frames per second to extract
         limit      = 120,    -- maximum frames to extract per video
+        width      = 640,    -- frame width in pixels; 'auto' matches the window (slower)
       },
       keys = {
         toggle        = '<CR>', -- play / pause inline animation
