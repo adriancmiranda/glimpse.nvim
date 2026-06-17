@@ -71,6 +71,7 @@
 ---@field strategy? 'auto'|'batch'|'poll' Frame extraction strategy for inline playback (default: 'auto')
 ---@field per_second? number Frames per second to extract (default: 10)
 ---@field limit? integer Maximum frames to extract (default: 120)
+---@field width? integer|'auto' Frame width in pixels for ffmpeg (default: 640). Use 'auto' to match window width.
 
 ---@class GlimpseVideoKeysConfig
 ---@field toggle? string Keymap to toggle play/pause in an animation buffer (default: '<CR>')

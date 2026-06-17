@@ -251,7 +251,17 @@ local function _show_animated(filepath, mode, source_win)
 		end
 	end
 
-	cancel_frames = frames_mod.extract_frames_async(filepath, {}, function(data, _index, is_preview)
+	local frames_cfg = (config.video and config.video.frames) or {}
+	local frame_width
+	if frames_cfg.width == 'auto' then
+		local src_win = vim.fn.bufwinid(vim.api.nvim_get_current_buf())
+		local cell_w = (config.cell_size and config.cell_size.width) or 20
+		frame_width = (src_win ~= -1 and vim.api.nvim_win_get_width(src_win) or 80) * cell_w
+	else
+		frame_width = frames_cfg.width or 640
+	end
+
+	cancel_frames = frames_mod.extract_frames_async(filepath, { width = frame_width }, function(data, _index, is_preview)
 		if _tokens[winid] ~= token then
 			return
 		end
