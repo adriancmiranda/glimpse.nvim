@@ -10,6 +10,10 @@
 
 - *(video)* Add configurable frame extraction width
 
+### 📚 Documentation
+
+- Add video.frames.width to README configuration example
+
 ### ⚡ Performance
 
 - *(renderer)* Coalesce rapid rerender requests with a one-deep pending slot
