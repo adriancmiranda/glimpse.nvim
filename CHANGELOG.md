@@ -6,6 +6,10 @@
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(video)* Add configurable frame extraction width
+
 ### ⚡ Performance
 
 - *(renderer)* Coalesce rapid rerender requests with a one-deep pending slot
