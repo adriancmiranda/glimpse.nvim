@@ -93,6 +93,7 @@ GlimpseVideoFramesConfig                              *GlimpseVideoFramesConfig*
         {strategy?}    ("auto"|"batch"|"poll")  Frame extraction strategy for inline playback (default: 'auto')
         {per_second?}  (number)                 Frames per second to extract (default: 10)
         {limit?}       (integer)                Maximum frames to extract (default: 120)
+        {width?}       (integer|"auto")         Frame width in pixels for ffmpeg (default: 640). Use 'auto' to match window width.
 
 
 GlimpseVideoKeysConfig                                  *GlimpseVideoKeysConfig*
