@@ -13,6 +13,7 @@
 ### 📚 Documentation
 
 - Add video.frames.width to README configuration example
+- Document oil.toggle_float integration and allow details/summary HTML
 
 ### ⚡ Performance
 
