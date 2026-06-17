@@ -203,6 +203,27 @@ Breaking change: the public config was reorganized into nested tables.
 
 When an image is opened, the current window follows that file's directory, so `Oil.nvim` opens in the same folder.
 
+<details>
+<summary>Advanced: bind Oil float to current directory</summary>
+
+```lua
+-- Toggle open/close
+vim.keymap.set('n', '<leader>e', function()
+  require('glimpse.integrations.oil').toggle_float()
+end)
+
+-- Always open (useful if you handle close separately via Oil's own keymap)
+vim.keymap.set('n', '<leader>E', function()
+  require('glimpse.integrations.oil').open_float()
+end)
+```
+
+Both ensure the float opens at the directory Oil is currently browsing,
+even when the cursor is on an image buffer. To close, use Oil's built-in
+close keymap (default `q` inside the float).
+
+</details>
+
 ### Keymaps (Neo-tree)
 
 Enable with `integrations = { neotree = { enable = true } }` in setup.
