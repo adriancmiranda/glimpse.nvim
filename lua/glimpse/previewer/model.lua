@@ -294,6 +294,7 @@ local function _run_pipeline(filepath, mode, source_win)
 		local id = kitty.new_id()
 		kitty.retransmit_frame(id, path)
 		require('glimpse.renderer').setup_animation_buf(b, w, id, gc, gr, wc, wr)
+		pcall(vim.api.nvim_buf_set_name, b, 'glimpse://model/' .. vim.fn.fnamemodify(filepath, ':t'))
 		require('glimpse.preview_state').mark(b)
 		vim.cmd('redraw')
 		cur_id = id
