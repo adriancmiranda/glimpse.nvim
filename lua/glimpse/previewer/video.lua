@@ -181,7 +181,7 @@ local function _show_animated(filepath, mode, source_win)
 		end
 		local id = kitty.new_id()
 		kitty.retransmit_frame(id, tmp)
-		renderer.setup_animation_buf(b, w, id, gc, gr, wc, wr)
+		renderer.setup_animation_buf(b, w, id, gc, gr, wc, wr, filepath)
 		vim.cmd('redraw')
 		-- Keep the file alive until cleanup_anim — the terminal reads it
 		-- asynchronously (especially through tmux buffering) and may open it
@@ -322,7 +322,7 @@ local function _show_animated(filepath, mode, source_win)
 		end
 
 		-- Set up buffer with placeholder grid
-		renderer.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_cols, win_rows)
+		renderer.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_cols, win_rows, filepath)
 		preview_state.mark(buf)
 		vim.cmd('redraw')
 
