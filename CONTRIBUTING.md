@@ -15,6 +15,7 @@
 |------------|-------|
 | openssl | Certificate metadata extraction |
 | ffmpeg | Video thumbnail extraction and inline animation |
+| f3d | 3D model thumbnails and turntable frames |
 | ghostscript | PDF rendering via ImageMagick |
 | tmux >= 3.4 | Escape sequence passthrough (Kitty Graphics via tmux) |
 | `kitten` | Included with Kitty |
@@ -43,7 +44,8 @@ lua/glimpse/
 ├── sixel.lua             -- Sixel protocol (fallback)
 ├── thumbnail.lua         -- Video thumbnail extraction (ffmpeg, async)
 ├── magickwand.lua        -- ImageMagick interface for conversion
-├── util.lua              -- Image, video and certificate format detection
+├── pipeline.lua          -- Steps-based conversion pipeline (run_steps, run_sequence)
+├── util.lua              -- Image, video, model and certificate format detection
 ├── archive.lua           -- Archive listing and suspicious path detection
 ├── font.lua              -- Font metadata extraction and rendering
 ├── sqlite.lua            -- SQLite schema preview
@@ -61,6 +63,7 @@ lua/glimpse/
 │   ├── font.lua          -- Font previewer
 │   ├── image.lua         -- Inline image previewer
 │   ├── key.lua           -- GPG/SSH key previewer
+│   ├── model.lua         -- 3D model previewer via conversion pipeline (f3d)
 │   ├── sqlite.lua        -- SQLite previewer
 │   └── video.lua         -- Inline animation (Kitty/Ghostty) or thumbnail fallback
 ├── strategy/
