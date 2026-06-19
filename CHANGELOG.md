@@ -13,6 +13,11 @@
 ### 🐛 Bug Fixes
 
 - [`52f0321`](https://github.com/adriancmiranda/glimpse.nvim/commit/52f03211502c8a507f6f77ef93521688f5028700) *(telescope)* Render media previews immediately
+- [`99a4212`](https://github.com/adriancmiranda/glimpse.nvim/commit/99a42129085cd5eaaaa1adcc9cfe87ebda924052) *(renderer)* Use source filename as preview buffer name instead of image hash
+
+### 🚜 Refactor
+
+- [`2620138`](https://github.com/adriancmiranda/glimpse.nvim/commit/262013818aa6fc539a5188a051fc52a971f001ce) *(renderer)* Extract buffer label into local variable
 
 ### 📚 Documentation
 
