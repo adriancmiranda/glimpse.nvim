@@ -173,6 +173,7 @@ describe('telescope integration', function()
 			bufname = 'glimpse://telescope/media/image/example.png',
 			winid = win,
 		})
+		assert.is_not_nil(render_calls[1])
 		assert.is_true(wait_for(function()
 			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'rendered:/tmp/example.png'
 		end))
@@ -194,6 +195,7 @@ describe('telescope integration', function()
 			bufname = 'glimpse://telescope/media/video/example.mp4',
 			winid = win,
 		})
+		assert.is_not_nil(render_calls[2])
 		assert.is_true(wait_for(function()
 			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'rendered:/tmp/thumb.png'
 		end))

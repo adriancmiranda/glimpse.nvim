@@ -553,4 +553,54 @@ describe('renderer animation helpers', function()
 		restore_package('glimpse.renderer', saved_renderer)
 		restore_package('glimpse', saved_glimpse)
 	end)
+
+	it('suppresses convert errors after the placement is closed', function()
+		local saved_kitty = package.loaded['glimpse.kitty']
+		local saved_renderer = package.loaded['glimpse.renderer']
+		local saved_glimpse = package.loaded['glimpse']
+		local original_win = vim.api.nvim_get_current_win()
+		local original_buf = vim.api.nvim_get_current_buf()
+		local original_notify = vim.notify
+
+		local pending_cb = nil
+		local notifications = {}
+
+		restore_package('glimpse', {
+			get_config = function()
+				return { cell_size = { width = 20, height = 40 }, loading = { text = '...' } }
+			end,
+		})
+		restore_package('glimpse.kitty', {
+			transmit_async = function(_, _, cb)
+				pending_cb = cb
+				return 1
+			end,
+			delete = function() end,
+		})
+		restore_package('glimpse.renderer', nil)
+		vim.notify = function(msg, level)
+			notifications[#notifications + 1] = { msg = msg, level = level }
+		end
+
+		local renderer = require('glimpse.renderer')
+		local buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_win_set_buf(original_win, buf)
+
+		local tmp = vim.fn.tempname() .. '.png'
+		vim.fn.writefile({ 'x' }, tmp)
+
+		renderer.render(buf, tmp)
+		renderer.close(buf)
+		pending_cb(nil, 'magick falhou (code=1)')
+
+		assert.equals(0, #notifications)
+
+		os.remove(tmp)
+		pcall(vim.api.nvim_buf_delete, buf, { force = true })
+		pcall(vim.api.nvim_win_set_buf, original_win, original_buf)
+		vim.notify = original_notify
+		restore_package('glimpse.kitty', saved_kitty)
+		restore_package('glimpse.renderer', saved_renderer)
+		restore_package('glimpse', saved_glimpse)
+	end)
 end)

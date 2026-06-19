@@ -153,9 +153,9 @@ local function _attach_preview_cleanup(winid, bufnr)
 		end,
 	})
 end
-local function _render_preview(filepath, bufnr, opts, request_id)
+local function _render_preview(filepath, bufnr, opts, request_id, kind)
 	local glimpse = require('glimpse')
-	local kind = glimpse.get_preview_kind(filepath)
+	kind = kind or glimpse.get_preview_kind(filepath)
 	local win = (opts.winid and opts.winid ~= -1) and opts.winid or vim.fn.bufwinid(bufnr)
 
 	if kind and not _kind_enabled(kind) then
@@ -236,6 +236,8 @@ end
 ---@param opts? table
 function M.buffer_previewer_maker(filepath, bufnr, opts)
 	opts = opts or {}
+	local glimpse = require('glimpse')
+	local kind = glimpse.get_preview_kind(filepath)
 
 	if not _timers[bufnr] then
 		_timers[bufnr] = vim.uv.new_timer()
@@ -248,6 +250,11 @@ function M.buffer_previewer_maker(filepath, bufnr, opts)
 
 	local request_id = tostring(vim.uv.hrtime()) .. ':' .. tostring(bufnr)
 	_request_ids[bufnr] = request_id
+
+	if kind == 'image' or kind == 'video' then
+		_render_preview(filepath, bufnr, opts, request_id, kind)
+		return
+	end
 
 	_timers[bufnr]:start(
 		100,
@@ -262,7 +269,7 @@ function M.buffer_previewer_maker(filepath, bufnr, opts)
 			if not vim.api.nvim_buf_is_valid(bufnr) or _request_ids[bufnr] ~= request_id then
 				return
 			end
-			_render_preview(filepath, bufnr, opts, request_id)
+			_render_preview(filepath, bufnr, opts, request_id, kind)
 		end)
 	)
 end
