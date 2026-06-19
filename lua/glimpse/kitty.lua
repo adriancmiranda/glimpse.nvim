@@ -388,22 +388,49 @@ function M.transmit_async(filepath, opts, callback)
 		'%w %h',
 		'info:',
 	})
+	local completed = false
+	local stderr_lines = {}
+	local function magick_error(code)
+		local stderr = table.concat(stderr_lines, '\n')
+		if stderr ~= '' then
+			return string.format('magick falhou (code=%d): %s', code, vim.trim(stderr))
+		end
+		return string.format('magick falhou (code=%d)', code)
+	end
 	local job_id = vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
+		stderr_buffered = true,
 		on_stdout = function(_, data)
+			if completed then
+				return
+			end
 			vim.schedule(function()
+				if completed then
+					return
+				end
 				convert_cache[cache_key] = tmp
 				local output = table.concat(data or {}, '')
 				local w_px, h_px = output:match('(%d+) (%d+)')
 				dims_cache[cache_key] = { w = tonumber(w_px), h = tonumber(h_px) }
+				completed = true
 				send({ a = 'T', t = 'f', i = id, f = 100, U = 1, q = 2, data = base64(tmp) })
 				callback(id, nil, tonumber(w_px), tonumber(h_px))
 			end)
 		end,
+		on_stderr = function(_, data)
+			for _, line in ipairs(data or {}) do
+				if line ~= nil and line ~= '' then
+					stderr_lines[#stderr_lines + 1] = line
+				end
+			end
+		end,
 		on_exit = function(_, code)
-			if code ~= 0 then
+			if code ~= 0 and not completed then
 				vim.schedule(function()
-					callback(nil, 'magick falhou')
+					if not completed then
+						completed = true
+						callback(nil, magick_error(code))
+					end
 				end)
 			end
 		end,

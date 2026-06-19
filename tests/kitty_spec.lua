@@ -1,5 +1,11 @@
 local kitty = require('glimpse.kitty')
 
+local function stub_fn(table_ref, key, value)
+	local original = table_ref[key]
+	table_ref[key] = value
+	return original
+end
+
 describe('kitty', function()
 	describe('transmit', function()
 		it('exposes transmit function', function()
@@ -152,6 +158,84 @@ describe('kitty', function()
 			local id, err = kitty.transmit('/tmp/nonexistent_image_12345.png')
 			assert.is_nil(id)
 			assert.is_not_nil(err)
+		end)
+	end)
+
+	describe('transmit_async magick fallback', function()
+		local restore = {}
+		local calls = {}
+
+		before_each(function()
+			calls = {
+				jobstart = {},
+				write = {},
+			}
+
+			restore.executable = stub_fn(vim.fn, 'executable', function(cmd)
+				return cmd == 'magick' and 1 or 0
+			end)
+			restore.jobstart = stub_fn(vim.fn, 'jobstart', function(cmd, opts)
+				calls.jobstart[#calls.jobstart + 1] = { cmd = cmd, opts = opts }
+				return 1
+			end)
+			restore.schedule = stub_fn(vim, 'schedule', function(fn)
+				fn()
+			end)
+			restore.write = kitty._write
+			kitty._write = function(data)
+				calls.write[#calls.write + 1] = data
+			end
+			restore.base64 = vim.base64
+			vim.base64 = {
+				encode = function(value)
+					return 'encoded:' .. value
+				end,
+			}
+			package.loaded['glimpse.magickwand'] = {
+				available = function()
+					return false
+				end,
+			}
+		end)
+
+		after_each(function()
+			vim.fn.executable = restore.executable
+			vim.fn.jobstart = restore.jobstart
+			vim.schedule = restore.schedule
+			kitty._write = restore.write
+			vim.base64 = restore.base64
+			package.loaded['glimpse.magickwand'] = nil
+		end)
+
+		it('includes stderr in the error message when magick fails', function()
+			local result, err
+			kitty.transmit_async('/tmp/broken.jpg', { width = 1, height = 1 }, function(id, callback_err)
+				result, err = id, callback_err
+			end)
+
+			assert.equals(1, #calls.jobstart)
+			calls.jobstart[1].opts.on_stderr(1, { 'no decode delegate for this image format' })
+			calls.jobstart[1].opts.on_exit(1, 1)
+
+			assert.is_nil(result)
+			assert.is_not_nil(err)
+			assert.is_not_nil(err:find('magick falhou', 1, true))
+			assert.is_not_nil(err:find('no decode delegate for this image format', 1, true))
+		end)
+
+		it('does not turn a successful stdout callback into an error on exit', function()
+			local result, err
+			kitty.transmit_async('/tmp/ok.jpg', { width = 1, height = 1 }, function(id, callback_err)
+				result, err = id, callback_err
+			end)
+
+			assert.equals(1, #calls.jobstart)
+			calls.jobstart[1].opts.on_stdout(1, { '12 34' })
+			calls.jobstart[1].opts.on_exit(1, 1)
+
+			assert.is_not_nil(result)
+			assert.is_nil(err)
+			assert.is_true(#calls.write > 0)
 		end)
 	end)
 

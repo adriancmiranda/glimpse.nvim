@@ -193,6 +193,9 @@ function M.render(buf, filepath, opts, on_done)
 		function(id, err, w_px, h_px)
 			placement.job_id = nil
 			if err or not id then
+				if placement.closed or placement.request_id ~= req_id or not vim.api.nvim_buf_is_valid(buf) then
+					return
+				end
 				vim.notify('[glimpse] ' .. (err or 'render failed'), vim.log.levels.WARN)
 				return
 			end
@@ -319,6 +322,10 @@ function M.rerender(buf)
 	placement.job_id = kitty.transmit_async(filepath, { width = cols, height = rows }, function(id, err, w_px, h_px)
 		placement.job_id = nil
 		if err or not id then
+			if placement.closed or placement.request_id ~= req_id or not vim.api.nvim_buf_is_valid(buf) then
+				dispatch_pending()
+				return
+			end
 			dispatch_pending()
 			return
 		end
