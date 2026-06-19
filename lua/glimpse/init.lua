@@ -38,6 +38,7 @@
 ---@field image? GlimpseImageConfig Image preview settings
 ---@field video? GlimpseVideoConfig Video preview settings
 ---@field archive? GlimpseArchiveConfig Archive preview settings
+---@field pipelines? { model?: GlimpsePipelineConfig } Conversion pipelines by preview type
 ---@field integrations? GlimpseIntegrationsConfig Plugin integrations
 
 ---@class GlimpseInlineConfig
@@ -195,6 +196,28 @@ local config = {
 			seek_backward = 'h',
 		},
 	},
+	pipelines = {
+		model = {
+			steps = {
+				{
+					command = 'f3d',
+					output_ext = '.png',
+					args = function(input, output)
+						return { input, '--output', output, '--config=thumbnail' }
+					end,
+				},
+			},
+			renderer = {
+				fps = 12,
+				progressive = true,
+			},
+			keys = {
+				toggle = '<CR>',
+				seek_forward = 'l',
+				seek_backward = 'h',
+			},
+		},
+	},
 	archive = {
 		formats = {
 			'.zip',
@@ -349,6 +372,8 @@ local function resolve_kind(filepath)
 		kind = 'key'
 	elseif util.is_font(filepath) then
 		kind = 'font'
+	elseif util.is_model(filepath) then
+		kind = 'model'
 	elseif util.is_video(filepath) then
 		kind = 'video'
 	elseif util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
@@ -397,6 +422,9 @@ local function resolve_previewer(filepath)
 	end
 	if kind == 'font' then
 		return require('glimpse.previewer.font'), { max_size = config.safety.max_file_size }, 'font'
+	end
+	if kind == 'model' then
+		return require('glimpse.previewer.model'), { max_size = config.safety.max_file_size }, 'model'
 	end
 	if kind == 'video' then
 		return require('glimpse.previewer.video'), { max_size = config.safety.max_file_size }, 'video'
@@ -494,6 +522,8 @@ M.is_cert = util.is_cert
 M.is_font = util.is_font
 ---@type fun(filepath: string): boolean
 M.is_key = util.is_key
+---@type fun(filepath: string): boolean Check whether the file is a supported 3D model.
+M.is_model = util.is_model
 
 --- Return the detected terminal.
 ---@return string|nil terminal 'wezterm'|'kitty'|'ghostty'|'iterm'|nil

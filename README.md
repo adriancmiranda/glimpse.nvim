@@ -11,6 +11,7 @@
 
 - 🖼️ Inline rendering via **Kitty Graphics Protocol** (Kitty, Ghostty)
 - 🎬 **Inline video playback** via Kitty Animation Protocol (play/pause, seek); thumbnail fallback for other terminals
+- 🧊 **3D model preview** via f3d, with configurable turntable animation
 - 📦 **Archive preview** - list contents of zip/tar without extraction
 - 🗄️ **SQLite preview** - show tables and columns without modifying the database
 - 💾 **Binary preview** - detect binaries with `file` and show a short `xxd` hexdump
@@ -31,6 +32,7 @@
 - Neovim >= 0.10
 - [ImageMagick](https://imagemagick.org/) (`magick` CLI) - inline image conversion and font rendering
 - [ffmpeg](https://ffmpeg.org/) (optional) - video thumbnail extraction
+- [f3d](https://f3d.app/) (optional) - 3D model thumbnails and turntable frames
 - [OpenSSL](https://www.openssl.org/) (`openssl` CLI) - certificate metadata extraction
 - [file](https://man7.org/linux/man-pages/man1/file.1.html) (`file` CLI) - binary type detection
 - [xxd](https://linux.die.net/man/1/xxd) (`xxd` CLI) - binary hexdump rendering
@@ -49,6 +51,7 @@
 | Inline image preview | `magick` | Yes |
 | Font rendering | `magick` | Yes, with textual fallback if unavailable |
 | Video preview | `ffmpeg` | No |
+| 3D model preview | `f3d` | No |
 | Archive preview | `zipinfo`, `tar` | Yes when the archive type is used |
 | SQLite preview | `sqlite3` | Yes when the SQLite preview is used |
 | Certificate preview | `openssl` | Yes when the certificate preview is used |
@@ -63,7 +66,7 @@
 ### macOS (Homebrew)
 
 ```bash
-brew install imagemagick ffmpeg
+brew install imagemagick ffmpeg f3d
 ```
 
 ### Linux (apt)
@@ -82,6 +85,7 @@ sudo pacman -S imagemagick ffmpeg
 
 ```bash
 magick --version
+f3d --version
 file --version
 xxd -h
 ```
@@ -103,6 +107,13 @@ xxd -h
     'BufReadPre *.zip', 'BufReadPre *.tar', 'BufReadPre *.tgz',
     'BufReadPre *.jar', 'BufReadPre *.war', 'BufReadPre *.apk',
     'BufReadPre *.db', 'BufReadPre *.sqlite', 'BufReadPre *.sqlite3',
+    'BufReadPre *.obj', 'BufReadPre *.fbx', 'BufReadPre *.dae',
+    'BufReadPre *.glb', 'BufReadPre *.gltf', 'BufReadPre *.stl',
+    'BufReadPre *.ply', 'BufReadPre *.3ds', 'BufReadPre *.3mf',
+    'BufReadPre *.off', 'BufReadPre *.x', 'BufReadPre *.dxf',
+    'BufReadPre *.wrl', 'BufReadPre *.vrml', 'BufReadPre *.stp',
+    'BufReadPre *.step', 'BufReadPre *.igs', 'BufReadPre *.iges',
+    'BufReadPre *.abc', 'BufReadPre *.brep',
   },
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
@@ -167,6 +178,31 @@ xxd -h
         seek_backward = 'h',   -- seek backward 5 seconds
       },
     },
+    pipelines = {
+      model = {
+        steps = {
+          {
+            command = 'f3d',
+            output_ext = '.png',
+            args = function(input, output)
+              return {
+                input, '--output', output,
+                '--config=thumbnail',
+              }
+            end,
+          },
+        },
+        renderer = {
+          fps = 12,
+          progressive = true,
+        },
+        keys = {
+          toggle = '<CR>',
+          seek_forward = 'l',
+          seek_backward = 'h',
+        },
+      },
+    },
     archive = {
       formats = {            -- supported archive extensions (preview only, no extraction)
         '.zip', '.tar', '.tar.gz', '.tgz',
@@ -192,6 +228,35 @@ xxd -h
 ```
 
 Breaking change: the public config was reorganized into nested tables.
+
+### 3D model turntable
+
+The default pipeline renders a static thumbnail with f3d. To generate a
+progressive turntable animation instead, use a sequence step:
+
+```lua
+require('glimpse').setup({
+  pipelines = {
+    model = {
+      steps = {
+        {
+          command = 'f3d',
+          type = 'sequence',
+          frames = 36,
+          args = function(input, output, frame)
+            return {
+              input, '--output', output,
+              '--config=thumbnail',
+              '--camera-azimuth-angle=' .. (frame * 10),
+            }
+          end,
+        },
+      },
+      renderer = { fps = 12, progressive = true },
+    },
+  },
+})
+```
 
 ### Keymaps (Oil.nvim)
 

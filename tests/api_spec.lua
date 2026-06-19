@@ -42,6 +42,8 @@ describe('public api', function()
 		assert.is_table(config.loading)
 		assert.is_table(config.image)
 		assert.is_table(config.video)
+		assert.is_table(config.pipelines)
+		assert.is_table(config.pipelines.model)
 		assert.is_table(config.archive)
 		assert.equals('right', config.pane.position)
 		assert.equals(40, config.pane.size)
@@ -58,6 +60,9 @@ describe('public api', function()
 		assert.equals('<CR>', config.video.keys.toggle)
 		assert.equals('l', config.video.keys.seek_forward)
 		assert.equals('h', config.video.keys.seek_backward)
+		assert.equals('f3d', config.pipelines.model.steps[1].command)
+		assert.equals('.png', config.pipelines.model.steps[1].output_ext)
+		assert.equals(12, config.pipelines.model.renderer.fps)
 		assert.are.same(
 			{ '.zip', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.txz', '.jar', '.war', '.apk' },
 			config.archive.formats
