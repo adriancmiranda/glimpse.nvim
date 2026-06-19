@@ -23,7 +23,7 @@ body = """
     ### {{ group | striptags | trim | upper_first }}
 
     {% for commit in commits | unique(attribute="message") %}
-        - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+        - [`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/adriancmiranda/glimpse.nvim/commit/{{ commit.id }}) {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
             {% if commit.breaking %}[**breaking**] {% endif %}\
             {{ commit.message | upper_first }}\
             {% if commit.breaking and commit.body %}
