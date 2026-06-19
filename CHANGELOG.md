@@ -10,6 +10,10 @@
 
 - *(video)* Add configurable frame extraction width
 
+### 🐛 Bug Fixes
+
+- *(telescope)* Render media previews immediately
+
 ### 📚 Documentation
 
 - Add video.frames.width to README configuration example
