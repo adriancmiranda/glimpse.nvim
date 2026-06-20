@@ -35,6 +35,7 @@
 - [`702c875`](https://github.com/adriancmiranda/glimpse.nvim/commit/702c875fa17513202aa6263a5ccbc65cc73dccf8) Document oil.toggle_float integration and allow details/summary HTML
 - [`59351b7`](https://github.com/adriancmiranda/glimpse.nvim/commit/59351b74b5cfc4ef6e1aa0e0dac1ac77cb0e9ec7) *(changelog)* Prefix each entry with a linked commit hash
 - [`8a62200`](https://github.com/adriancmiranda/glimpse.nvim/commit/8a62200174f3440d705ddb57b2b4112b1382bd0e) *(contributing)* Add f3d dependency, pipeline.lua and model.lua to code structure
+- [`c4ded15`](https://github.com/adriancmiranda/glimpse.nvim/commit/c4ded15ee06d5cf455221e48e8f224554eab3a45) Update README and CONTRIBUTING for markdown, plantuml and mermaid previewers
 
 ### ⚡ Performance
 
