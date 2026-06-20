@@ -294,6 +294,16 @@ local function _show_animated(filepath, mode, source_win)
 			return
 		end
 
+		-- Trigger full cleanup when the animation window is closed directly
+		-- (bufhidden=hide means BufDelete never fires in that path).
+		vim.api.nvim_create_autocmd('WinClosed', {
+			pattern = tostring(win),
+			once = true,
+			callback = function()
+				cleanup_anim(true)
+			end,
+		})
+
 		local animation_files = {}
 		local cell_w = (config.cell_size and config.cell_size.width) or 20
 		local cell_h = (config.cell_size and config.cell_size.height) or 40
