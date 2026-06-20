@@ -218,6 +218,16 @@ local config = {
 			},
 		},
 	},
+	markdown = {
+		formats = { '.md', '.markdown', '.mdx', '.mdwn', '.mdown' },
+		tools = {
+			{ 'leaf', '--inline', 'ansi', '{input}' },
+			{ 'glow', '-s', 'dark', '{input}' },
+			{ 'mdcat', '{input}' },
+			{ 'pandoc', '--to', 'plain', '--wrap', 'none', '{input}' },
+			{ 'cat', '{input}' },
+		},
+	},
 	archive = {
 		formats = {
 			'.zip',
@@ -372,6 +382,8 @@ local function resolve_kind(filepath)
 		kind = 'key'
 	elseif util.is_font(filepath) then
 		kind = 'font'
+	elseif util.is_markdown(filepath) then
+		kind = 'markdown'
 	elseif util.is_model(filepath) then
 		kind = 'model'
 	elseif util.is_video(filepath) then
@@ -422,6 +434,9 @@ local function resolve_previewer(filepath)
 	end
 	if kind == 'font' then
 		return require('glimpse.previewer.font'), { max_size = config.safety.max_file_size }, 'font'
+	end
+	if kind == 'markdown' then
+		return require('glimpse.previewer.markdown'), { max_size = config.safety.max_file_size }, 'markdown'
 	end
 	if kind == 'model' then
 		return require('glimpse.previewer.model'), { max_size = config.safety.max_file_size }, 'model'
@@ -508,6 +523,8 @@ M.is_git_lfs_pointer = util.is_git_lfs_pointer
 
 ---@type fun(filepath: string): boolean Check whether the file is a supported video.
 M.is_video = util.is_video
+---@type fun(filepath: string): boolean Check whether the file is a Markdown document.
+M.is_markdown = util.is_markdown
 ---@type fun(filepath: string): boolean
 M.is_archive = util.is_archive
 ---@type fun(filepath: string): boolean

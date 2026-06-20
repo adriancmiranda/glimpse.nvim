@@ -183,6 +183,7 @@ function M.is_previewable(filepath)
 	return M.is_image(filepath)
 		or M.is_video(filepath)
 		or M.is_model(filepath)
+		or M.is_markdown(filepath)
 		or M.is_archive(filepath)
 		or M.is_sqlite(filepath)
 		or M.is_cert(filepath)
@@ -227,6 +228,14 @@ local _model_exts = {
 function M.is_model(filepath)
 	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
 	return _model_exts[ext] == true
+end
+
+--- Check whether the file is a Markdown document.
+--- @param filepath string
+--- @return boolean
+function M.is_markdown(filepath)
+	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
+	return ext == 'md' or ext == 'markdown' or ext == 'mdx' or ext == 'mdwn' or ext == 'mdown'
 end
 
 --- Check whether the file is a GPG or SSH key.
