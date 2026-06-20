@@ -185,6 +185,7 @@ function M.is_previewable(filepath)
 		or M.is_model(filepath)
 		or M.is_markdown(filepath)
 		or M.is_plantuml(filepath)
+		or M.is_mermaid(filepath)
 		or M.is_archive(filepath)
 		or M.is_sqlite(filepath)
 		or M.is_cert(filepath)
@@ -201,6 +202,7 @@ function M.is_font(filepath)
 end
 
 local _plantuml_exts = { puml = true, plantuml = true, pu = true, wsd = true, iuml = true }
+local _mermaid_exts = { mmd = true, mermaid = true }
 
 --- Check whether the file is a PlantUML diagram.
 --- @param filepath string
@@ -208,6 +210,14 @@ local _plantuml_exts = { puml = true, plantuml = true, pu = true, wsd = true, iu
 function M.is_plantuml(filepath)
 	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
 	return _plantuml_exts[ext] == true
+end
+
+--- Check whether the file is a Mermaid diagram.
+--- @param filepath string
+--- @return boolean
+function M.is_mermaid(filepath)
+	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
+	return _mermaid_exts[ext] == true
 end
 
 local _model_exts = {
