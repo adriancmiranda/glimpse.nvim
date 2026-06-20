@@ -382,6 +382,12 @@ M.is_font()                                                          *M.is_font*
      @return boolean
 
 
+M.is_plantuml()                                                  *M.is_plantuml*
+     Check whether the file is a PlantUML diagram.
+     @param filepath string
+     @return boolean
+
+
 M.is_model()                                                        *M.is_model*
      Check whether the file is a supported 3D model.
      @param filepath string
