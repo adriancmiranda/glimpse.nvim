@@ -26,7 +26,7 @@
 
 --- glimpse.nvim configuration.
 ---@class GlimpseConfig
----@field strategy? 'auto'|'inline'|'pane' Rendering method (default: 'auto')
+---@field strategy? 'auto'|'inline'|'inline_buffer'|'pane' Rendering method (default: 'auto')
 ---@field pane? GlimpsePaneConfig External pane settings
 ---@field inline? GlimpseInlineConfig Inline rendering options
 ---@field keys? GlimpseKeysConfig Configurable keymaps
@@ -318,7 +318,11 @@ function M.setup(opts)
 	config.integrations.telescope = normalize_telescope_config(config.integrations.telescope)
 	kind_cache = {}
 	kind_cache_revision = kind_cache_revision + 1
-	if M._should_use_inline() and config.inline.rerender_on_tab then
+	if config.strategy == 'inline_buffer' then
+		if detect.supports_inline() then
+			require('glimpse.strategy.inline_buffer').setup_autocmds()
+		end
+	elseif M._should_use_inline() and config.inline.rerender_on_tab then
 		inline.setup_autocmds()
 	end
 	if config.integrations.oil and config.integrations.oil.enable ~= false then
@@ -415,7 +419,7 @@ local function resolve_kind(filepath)
 end
 
 function M._should_use_inline()
-	if config.strategy == 'inline' then
+	if config.strategy == 'inline' or config.strategy == 'inline_buffer' then
 		return true
 	end
 	if config.strategy == 'pane' then
@@ -489,7 +493,7 @@ function M.show(filepath)
 		return
 	end
 
-	local previewer, safety_opts = resolve_previewer(filepath)
+	local previewer, safety_opts, kind = resolve_previewer(filepath)
 	if not previewer then
 		vim.notify('[glimpse] not previewable: ' .. filepath, vim.log.levels.WARN)
 		return
@@ -497,6 +501,10 @@ function M.show(filepath)
 	local safe, reason = safety.check(filepath, safety_opts)
 	if not safe then
 		vim.notify('[glimpse] ' .. reason .. ': ' .. filepath, vim.log.levels.WARN)
+		return
+	end
+	if kind == 'image' and config.strategy == 'inline_buffer' then
+		require('glimpse.strategy.inline_buffer').show(filepath)
 		return
 	end
 	if util.is_image(filepath) then
@@ -527,7 +535,11 @@ end
 function M.close()
 	local buf = vim.api.nvim_get_current_buf()
 	if vim.bo[buf].filetype == 'image' then
-		inline.close(buf, true)
+		if config.strategy == 'inline_buffer' then
+			require('glimpse.strategy.inline_buffer').close(buf)
+		else
+			inline.close(buf, true)
+		end
 	end
 end
 
