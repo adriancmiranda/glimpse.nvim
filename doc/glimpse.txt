@@ -27,6 +27,7 @@ GlimpseConfig                                                    *GlimpseConfig*
         {strategy?}      ("auto"|"inline"|"pane")          Rendering method (default: 'auto')
         {pane?}          (GlimpsePaneConfig)               External pane settings
         {inline?}        (GlimpseInlineConfig)             Inline rendering options
+        {float?}         (GlimpseFloatConfig)              Floating preview sizes
         {keys?}          (GlimpseKeysConfig)               Configurable keymaps
         {debounce?}      (GlimpseDebounceConfig)           Debounce timings in ms
         {cell_size?}     (GlimpseCellSizeConfig)           Estimated terminal cell pixel size
@@ -61,6 +62,32 @@ GlimpsePaneConfig                                            *GlimpsePaneConfig*
     Fields: ~
         {position?}  ("right"|"bottom")  External pane position (default: 'right')
         {size?}      (number)            External pane size in percent (default: 40)
+
+
+GlimpseFloatSizeConfig                                  *GlimpseFloatSizeConfig*
+
+    Fields: ~
+        {width?}   (number|"auto")  Width in columns, or 'auto' to fill the available editor width
+        {height?}  (number|"auto")  Maximum height in rows, or 'auto' to fit content within the available editor height
+
+
+GlimpseFloatKind                                              *GlimpseFloatKind*
+
+    Type: ~
+        "markdown"|"archive"|"cert"|"font"|"key"|"sqlite"|"binary"
+
+
+                                                            *GlimpseFloatConfig*
+GlimpseFloatConfig : GlimpseFloatSizeConfig
+
+    Fields: ~
+        {markdown?}  (GlimpseFloatSizeConfig)
+        {archive?}   (GlimpseFloatSizeConfig)
+        {cert?}      (GlimpseFloatSizeConfig)
+        {font?}      (GlimpseFloatSizeConfig)
+        {key?}       (GlimpseFloatSizeConfig)
+        {sqlite?}    (GlimpseFloatSizeConfig)
+        {binary?}    (GlimpseFloatSizeConfig)
 
 
 GlimpseCacheConfig                                          *GlimpseCacheConfig*
