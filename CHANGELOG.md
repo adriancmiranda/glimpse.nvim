@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - [`bb0577e`](https://github.com/adriancmiranda/glimpse.nvim/commit/bb0577e664dbbbb37438455a52b1f40ed85157a3) *(video)* Add configurable frame extraction width
+- [`35fe92c`](https://github.com/adriancmiranda/glimpse.nvim/commit/35fe92c4a2a4eee76254be3cde273f5d6eaacc40) *(model)* Add 3D model previews via conversion pipeline
 
 ### 🐛 Bug Fixes
 
@@ -16,6 +17,8 @@
 - [`99a4212`](https://github.com/adriancmiranda/glimpse.nvim/commit/99a42129085cd5eaaaa1adcc9cfe87ebda924052) *(renderer)* Use source filename as preview buffer name instead of image hash
 - [`3d1830f`](https://github.com/adriancmiranda/glimpse.nvim/commit/3d1830f6bb1ba16a5c904b95d086becbde21b44c) *(video)* Stop animation and timers when preview window is closed directly
 - [`337db59`](https://github.com/adriancmiranda/glimpse.nvim/commit/337db59d7c56e00157c496b2ad353fa513b3e842) *(preview)* Show filename instead of sha256 hash in preview buffer names
+- [`419b780`](https://github.com/adriancmiranda/glimpse.nvim/commit/419b780feb3f8e132ecf7a133593a3e77ac42a9c) *(model)* Name preview buffer with model filename instead of image hash
+- [`695a84f`](https://github.com/adriancmiranda/glimpse.nvim/commit/695a84f3198107e3e6b61dec4b57e85cd58aedf9) *(model)* Pass filepath to setup_animation_buf for buffer naming
 
 ### 🚜 Refactor
 
@@ -26,6 +29,7 @@
 - [`ed04496`](https://github.com/adriancmiranda/glimpse.nvim/commit/ed04496a6cef9a573aeb20d3145d9ff0e656553b) Add video.frames.width to README configuration example
 - [`702c875`](https://github.com/adriancmiranda/glimpse.nvim/commit/702c875fa17513202aa6263a5ccbc65cc73dccf8) Document oil.toggle_float integration and allow details/summary HTML
 - [`59351b7`](https://github.com/adriancmiranda/glimpse.nvim/commit/59351b74b5cfc4ef6e1aa0e0dac1ac77cb0e9ec7) *(changelog)* Prefix each entry with a linked commit hash
+- [`8a62200`](https://github.com/adriancmiranda/glimpse.nvim/commit/8a62200174f3440d705ddb57b2b4112b1382bd0e) *(contributing)* Add f3d dependency, pipeline.lua and model.lua to code structure
 
 ### ⚡ Performance
 
