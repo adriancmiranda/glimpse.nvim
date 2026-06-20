@@ -102,11 +102,63 @@ local function _show_animated(filepath, mode, source_win)
 	local cancel_frames = nil
 	local frame_files = {}
 	local anim_timer, paused, resize_timer, resize_group
+	-- Set to true by cleanup_anim; guards ensure_window against reopening a
+	-- split that the user intentionally closed, even when the token check is
+	-- bypassed by both scheduled callbacks firing in the same idle batch.
+	local show_stopped = false
+	-- Forward-declared so the _states[winid] stop closure below can reference it
+	-- before the full assignment at the end of this block.
 	local cleanup_anim
+
+	-- Register a stop handle immediately so callers can cancel the extraction
+	-- before the first frame arrives (mirrors pipeline_previewer pattern).
+	-- cleanup_anim will be assigned before stop() is ever called.
+	_states[winid] = {
+		source_win = winid,
+		stop = function(final)
+			if cleanup_anim then
+				cleanup_anim(final)
+			end
+		end,
+	}
+
+	-- Watch any currently-open preview windows. If the user closes one before
+	-- our deferred_on_done installs its own WinClosed handler, cancel this
+	-- extraction so the deferred callback cannot reopen the split.
+	-- Two events needed: BufDelete (force-wipe) and WinClosed (q with
+	-- bufhidden=hide — buffer stays alive so BufDelete never fires).
+	for _, w in ipairs(vim.api.nvim_list_wins()) do
+		if w ~= winid then
+			local b = vim.api.nvim_win_get_buf(w)
+			if preview_state.is_marked(b) then
+				vim.api.nvim_create_autocmd('BufDelete', {
+					buffer = b,
+					once = true,
+					callback = function()
+						if _tokens[winid] == token then
+							cleanup_anim(true)
+						end
+					end,
+				})
+				vim.api.nvim_create_autocmd('WinClosed', {
+					pattern = tostring(w),
+					once = true,
+					callback = function()
+						if _tokens[winid] == token then
+							cleanup_anim(true)
+						end
+					end,
+				})
+			end
+		end
+	end
 
 	-- Find or create the image window; memoized so preview and full animation
 	-- share the same buf/win without opening a second split.
 	local function ensure_window()
+		if show_stopped then
+			return nil, nil
+		end
 		if anim_buf and vim.api.nvim_buf_is_valid(anim_buf) then
 			if anim_win and vim.api.nvim_win_is_valid(anim_win) and vim.api.nvim_win_get_buf(anim_win) == anim_buf then
 				return anim_buf, anim_win
@@ -156,6 +208,11 @@ local function _show_animated(filepath, mode, source_win)
 	end
 
 	local function show_frame_immediately(data)
+		-- Bail if the source window is gone (user closed oil before first frame).
+		if not vim.api.nvim_win_is_valid(winid) then
+			cleanup_anim(true)
+			return
+		end
 		local b, w = ensure_window()
 		if not b or not w then
 			return
@@ -200,6 +257,7 @@ local function _show_animated(filepath, mode, source_win)
 	end
 
 	cleanup_anim = function(full_cleanup)
+		show_stopped = true
 		full_cleanup = full_cleanup ~= false
 		if cancel_frames then
 			pcall(cancel_frames)
@@ -245,6 +303,7 @@ local function _show_animated(filepath, mode, source_win)
 		frame_files = {}
 		if is_owner then
 			_tokens[winid] = nil
+			_states[winid] = nil
 			if buf then
 				_states[buf] = nil
 			end
@@ -379,7 +438,8 @@ local function _show_animated(filepath, mode, source_win)
 			end
 		end
 
-		-- State machine: play/pause toggle, seek, and cleanup
+		-- The buf-keyed entry takes over from the early winid-keyed registration.
+		_states[winid] = nil
 		_states[buf] = {
 			source_win = winid,
 			toggle = function()
@@ -478,6 +538,24 @@ function M.stop(buf, full_cleanup)
 	local s = _states[buf]
 	if s then
 		s.stop(full_cleanup ~= false)
+	end
+end
+
+--- Cancel any in-flight video extraction or animation for the given window.
+--- Keeps the preview window alive so the next call can reuse it.
+--- @param winid? number Defaults to current window
+function M.cancel(winid)
+	local w = winid or vim.api.nvim_get_current_win()
+	local state = _states[w]
+	if state then
+		state.stop(false)
+		return
+	end
+	for _, s in pairs(_states) do
+		if s.source_win == w then
+			s.stop(false)
+			break
+		end
 	end
 end
 
