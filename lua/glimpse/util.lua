@@ -182,6 +182,7 @@ end
 function M.is_previewable(filepath)
 	return M.is_image(filepath)
 		or M.is_video(filepath)
+		or M.is_model(filepath)
 		or M.is_archive(filepath)
 		or M.is_sqlite(filepath)
 		or M.is_cert(filepath)
@@ -195,6 +196,37 @@ end
 function M.is_font(filepath)
 	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
 	return ext == 'ttf' or ext == 'otf' or ext == 'woff' or ext == 'woff2'
+end
+
+local _model_exts = {
+	obj = true,
+	fbx = true,
+	dae = true,
+	glb = true,
+	gltf = true,
+	['3ds'] = true,
+	['3mf'] = true,
+	ply = true,
+	stl = true,
+	off = true,
+	x = true,
+	dxf = true,
+	wrl = true,
+	vrml = true,
+	stp = true,
+	step = true,
+	igs = true,
+	iges = true,
+	abc = true,
+	brep = true,
+}
+
+--- Check whether the file is a supported 3D model.
+--- @param filepath string
+--- @return boolean
+function M.is_model(filepath)
+	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
+	return _model_exts[ext] == true
 end
 
 --- Check whether the file is a GPG or SSH key.
