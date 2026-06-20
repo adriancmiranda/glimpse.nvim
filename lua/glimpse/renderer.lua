@@ -385,8 +385,7 @@ end
 function M.setup_animation_buf(buf, win, image_id, grid_cols, grid_rows, win_cols, win_rows, filepath)
 	local existing = placement_state.get(buf)
 	local old_image_id = existing and existing.image_id or nil
-	local label = filepath and vim.fn.fnamemodify(filepath, ':t') or tostring(image_id)
-	local name = 'glimpse://preview/' .. label
+	local name = filepath and util.preview_buf_name(filepath) or ('glimpse://preview/' .. tostring(image_id))
 	pcall(vim.api.nvim_buf_set_name, buf, name)
 	vim.bo[buf].buftype = 'nofile'
 	vim.bo[buf].swapfile = false

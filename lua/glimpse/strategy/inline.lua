@@ -6,9 +6,7 @@ local preview_state = require('glimpse.preview_state')
 
 local M = {}
 
-local function preview_bufname(filepath, buf)
-	return string.format('glimpse://inline/%s/%d', vim.fn.sha256(vim.fs.normalize(filepath)), buf)
-end
+local util = require('glimpse.util')
 
 local function debug_log(message)
 	if not vim.g.glimpse_debug then
@@ -29,7 +27,6 @@ local function window_col(win)
 end
 
 local function _render_existing_buffer(buf)
-	local util = require('glimpse.util')
 	if not vim.api.nvim_buf_is_valid(buf) or renderer.has_placement(buf) then
 		return
 	end
@@ -116,7 +113,7 @@ function M.preview(filepath)
 		if placement and placement.filepath and placement.filepath:match('^glimpse://video/') then
 			require('glimpse.previewer.video').stop(target_buf)
 		end
-		renderer.render(target_buf, filepath, { bufname = preview_bufname(filepath, target_buf) })
+		renderer.render(target_buf, filepath, { bufname = util.preview_buf_name(filepath, target_buf) })
 		preview_state.mark(target_buf)
 		vim.api.nvim_set_current_win(oil_win)
 		return
@@ -127,7 +124,7 @@ function M.preview(filepath)
 	vim.cmd('vsplit')
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_win_set_buf(0, buf)
-	renderer.render(buf, filepath, { bufname = preview_bufname(filepath, buf) })
+	renderer.render(buf, filepath, { bufname = util.preview_buf_name(filepath, buf) })
 	preview_state.mark(buf)
 	vim.api.nvim_set_current_win(oil_win)
 end
@@ -159,7 +156,6 @@ end
 --- Register autocmds for rerendering and the q keymap.
 function M.setup_autocmds()
 	local group = vim.api.nvim_create_augroup('ImagePreviewInline', { clear = true })
-	local util = require('glimpse.util')
 
 	-- Intercept image, font, and archive file openings
 	vim.api.nvim_create_autocmd('BufReadPost', {

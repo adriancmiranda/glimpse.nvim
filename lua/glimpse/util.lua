@@ -212,4 +212,16 @@ function M.is_key(filepath)
 	return ext == 'gpg' or ext == 'asc' or ext == 'key' or ext == 'pgp'
 end
 
+--- Build a human-readable preview buffer name.
+--- @param filepath string
+--- @param buf? integer  When provided, appended as [buf] to allow multiple buffers for the same file.
+--- @return string
+function M.preview_buf_name(filepath, buf)
+	local name = 'glimpse://preview/' .. vim.fn.fnamemodify(filepath, ':t')
+	if buf then
+		return name .. '[' .. buf .. ']'
+	end
+	return name
+end
+
 return M

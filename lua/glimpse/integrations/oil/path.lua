@@ -46,7 +46,7 @@ function M.buffer_filetype(buf)
 end
 
 function M.fresh_buffer_name(filepath, buf)
-	return string.format('glimpse://oil/image/%s/%d', vim.fn.sha256(filepath), buf)
+	return util.preview_buf_name(filepath, buf)
 end
 
 function M.buffer_filepath(buf)
