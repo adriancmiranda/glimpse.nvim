@@ -47,9 +47,10 @@ function M.setup()
 				if not current_dir then
 					return
 				end
-				-- Cancel any in-flight model pipeline so its callback is discarded
-				-- if the user switches to a different file before it finishes.
+				-- Cancel any in-flight pipeline/video so stale callbacks are
+				-- discarded when the user switches files or closes the preview.
 				require('glimpse.previewer.model').cancel()
+				require('glimpse.previewer.video').cancel()
 				local fpath = vim.fs.joinpath(current_dir, entry.name)
 				if util.is_video(fpath) then
 					require('glimpse.previewer.video').preview(fpath)
