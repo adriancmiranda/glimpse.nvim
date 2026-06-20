@@ -14,6 +14,7 @@
 
 - [`52f0321`](https://github.com/adriancmiranda/glimpse.nvim/commit/52f03211502c8a507f6f77ef93521688f5028700) *(telescope)* Render media previews immediately
 - [`99a4212`](https://github.com/adriancmiranda/glimpse.nvim/commit/99a42129085cd5eaaaa1adcc9cfe87ebda924052) *(renderer)* Use source filename as preview buffer name instead of image hash
+- [`3d1830f`](https://github.com/adriancmiranda/glimpse.nvim/commit/3d1830f6bb1ba16a5c904b95d086becbde21b44c) *(video)* Stop animation and timers when preview window is closed directly
 
 ### 🚜 Refactor
 
