@@ -415,6 +415,12 @@ M.is_plantuml()                                                  *M.is_plantuml*
      @return boolean
 
 
+M.is_mermaid()                                                    *M.is_mermaid*
+     Check whether the file is a Mermaid diagram.
+     @param filepath string
+     @return boolean
+
+
 M.is_model()                                                        *M.is_model*
      Check whether the file is a supported 3D model.
      @param filepath string
