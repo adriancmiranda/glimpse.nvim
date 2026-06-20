@@ -283,7 +283,7 @@ function M.rerender(buf)
 	local filepath = placement.filepath
 
 	-- Animation buffers use virtual paths; rerender is not supported yet
-	if filepath and filepath:match('^glimpse://video/') then
+	if filepath and filepath:match('^glimpse://preview/') then
 		return
 	end
 
