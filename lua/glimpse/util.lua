@@ -183,6 +183,7 @@ function M.is_previewable(filepath)
 	return M.is_image(filepath)
 		or M.is_video(filepath)
 		or M.is_model(filepath)
+		or M.is_plantuml(filepath)
 		or M.is_archive(filepath)
 		or M.is_sqlite(filepath)
 		or M.is_cert(filepath)
@@ -196,6 +197,16 @@ end
 function M.is_font(filepath)
 	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
 	return ext == 'ttf' or ext == 'otf' or ext == 'woff' or ext == 'woff2'
+end
+
+local _plantuml_exts = { puml = true, plantuml = true, pu = true, wsd = true, iuml = true }
+
+--- Check whether the file is a PlantUML diagram.
+--- @param filepath string
+--- @return boolean
+function M.is_plantuml(filepath)
+	local ext = (filepath:match('%.([^.]+)$') or ''):lower()
+	return _plantuml_exts[ext] == true
 end
 
 local _model_exts = {
