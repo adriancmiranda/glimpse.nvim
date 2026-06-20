@@ -221,7 +221,7 @@ local config = {
 	markdown = {
 		formats = { '.md', '.markdown', '.mdx', '.mdwn', '.mdown' },
 		tools = {
-			{ 'leaf', '--inline', 'plain', '{input}' },
+			{ 'leaf', '--inline', 'ansi', '{input}' },
 			{ 'glow', '-s', 'dark', '{input}' },
 			{ 'mdcat', '{input}' },
 			{ 'pandoc', '--to', 'plain', '--wrap', 'none', '{input}' },
