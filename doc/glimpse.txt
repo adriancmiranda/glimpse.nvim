@@ -24,19 +24,20 @@ GlimpseConfig                                                    *GlimpseConfig*
      glimpse.nvim configuration.
 
     Fields: ~
-        {strategy?}      ("auto"|"inline"|"pane")     Rendering method (default: 'auto')
-        {pane?}          (GlimpsePaneConfig)          External pane settings
-        {inline?}        (GlimpseInlineConfig)        Inline rendering options
-        {keys?}          (GlimpseKeysConfig)          Configurable keymaps
-        {debounce?}      (GlimpseDebounceConfig)      Debounce timings in ms
-        {cell_size?}     (GlimpseCellSizeConfig)      Estimated terminal cell pixel size
-        {cache?}         (GlimpseCacheConfig)         Cache settings
-        {safety?}        (GlimpseSafetyConfig)        Safety settings
-        {loading?}       (GlimpseLoadingConfig)       Loading text
-        {image?}         (GlimpseImageConfig)         Image preview settings
-        {video?}         (GlimpseVideoConfig)         Video preview settings
-        {archive?}       (GlimpseArchiveConfig)       Archive preview settings
-        {integrations?}  (GlimpseIntegrationsConfig)  Plugin integrations
+        {strategy?}      ("auto"|"inline"|"pane")          Rendering method (default: 'auto')
+        {pane?}          (GlimpsePaneConfig)               External pane settings
+        {inline?}        (GlimpseInlineConfig)             Inline rendering options
+        {keys?}          (GlimpseKeysConfig)               Configurable keymaps
+        {debounce?}      (GlimpseDebounceConfig)           Debounce timings in ms
+        {cell_size?}     (GlimpseCellSizeConfig)           Estimated terminal cell pixel size
+        {cache?}         (GlimpseCacheConfig)              Cache settings
+        {safety?}        (GlimpseSafetyConfig)             Safety settings
+        {loading?}       (GlimpseLoadingConfig)            Loading text
+        {image?}         (GlimpseImageConfig)              Image preview settings
+        {video?}         (GlimpseVideoConfig)              Video preview settings
+        {archive?}       (GlimpseArchiveConfig)            Archive preview settings
+        {pipelines?}     ({model?:GlimpsePipelineConfig})  Conversion pipelines by preview type
+        {integrations?}  (GlimpseIntegrationsConfig)       Plugin integrations
 
 
 GlimpseInlineConfig                                        *GlimpseInlineConfig*
@@ -272,6 +273,12 @@ M.is_key                                                              *M.is_key*
         (fun(filepath:string):boolean)
 
 
+M.is_model                                                          *M.is_model*
+
+    Type: ~
+        (fun(filepath:string):boolean)  Check whether the file is a supported 3D model.
+
+
 M.get_config()                                                    *M.get_config*
      Return the current configuration.
 
@@ -365,6 +372,12 @@ M.is_previewable()                                            *M.is_previewable*
 
 M.is_font()                                                          *M.is_font*
      Check whether the file is a font.
+     @param filepath string
+     @return boolean
+
+
+M.is_model()                                                        *M.is_model*
+     Check whether the file is a supported 3D model.
      @param filepath string
      @return boolean
 
