@@ -23,6 +23,7 @@
 - [`695a84f`](https://github.com/adriancmiranda/glimpse.nvim/commit/695a84f3198107e3e6b61dec4b57e85cd58aedf9) *(model)* Pass filepath to setup_animation_buf for buffer naming
 - [`37eb2b2`](https://github.com/adriancmiranda/glimpse.nvim/commit/37eb2b2e2990e060a7f70d9d310ab5c93666d280) *(float)* Omit title_pos when title is nil
 - [`de59297`](https://github.com/adriancmiranda/glimpse.nvim/commit/de5929791311a936f166cf85f6546d2cbd14eabd) *(markdown)* Use terminal buffer for ANSI colors and ansi leaf spec
+- [`88e5573`](https://github.com/adriancmiranda/glimpse.nvim/commit/88e5573ba92ab1e87329a3b2c0ea88bb8abf87fe) *(float)* Bind close keymap in every float window
 
 ### 🚜 Refactor
 
