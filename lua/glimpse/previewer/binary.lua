@@ -172,6 +172,7 @@ function M.show(filepath)
 	vim.bo[buf].filetype = 'glimpse_binary'
 
 	local win = float.open(buf, {
+		kind = 'binary',
 		title = ' Binary Preview ',
 		max_width = 100,
 		max_height = math.max(#lines, 8),

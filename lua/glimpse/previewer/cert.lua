@@ -220,6 +220,7 @@ function M.show(filepath)
 	end
 
 	float.open(buf, {
+		kind = 'cert',
 		title = ' Certificate ',
 		max_width = 90,
 		max_height = #lines,
