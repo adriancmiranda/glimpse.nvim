@@ -12,6 +12,7 @@
 - [`35fe92c`](https://github.com/adriancmiranda/glimpse.nvim/commit/35fe92c4a2a4eee76254be3cde273f5d6eaacc40) *(model)* Add 3D model previews via conversion pipeline
 - [`70430c7`](https://github.com/adriancmiranda/glimpse.nvim/commit/70430c732d5b17bfb678287e69aca6e4d6de5353) *(markdown)* Add Markdown previewer with configurable CLI renderer
 - [`cc8c145`](https://github.com/adriancmiranda/glimpse.nvim/commit/cc8c145dacd7bddc360452f1509a4999b4657de4) *(plantuml)* Add PlantUML diagram previewer via pipeline
+- [`af1c21b`](https://github.com/adriancmiranda/glimpse.nvim/commit/af1c21b48b49027c8e205f6fbd094ed5b1268f79) Make float preview sizes configurable
 
 ### 🐛 Bug Fixes
 
