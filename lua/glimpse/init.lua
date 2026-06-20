@@ -27,6 +27,7 @@
 --- glimpse.nvim configuration.
 ---@class GlimpseConfig
 ---@field strategy? 'auto'|'inline'|'pane' Rendering method (default: 'auto')
+---@field auto_open? boolean Automatically render non-text previewable files after opening them (default: false)
 ---@field pane? GlimpsePaneConfig External pane settings
 ---@field inline? GlimpseInlineConfig Inline rendering options
 ---@field float? GlimpseFloatConfig Floating preview sizes
@@ -145,10 +146,12 @@ local inline = require('glimpse.strategy.inline')
 
 ---@class Glimpse
 local M = {}
+local setup_auto_open
 
 ---@type GlimpseConfig
 local config = {
 	strategy = 'auto',
+	auto_open = false,
 	pane = {
 		position = 'right',
 		size = 40,
@@ -345,6 +348,7 @@ function M.setup(opts)
 	config.integrations.telescope = normalize_telescope_config(config.integrations.telescope)
 	kind_cache = {}
 	kind_cache_revision = kind_cache_revision + 1
+	setup_auto_open()
 	if M._should_use_inline() and config.inline.rerender_on_tab then
 		inline.setup_autocmds()
 	end
@@ -514,6 +518,15 @@ function M.get_preview_kind(filepath)
 	return resolve_kind(filepath)
 end
 
+--- Return whether a file should replace its source buffer when auto-opened.
+--- Native text formats remain editable and are available through preview().
+---@param filepath string Absolute file path
+---@return boolean
+function M.can_auto_open(filepath)
+	local kind = resolve_kind(filepath)
+	return kind ~= nil and kind ~= 'markdown' and kind ~= 'plantuml' and kind ~= 'mermaid'
+end
+
 --- Show a file (selects the previewer automatically).
 ---@param filepath string Absolute file path
 function M.show(filepath)
@@ -535,6 +548,30 @@ function M.show(filepath)
 		require('glimpse.dir').follow(filepath)
 	end
 	previewer.show(filepath)
+end
+
+setup_auto_open = function()
+	local group = vim.api.nvim_create_augroup('GlimpseAutoOpen', { clear = true })
+	if not config.auto_open then
+		return
+	end
+
+	vim.api.nvim_create_autocmd('BufReadPost', {
+		group = group,
+		callback = function(ev)
+			if not M.can_auto_open(ev.file) then
+				return
+			end
+
+			local kind = resolve_kind(ev.file)
+			local handled_by_inline = kind == 'image' or kind == 'font' or kind == 'archive' or kind == 'model'
+			if M._should_use_inline() and handled_by_inline then
+				return
+			end
+
+			M.show(ev.file)
+		end,
+	})
 end
 
 --- Quick preview (reuses an existing window or opens a float).

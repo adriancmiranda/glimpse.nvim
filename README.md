@@ -129,6 +129,7 @@ xxd -h
   },
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
+    auto_open = false,        -- render non-text previewable files when opened directly
     pane = {
       position = 'right',     -- 'right' | 'bottom'
       size = 40,              -- split/pane size percentage
@@ -276,6 +277,12 @@ xxd -h
 ```
 
 Breaking change: the public config was reorganized into nested tables.
+
+### Automatic opening
+
+Set `auto_open = true` to render non-text previewable files opened directly with
+Neovim or selected normally in a file explorer. Native text formats such as
+Markdown and PlantUML remain editable; use the preview key to render them.
 
 ### Float sizing
 
