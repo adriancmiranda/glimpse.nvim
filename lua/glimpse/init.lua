@@ -207,6 +207,16 @@ local config = {
 				},
 			},
 		},
+		mermaid = {
+			steps = {
+				{
+					command = 'mmdc',
+					args = function(input, output)
+						return { '-i', input, '-o', output }
+					end,
+				},
+			},
+		},
 		model = {
 			steps = {
 				{
@@ -386,6 +396,8 @@ local function resolve_kind(filepath)
 		kind = 'model'
 	elseif util.is_plantuml(filepath) then
 		kind = 'plantuml'
+	elseif util.is_mermaid(filepath) then
+		kind = 'mermaid'
 	elseif util.is_video(filepath) then
 		kind = 'video'
 	elseif util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
@@ -440,6 +452,9 @@ local function resolve_previewer(filepath)
 	end
 	if kind == 'plantuml' then
 		return require('glimpse.previewer.plantuml'), { max_size = config.safety.max_file_size }, 'plantuml'
+	end
+	if kind == 'mermaid' then
+		return require('glimpse.previewer.mermaid'), { max_size = config.safety.max_file_size }, 'mermaid'
 	end
 	if kind == 'video' then
 		return require('glimpse.previewer.video'), { max_size = config.safety.max_file_size }, 'video'
