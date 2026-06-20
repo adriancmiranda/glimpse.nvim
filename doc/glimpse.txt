@@ -237,6 +237,12 @@ M.is_video                                                          *M.is_video*
         (fun(filepath:string):boolean)  Check whether the file is a supported video.
 
 
+M.is_markdown                                                    *M.is_markdown*
+
+    Type: ~
+        (fun(filepath:string):boolean)  Check whether the file is a Markdown document.
+
+
 M.is_archive                                                      *M.is_archive*
 
     Type: ~
@@ -378,6 +384,12 @@ M.is_font()                                                          *M.is_font*
 
 M.is_model()                                                        *M.is_model*
      Check whether the file is a supported 3D model.
+     @param filepath string
+     @return boolean
+
+
+M.is_markdown()                                                  *M.is_markdown*
+     Check whether the file is a Markdown document.
      @param filepath string
      @return boolean
 
