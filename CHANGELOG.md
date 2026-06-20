@@ -10,6 +10,7 @@
 
 - [`bb0577e`](https://github.com/adriancmiranda/glimpse.nvim/commit/bb0577e664dbbbb37438455a52b1f40ed85157a3) *(video)* Add configurable frame extraction width
 - [`35fe92c`](https://github.com/adriancmiranda/glimpse.nvim/commit/35fe92c4a2a4eee76254be3cde273f5d6eaacc40) *(model)* Add 3D model previews via conversion pipeline
+- [`70430c7`](https://github.com/adriancmiranda/glimpse.nvim/commit/70430c732d5b17bfb678287e69aca6e4d6de5353) *(markdown)* Add Markdown previewer with configurable CLI renderer
 
 ### 🐛 Bug Fixes
 
@@ -19,6 +20,8 @@
 - [`337db59`](https://github.com/adriancmiranda/glimpse.nvim/commit/337db59d7c56e00157c496b2ad353fa513b3e842) *(preview)* Show filename instead of sha256 hash in preview buffer names
 - [`419b780`](https://github.com/adriancmiranda/glimpse.nvim/commit/419b780feb3f8e132ecf7a133593a3e77ac42a9c) *(model)* Name preview buffer with model filename instead of image hash
 - [`695a84f`](https://github.com/adriancmiranda/glimpse.nvim/commit/695a84f3198107e3e6b61dec4b57e85cd58aedf9) *(model)* Pass filepath to setup_animation_buf for buffer naming
+- [`37eb2b2`](https://github.com/adriancmiranda/glimpse.nvim/commit/37eb2b2e2990e060a7f70d9d310ab5c93666d280) *(float)* Omit title_pos when title is nil
+- [`de59297`](https://github.com/adriancmiranda/glimpse.nvim/commit/de5929791311a936f166cf85f6546d2cbd14eabd) *(markdown)* Use terminal buffer for ANSI colors and ansi leaf spec
 
 ### 🚜 Refactor
 
