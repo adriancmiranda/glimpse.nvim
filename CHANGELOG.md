@@ -23,6 +23,7 @@
 ### 🚜 Refactor
 
 - [`2620138`](https://github.com/adriancmiranda/glimpse.nvim/commit/262013818aa6fc539a5188a051fc52a971f001ce) *(renderer)* Extract buffer label into local variable
+- [`92daec7`](https://github.com/adriancmiranda/glimpse.nvim/commit/92daec7ae89f8c44982c77489bd86a9c5807be66) *(model)* Extract pipeline_previewer as shared runtime
 
 ### 📚 Documentation
 
