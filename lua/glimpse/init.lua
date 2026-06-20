@@ -197,6 +197,16 @@ local config = {
 		},
 	},
 	pipelines = {
+		plantuml = {
+			steps = {
+				{
+					command = 'sh',
+					args = function(input, output)
+						return { '-c', 'plantuml -tpng -pipe < "$1" > "$2"', '--', input, output }
+					end,
+				},
+			},
+		},
 		model = {
 			steps = {
 				{
@@ -386,6 +396,8 @@ local function resolve_kind(filepath)
 		kind = 'markdown'
 	elseif util.is_model(filepath) then
 		kind = 'model'
+	elseif util.is_plantuml(filepath) then
+		kind = 'plantuml'
 	elseif util.is_video(filepath) then
 		kind = 'video'
 	elseif util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
@@ -440,6 +452,9 @@ local function resolve_previewer(filepath)
 	end
 	if kind == 'model' then
 		return require('glimpse.previewer.model'), { max_size = config.safety.max_file_size }, 'model'
+	end
+	if kind == 'plantuml' then
+		return require('glimpse.previewer.plantuml'), { max_size = config.safety.max_file_size }, 'plantuml'
 	end
 	if kind == 'video' then
 		return require('glimpse.previewer.video'), { max_size = config.safety.max_file_size }, 'video'
