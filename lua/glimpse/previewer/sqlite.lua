@@ -52,6 +52,7 @@ function M.show(filepath)
 	end
 
 	float.open(buf, {
+		kind = 'sqlite',
 		title = ' SQLite ',
 		max_width = 80,
 		max_height = #lines,

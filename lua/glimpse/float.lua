@@ -9,35 +9,78 @@ local autocmds_ready = false
 ---@field title? string
 ---@field title_pos? string
 ---@field border? string
----@field max_width? number
----@field max_height? number
+---@field kind? GlimpseFloatKind Preview type used for type-specific configuration
+---@field max_width? number|'auto'
+---@field max_height? number|'auto'
 ---@field min_width? number
 ---@field min_height? number
 ---@field margin_x? number
 ---@field margin_y? number
 ---@field focusable? boolean
 ---@field close_key? string
+---@field content_height? number|fun(width: number): number Expected content height before the buffer is populated
+---@field on_resize? fun(width: number, height: number, win: number, buf: number) Called after the float is reflowed
 
 local function clamp(value, min_value, max_value)
 	return math.max(min_value, math.min(max_value, value))
 end
 
-local function compute_size(buf, opts)
+local function apply_config(opts)
 	opts = opts or {}
-	local margin_x = opts.margin_x or 4
-	local margin_y = opts.margin_y or 4
-	local min_width = opts.min_width or 20
-	local min_height = opts.min_height or 4
-	local max_width = opts.max_width or 80
-	local max_height = opts.max_height or math.huge
+	local configured = require('glimpse').get_config().float or {}
+	local kind_config = opts.kind and configured[opts.kind] or nil
+	local resolved = vim.tbl_extend('force', {}, opts)
 
+	for option, field in pairs({ max_width = 'width', max_height = 'height' }) do
+		if type(kind_config) == 'table' and kind_config[field] ~= nil then
+			resolved[option] = kind_config[field]
+		elseif configured[field] ~= nil then
+			resolved[option] = configured[field]
+		end
+	end
+
+	return resolved
+end
+
+local function resolve_width(opts)
+	opts = apply_config(opts)
+	local margin_x = opts.margin_x or 4
+	local min_width = opts.min_width or 20
+	local max_width = opts.max_width or 80
 	local columns = math.max(vim.o.columns - margin_x, min_width)
-	local lines = math.max(vim.o.lines - margin_y, min_height)
-	local line_count = vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_line_count(buf) or 1
+	if max_width == 'auto' then
+		max_width = columns
+	end
 
 	local width = clamp(math.floor(math.min(max_width, columns)), min_width, columns)
+	return width, opts
+end
+
+local function compute_size(buf, opts)
+	local width
+	width, opts = resolve_width(opts)
+	local margin_y = opts.margin_y or 4
+	local min_height = opts.min_height or 4
+	local max_height = opts.max_height or math.huge
+	local lines = math.max(vim.o.lines - margin_y, min_height)
+	if max_height == 'auto' then
+		max_height = lines
+	end
+
+	local line_count = opts.content_height
+	if type(line_count) == 'function' then
+		line_count = line_count(width)
+	end
+	line_count = line_count or (vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_line_count(buf) or 1)
 	local height = clamp(math.floor(math.min(math.min(max_height, line_count), lines)), min_height, lines)
 	return width, height
+end
+
+--- Resolve the final width for float options without opening a window.
+--- @param opts? GlimpseFloatOptions
+--- @return number width
+function M.resolve_width(opts)
+	return resolve_width(opts)
 end
 
 local function build_config(buf, opts)
@@ -64,6 +107,21 @@ local function clear(win)
 	tracked[win] = nil
 end
 
+local function reflow_win(win, meta)
+	if not vim.api.nvim_win_is_valid(win) or not vim.api.nvim_buf_is_valid(meta.buf) then
+		clear(win)
+		return
+	end
+
+	local config, width, height = build_config(meta.buf, meta.opts)
+	vim.api.nvim_win_set_config(win, config)
+
+	local on_resize = meta.opts and meta.opts.on_resize
+	if type(on_resize) == 'function' then
+		pcall(on_resize, width, height, win, meta.buf)
+	end
+end
+
 local function setup_autocmds()
 	if autocmds_ready then
 		return
@@ -75,12 +133,7 @@ local function setup_autocmds()
 		group = group,
 		callback = function()
 			for win, meta in pairs(tracked) do
-				if not vim.api.nvim_win_is_valid(win) or not vim.api.nvim_buf_is_valid(meta.buf) then
-					clear(win)
-				else
-					local config = build_config(meta.buf, meta.opts)
-					vim.api.nvim_win_set_config(win, config)
-				end
+				reflow_win(win, meta)
 			end
 		end,
 	})
@@ -125,11 +178,7 @@ function M.reflow(win)
 	if not meta then
 		return
 	end
-	if not vim.api.nvim_win_is_valid(win) or not vim.api.nvim_buf_is_valid(meta.buf) then
-		clear(win)
-		return
-	end
-	vim.api.nvim_win_set_config(win, build_config(meta.buf, meta.opts))
+	reflow_win(win, meta)
 end
 
 return M

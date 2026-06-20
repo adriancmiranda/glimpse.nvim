@@ -1,6 +1,74 @@
 local float = require('glimpse.float')
 
 describe('float preview helper', function()
+	it('resolves configured widths without opening a window', function()
+		local config = require('glimpse').get_config()
+		local saved = vim.deepcopy(config.float)
+		config.float = { markdown = { width = 42 } }
+
+		assert.equals(42, float.resolve_width({ kind = 'markdown', max_width = 100 }))
+
+		config.float = saved
+	end)
+
+	it('applies global and preview-specific size configuration', function()
+		local config = require('glimpse').get_config()
+		local saved = vim.deepcopy(config.float)
+		local buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'one', 'two' })
+		config.float = {
+			width = 55,
+			archive = { width = 33 },
+		}
+
+		local global_win = float.open(buf, { max_width = 80 })
+		assert.equals(55, vim.api.nvim_win_get_config(global_win).width)
+		vim.api.nvim_win_close(global_win, true)
+
+		local archive_win = float.open(buf, { kind = 'archive', max_width = 70 })
+		assert.equals(33, vim.api.nvim_win_get_config(archive_win).width)
+		vim.api.nvim_win_close(archive_win, true)
+
+		config.float = saved
+	end)
+
+	it('uses all available columns when width is auto', function()
+		local config = require('glimpse').get_config()
+		local saved = vim.deepcopy(config.float)
+		local buf = vim.api.nvim_create_buf(false, true)
+		config.float = { width = 'auto' }
+
+		local win = float.open(buf)
+		assert.equals(vim.o.columns - 4, vim.api.nvim_win_get_config(win).width)
+		vim.api.nvim_win_close(win, true)
+
+		config.float = saved
+	end)
+
+	it('uses an expected content height before a buffer is populated', function()
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = float.open(buf, { content_height = 12 })
+
+		assert.equals(12, vim.api.nvim_win_get_config(win).height)
+		vim.api.nvim_win_close(win, true)
+	end)
+
+	it('resolves dynamic content height after the final width', function()
+		local buf = vim.api.nvim_create_buf(false, true)
+		local resolved_width
+		local win = float.open(buf, {
+			max_width = 40,
+			content_height = function(width)
+				resolved_width = width
+				return 9
+			end,
+		})
+
+		assert.equals(40, resolved_width)
+		assert.equals(9, vim.api.nvim_win_get_config(win).height)
+		vim.api.nvim_win_close(win, true)
+	end)
+
 	it('reflows tracked windows on resize events', function()
 		local buf = vim.api.nvim_create_buf(false, true)
 		vim.api.nvim_buf_set_lines(buf, 0, -1, false, {

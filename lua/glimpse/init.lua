@@ -29,6 +29,7 @@
 ---@field strategy? 'auto'|'inline'|'pane' Rendering method (default: 'auto')
 ---@field pane? GlimpsePaneConfig External pane settings
 ---@field inline? GlimpseInlineConfig Inline rendering options
+---@field float? GlimpseFloatConfig Floating preview sizes
 ---@field keys? GlimpseKeysConfig Configurable keymaps
 ---@field debounce? GlimpseDebounceConfig Debounce timings in ms
 ---@field cell_size? GlimpseCellSizeConfig Estimated terminal cell pixel size
@@ -54,6 +55,21 @@
 ---@class GlimpsePaneConfig
 ---@field position? 'right'|'bottom' External pane position (default: 'right')
 ---@field size? number External pane size in percent (default: 40)
+
+---@class GlimpseFloatSizeConfig
+---@field width? number|'auto' Width in columns, or 'auto' to fill the available editor width
+---@field height? number|'auto' Maximum height in rows, or 'auto' to fit content within the available editor height
+
+---@alias GlimpseFloatKind 'markdown'|'archive'|'cert'|'font'|'key'|'sqlite'|'binary'
+
+---@class GlimpseFloatConfig: GlimpseFloatSizeConfig
+---@field markdown? GlimpseFloatSizeConfig
+---@field archive? GlimpseFloatSizeConfig
+---@field cert? GlimpseFloatSizeConfig
+---@field font? GlimpseFloatSizeConfig
+---@field key? GlimpseFloatSizeConfig
+---@field sqlite? GlimpseFloatSizeConfig
+---@field binary? GlimpseFloatSizeConfig
 
 ---@class GlimpseCacheConfig
 ---@field dir? string Cache directory for converted images
@@ -141,6 +157,7 @@ local config = {
 		rerender_on_tab = true,
 		close_with_q = true,
 	},
+	float = {},
 	keys = {
 		preview = '<leader>p',
 		open = ';',
@@ -231,8 +248,8 @@ local config = {
 	markdown = {
 		formats = { '.md', '.markdown', '.mdx', '.mdwn', '.mdown' },
 		tools = {
-			{ 'leaf', '--inline', 'ansi', '{input}' },
-			{ 'glow', '-s', 'dark', '{input}' },
+			{ 'leaf', '--inline', 'ansi:{width}', '{input}' },
+			{ 'glow', '-s', 'dark', '--width', '{width}', '{input}' },
 			{ 'mdcat', '{input}' },
 			{ 'pandoc', '--to', 'plain', '--wrap', 'none', '{input}' },
 			{ 'cat', '{input}' },

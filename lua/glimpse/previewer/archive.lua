@@ -96,6 +96,7 @@ function M.preview(filepath)
 	end
 
 	float.open(buf, {
+		kind = 'archive',
 		title = ' Archive Summary ',
 		max_width = 70,
 		max_height = #lines,

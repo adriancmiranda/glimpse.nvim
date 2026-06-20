@@ -112,6 +112,7 @@ function M.preview(filepath)
 	end
 
 	float.open(buf, {
+		kind = 'font',
 		title = ' Font ',
 		max_width = 60,
 		max_height = #lines,

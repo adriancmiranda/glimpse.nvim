@@ -152,6 +152,7 @@ function M.show(filepath)
 	end
 
 	float.open(buf, {
+		kind = 'key',
 		title = ' Key Info ',
 		max_width = 70,
 		max_height = #lines,

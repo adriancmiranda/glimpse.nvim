@@ -137,6 +137,15 @@ xxd -h
       rerender_on_tab = true, -- re-render when switching back to image tab
       close_with_q = true,    -- map key to close image buffer
     },
+    float = {
+      width = nil,            -- global max width; number or 'auto' for 100%
+      height = nil,           -- global max height; number or 'auto'
+      markdown = {
+        width = 100,          -- per-type override (built-in Markdown default)
+      },
+      -- archive = { width = 70 },
+      -- binary = { width = 'auto' },
+    },
     keys = {
       preview = '<leader>p',  -- preview image/video side by side (Oil)
       open = ';',             -- open image (configurable: current tab or new tab) (Oil)
@@ -192,8 +201,8 @@ xxd -h
     },
     markdown = {
       tools = {                -- first executable found wins
-        { 'leaf', '--inline', 'ansi', '{input}' },
-        { 'glow', '-s', 'dark', '{input}' },
+        { 'leaf', '--inline', 'ansi:{width}', '{input}' },
+        { 'glow', '-s', 'dark', '--width', '{width}', '{input}' },
         { 'mdcat', '{input}' },
         { 'pandoc', '--to', 'plain', '--wrap', 'none', '{input}' },
         { 'cat', '{input}' },
@@ -269,6 +278,16 @@ xxd -h
 ```
 
 Breaking change: the public config was reorganized into nested tables.
+
+### Float sizing
+
+`float.width` and `float.height` override every floating preview. A preview-specific
+entry such as `float.markdown` takes precedence over the global value. Numeric
+widths use that many columns and numeric heights cap the content height.
+`width = 'auto'` fills the available editor width; `height = 'auto'` fits the
+content within the available editor height. Float margins are always respected.
+Without overrides, the built-in sizes remain unchanged, except Markdown now
+defaults to 100 columns.
 
 ### 3D model turntable
 
