@@ -140,9 +140,7 @@ xxd -h
     float = {
       width = nil,            -- global max width; number or 'auto' for 100%
       height = nil,           -- global max height; number or 'auto'
-      markdown = {
-        width = 100,          -- per-type override (built-in Markdown default)
-      },
+      -- markdown = { width = 100 }, -- uncomment to override the built-in 100-column default
       -- archive = { width = 70 },
       -- binary = { width = 'auto' },
     },
