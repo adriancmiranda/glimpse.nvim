@@ -16,6 +16,7 @@ local autocmds_ready = false
 ---@field margin_x? number
 ---@field margin_y? number
 ---@field focusable? boolean
+---@field close_key? string
 
 local function clamp(value, min_value, max_value)
 	return math.max(min_value, math.min(max_value, value))
@@ -106,6 +107,14 @@ function M.open(buf, opts)
 		buf = buf,
 		opts = opts or {},
 	}
+	local close_key = (opts and opts.close_key) or require('glimpse').get_config().keys.close
+	if close_key then
+		vim.keymap.set('n', close_key, function()
+			if vim.api.nvim_win_is_valid(win) then
+				vim.api.nvim_win_close(win, true)
+			end
+		end, { buffer = buf, silent = true })
+	end
 	return win
 end
 
