@@ -2,6 +2,7 @@
 
 local M = {}
 local dir = require('glimpse.dir')
+local util = require('glimpse.util')
 
 local _timers = {}
 local _request_ids = {}
@@ -41,11 +42,6 @@ end
 
 local function _should_follow_cwd()
 	return _config.follow_cwd == true
-end
-
-local function _buffer_name_for_entry(kind, filepath)
-	local normalized = vim.uv.fs_realpath(filepath) or vim.fn.fnamemodify(filepath, ':p')
-	return string.format('glimpse://telescope/media/%s/%s', kind, vim.fn.sha256(normalized))
 end
 
 local function _release_media_buffer(bufnr)
@@ -167,7 +163,7 @@ local function _render_preview(filepath, bufnr, opts, request_id, kind)
 	if kind == 'image' then
 		_attach_preview_cleanup(win, bufnr)
 		require('glimpse.renderer').render(bufnr, filepath, {
-			bufname = opts.bufname,
+			bufname = util.preview_buf_name(filepath),
 			winid = win,
 		})
 		if _should_follow_cwd() then
@@ -190,7 +186,7 @@ local function _render_preview(filepath, bufnr, opts, request_id, kind)
 				and _request_ids[bufnr] == request_id
 			then
 				require('glimpse.renderer').render(bufnr, thumb, {
-					bufname = opts.bufname,
+					bufname = util.preview_buf_name(filepath),
 					winid = win,
 				})
 				if
@@ -293,7 +289,7 @@ function M.previewer(opts)
 			local glimpse = require('glimpse')
 			local kind = glimpse.get_preview_kind(filepath)
 			if kind == 'image' or kind == 'video' then
-				return _buffer_name_for_entry(kind, filepath)
+				return util.preview_buf_name(filepath)
 			end
 			return filepath
 		end,
