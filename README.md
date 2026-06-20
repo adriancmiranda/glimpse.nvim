@@ -12,6 +12,8 @@
 - 🖼️ Inline rendering via **Kitty Graphics Protocol** (Kitty, Ghostty)
 - 🎬 **Inline video playback** via Kitty Animation Protocol (play/pause, seek); thumbnail fallback for other terminals
 - 🧊 **3D model preview** via f3d, with configurable turntable animation
+- 📝 **Markdown preview** via a configurable CLI renderer (leaf, glow, mdcat, pandoc) with full ANSI color support
+- 📊 **Diagram preview** - PlantUML (`.puml`) and Mermaid (`.mmd`) rendered as inline images
 - 📦 **Archive preview** - list contents of zip/tar without extraction
 - 🗄️ **SQLite preview** - show tables and columns without modifying the database
 - 💾 **Binary preview** - detect binaries with `file` and show a short `xxd` hexdump
@@ -33,6 +35,9 @@
 - [ImageMagick](https://imagemagick.org/) (`magick` CLI) - inline image conversion and font rendering
 - [ffmpeg](https://ffmpeg.org/) (optional) - video thumbnail extraction
 - [f3d](https://f3d.app/) (optional) - 3D model thumbnails and turntable frames
+- [plantuml](https://plantuml.com/) (optional) - PlantUML diagram rendering (requires Java)
+- [mmdc](https://github.com/mermaid-js/mermaid-cli) (optional) - Mermaid diagram rendering
+- One of [leaf](https://github.com/rivolink/leaf), [glow](https://github.com/charmbracelet/glow), [mdcat](https://github.com/BIRSAx2/mdcat), or [pandoc](https://pandoc.org/) (optional) - Markdown rendering
 - [OpenSSL](https://www.openssl.org/) (`openssl` CLI) - certificate metadata extraction
 - [file](https://man7.org/linux/man-pages/man1/file.1.html) (`file` CLI) - binary type detection
 - [xxd](https://linux.die.net/man/1/xxd) (`xxd` CLI) - binary hexdump rendering
@@ -57,6 +62,9 @@
 | Certificate preview | `openssl` | Yes when the certificate preview is used |
 | Binary preview | `file`, `xxd` | Yes when the binary preview is used |
 | SSH/GPG key preview | `ssh-keygen`, `gpg` | Yes when the key preview is used |
+| Markdown preview | `leaf`, `glow`, `mdcat`, `pandoc`, or `cat` | First executable found wins |
+| PlantUML preview | `plantuml` + Java runtime | Yes when the PlantUML previewer is used |
+| Mermaid preview | `mmdc` | Yes when the Mermaid previewer is used |
 
 ## Installing dependencies
 
@@ -114,6 +122,10 @@ xxd -h
     'BufReadPre *.wrl', 'BufReadPre *.vrml', 'BufReadPre *.stp',
     'BufReadPre *.step', 'BufReadPre *.igs', 'BufReadPre *.iges',
     'BufReadPre *.abc', 'BufReadPre *.brep',
+    'BufReadPre *.md', 'BufReadPre *.markdown', 'BufReadPre *.mdx',
+    'BufReadPre *.puml', 'BufReadPre *.plantuml', 'BufReadPre *.pu',
+    'BufReadPre *.wsd', 'BufReadPre *.iuml',
+    'BufReadPre *.mmd', 'BufReadPre *.mermaid',
   },
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
@@ -178,7 +190,36 @@ xxd -h
         seek_backward = 'h',   -- seek backward 5 seconds
       },
     },
+    markdown = {
+      tools = {                -- first executable found wins
+        { 'leaf', '--inline', 'ansi', '{input}' },
+        { 'glow', '-s', 'dark', '{input}' },
+        { 'mdcat', '{input}' },
+        { 'pandoc', '--to', 'plain', '--wrap', 'none', '{input}' },
+        { 'cat', '{input}' },
+      },
+    },
     pipelines = {
+      plantuml = {             -- requires plantuml + Java
+        steps = {
+          {
+            command = 'sh',
+            args = function(input, output)
+              return { '-c', 'plantuml -tpng -pipe < "$1" > "$2"', '--', input, output }
+            end,
+          },
+        },
+      },
+      mermaid = {              -- requires mmdc (mermaid-cli)
+        steps = {
+          {
+            command = 'mmdc',
+            args = function(input, output)
+              return { '-i', input, '-o', output }
+            end,
+          },
+        },
+      },
       model = {
         steps = {
           {
@@ -417,6 +458,9 @@ It never makes network requests or sends data externally.
 | zipinfo | Archive listing (read-only) | Archive preview |
 | tar | Archive listing (read-only) | tar/tgz preview |
 | sqlite3 | Schema listing (read-only) | SQLite preview |
+| leaf / glow / mdcat / pandoc / cat | Markdown rendering | Markdown preview |
+| plantuml | PlantUML diagram rendering | PlantUML preview |
+| mmdc | Mermaid diagram rendering | Mermaid preview |
 
 No files are extracted, modified, or uploaded. All processing is local and read-only.
 
@@ -498,6 +542,10 @@ tmux set-environment WEZTERM_UNIX_SOCKET ~/.local/share/wezterm/gui-sock-<PID>
 
 **Videos:** MP4, MKV, AVI, MOV, WebM, FLV, WMV, M4V (requires ffmpeg)
 
+**Markdown:** MD, MARKDOWN, MDX, MDWN, MDOWN (requires leaf, glow, mdcat, pandoc, or cat)
+
+**Diagrams:** PUML, PLANTUML, PU, WSD, IUML (PlantUML, requires plantuml + Java), MMD, MERMAID (Mermaid, requires mmdc)
+
 ## Architecture
 
 ```bash
@@ -510,11 +558,13 @@ lua/
 │   ├── sixel.lua             -- Sixel protocol (fallback)
 │   ├── thumbnail.lua         -- Video thumbnail extraction (ffmpeg, async)
 │   ├── magickwand.lua        -- FFI bindings for libMagickWand
-│   ├── util.lua              -- Image, video and certificate format detection
+│   ├── util.lua              -- Format detection (image, video, model, diagram, markdown...)
 │   ├── archive.lua           -- Archive listing and suspicious path detection
 │   ├── font.lua              -- Font metadata extraction and rendering
 │   ├── sqlite.lua            -- SQLite schema preview
 │   ├── safety.lua            -- File validation and safety checks
+│   ├── pipeline.lua          -- Steps-based conversion pipeline (run_steps, run_sequence)
+│   ├── pipeline_previewer.lua -- Shared runtime for pipeline-based previewers (tokens, animation, cleanup)
 │   ├── previewer/
 │   │   ├── archive.lua       -- Archive previewer
 │   │   ├── cert.lua          -- X.509 certificate previewer
@@ -522,6 +572,9 @@ lua/
 │   │   ├── font.lua          -- Font previewer
 │   │   ├── image.lua         -- Inline image previewer
 │   │   ├── key.lua           -- GPG/SSH key previewer
+│   │   ├── markdown.lua      -- Markdown previewer (leaf/glow/mdcat/pandoc, terminal buffer)
+│   │   ├── mermaid.lua       -- Mermaid diagram previewer (mmdc)
+│   │   ├── plantuml.lua      -- PlantUML diagram previewer (plantuml -pipe)
 │   │   └── sqlite.lua        -- SQLite previewer
 │   ├── strategy/
 │   │   ├── inline.lua        -- Inline rendering + autocmds

@@ -16,6 +16,9 @@
 | openssl | Certificate metadata extraction |
 | ffmpeg | Video thumbnail extraction and inline animation |
 | f3d | 3D model thumbnails and turntable frames |
+| plantuml + Java | PlantUML diagram rendering |
+| mmdc (mermaid-cli) | Mermaid diagram rendering |
+| leaf / glow / mdcat / pandoc | Markdown rendering (first found wins) |
 | ghostscript | PDF rendering via ImageMagick |
 | tmux >= 3.4 | Escape sequence passthrough (Kitty Graphics via tmux) |
 | `kitten` | Included with Kitty |
@@ -45,7 +48,8 @@ lua/glimpse/
 ├── thumbnail.lua         -- Video thumbnail extraction (ffmpeg, async)
 ├── magickwand.lua        -- ImageMagick interface for conversion
 ├── pipeline.lua          -- Steps-based conversion pipeline (run_steps, run_sequence)
-├── util.lua              -- Image, video, model and certificate format detection
+├── pipeline_previewer.lua -- Shared runtime for pipeline-based previewers (tokens, animation, cleanup)
+├── util.lua              -- Format detection (image, video, model, diagram, markdown...)
 ├── archive.lua           -- Archive listing and suspicious path detection
 ├── font.lua              -- Font metadata extraction and rendering
 ├── sqlite.lua            -- SQLite schema preview
@@ -63,7 +67,10 @@ lua/glimpse/
 │   ├── font.lua          -- Font previewer
 │   ├── image.lua         -- Inline image previewer
 │   ├── key.lua           -- GPG/SSH key previewer
+│   ├── markdown.lua      -- Markdown previewer (leaf/glow/mdcat/pandoc, terminal buffer)
+│   ├── mermaid.lua       -- Mermaid diagram previewer (mmdc)
 │   ├── model.lua         -- 3D model previewer via conversion pipeline (f3d)
+│   ├── plantuml.lua      -- PlantUML diagram previewer (plantuml -pipe)
 │   ├── sqlite.lua        -- SQLite previewer
 │   └── video.lua         -- Inline animation (Kitty/Ghostty) or thumbnail fallback
 ├── strategy/
