@@ -25,6 +25,7 @@ GlimpseConfig                                                    *GlimpseConfig*
 
     Fields: ~
         {strategy?}      ("auto"|"inline"|"pane")          Rendering method (default: 'auto')
+        {auto_open?}     (boolean)                         Automatically render non-text previewable files after opening them (default: false)
         {pane?}          (GlimpsePaneConfig)               External pane settings
         {inline?}        (GlimpseInlineConfig)             Inline rendering options
         {float?}         (GlimpseFloatConfig)              Floating preview sizes
@@ -226,6 +227,17 @@ M.get_preview_kind({filepath})                              *M.get_preview_kind*
 
     Returns: ~
         (string|nil)  kind
+
+
+M.can_auto_open({filepath})                                    *M.can_auto_open*
+     Return whether a file should replace its source buffer when auto-opened.
+     Native text formats remain editable and are available through preview().
+
+    Parameters: ~
+        {filepath}  (string)  Absolute file path
+
+    Returns: ~
+        (boolean)
 
 
 M.show({filepath})                                                      *M.show*
