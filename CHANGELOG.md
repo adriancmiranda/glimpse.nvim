@@ -14,6 +14,7 @@
 - [`cc8c145`](https://github.com/adriancmiranda/glimpse.nvim/commit/cc8c145dacd7bddc360452f1509a4999b4657de4) *(plantuml)* Add PlantUML diagram previewer via pipeline
 - [`af1c21b`](https://github.com/adriancmiranda/glimpse.nvim/commit/af1c21b48b49027c8e205f6fbd094ed5b1268f79) Make float preview sizes configurable
 - [`264f9f9`](https://github.com/adriancmiranda/glimpse.nvim/commit/264f9f93624dfa2acff25269f5e569ee0ba4768a) *(mermaid)* Add Mermaid diagram previewer via pipeline
+- [`178ad46`](https://github.com/adriancmiranda/glimpse.nvim/commit/178ad46fa19e801db06f16d9653393acbc595e4d) Add safe automatic preview opening
 
 ### 🐛 Bug Fixes
 
