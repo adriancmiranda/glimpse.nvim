@@ -24,22 +24,22 @@ GlimpseConfig                                                    *GlimpseConfig*
      glimpse.nvim configuration.
 
     Fields: ~
-        {strategy?}      ("auto"|"inline"|"pane")          Rendering method (default: 'auto')
-        {auto_open?}     (boolean)                         Automatically render non-text previewable files after opening them (default: false)
-        {pane?}          (GlimpsePaneConfig)               External pane settings
-        {inline?}        (GlimpseInlineConfig)             Inline rendering options
-        {float?}         (GlimpseFloatConfig)              Floating preview sizes
-        {keys?}          (GlimpseKeysConfig)               Configurable keymaps
-        {debounce?}      (GlimpseDebounceConfig)           Debounce timings in ms
-        {cell_size?}     (GlimpseCellSizeConfig)           Estimated terminal cell pixel size
-        {cache?}         (GlimpseCacheConfig)              Cache settings
-        {safety?}        (GlimpseSafetyConfig)             Safety settings
-        {loading?}       (GlimpseLoadingConfig)            Loading text
-        {image?}         (GlimpseImageConfig)              Image preview settings
-        {video?}         (GlimpseVideoConfig)              Video preview settings
-        {archive?}       (GlimpseArchiveConfig)            Archive preview settings
-        {pipelines?}     ({model?:GlimpsePipelineConfig})  Conversion pipelines by preview type
-        {integrations?}  (GlimpseIntegrationsConfig)       Plugin integrations
+        {strategy?}      ("auto"|"inline"|"pane")               Rendering method (default: 'auto')
+        {auto_open?}     (boolean)                              Automatically render non-text previewable files after opening them (default: false)
+        {pane?}          (GlimpsePaneConfig)                    External pane settings
+        {inline?}        (GlimpseInlineConfig)                  Inline rendering options
+        {float?}         (GlimpseFloatConfig)                   Floating preview sizes
+        {keys?}          (GlimpseKeysConfig)                    Configurable keymaps
+        {debounce?}      (GlimpseDebounceConfig)                Debounce timings in ms
+        {cell_size?}     (GlimpseCellSizeConfig)                Estimated terminal cell pixel size
+        {cache?}         (GlimpseCacheConfig)                   Cache settings
+        {safety?}        (GlimpseSafetyConfig)                  Safety settings
+        {loading?}       (GlimpseLoadingConfig)                 Loading text
+        {image?}         (GlimpseImageConfig)                   Image preview settings
+        {video?}         (GlimpseVideoConfig)                   Video preview settings
+        {archive?}       (GlimpseArchiveConfig)                 Archive preview settings
+        {pipelines?}     (table<string,GlimpsePipelineConfig>)  Conversion pipelines by preview type or extension
+        {integrations?}  (GlimpseIntegrationsConfig)            Plugin integrations
 
 
 GlimpseInlineConfig                                        *GlimpseInlineConfig*
