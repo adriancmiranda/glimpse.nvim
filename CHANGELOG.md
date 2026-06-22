@@ -42,6 +42,7 @@
 - [`8a62200`](https://github.com/adriancmiranda/glimpse.nvim/commit/8a62200174f3440d705ddb57b2b4112b1382bd0e) *(contributing)* Add f3d dependency, pipeline.lua and model.lua to code structure
 - [`c4ded15`](https://github.com/adriancmiranda/glimpse.nvim/commit/c4ded15ee06d5cf455221e48e8f224554eab3a45) Update README and CONTRIBUTING for markdown, plantuml and mermaid previewers
 - [`665cf20`](https://github.com/adriancmiranda/glimpse.nvim/commit/665cf20181866b3a7dda06d4e4b3caca80dd906a) Clarify float.markdown.width default in config example
+- [`375389d`](https://github.com/adriancmiranda/glimpse.nvim/commit/375389d0b327b0506d84678b64bec256052170b5) Simplify lazy-loading setup
 
 ### ⚡ Performance
 
