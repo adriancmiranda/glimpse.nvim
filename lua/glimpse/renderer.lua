@@ -270,14 +270,16 @@ end
 
 --- Re-render an existing placement (keep the old one until the new one is ready).
 --- @param buf number
-function M.rerender(buf)
+--- @param opts? { force?: boolean }
+function M.rerender(buf, opts)
+	opts = opts or {}
 	local placement = placement_state.get(buf)
 	if not placement then
 		return
 	end
 	-- Skip if it was created less than 500ms ago
 	local created_at = placement.created_at or 0
-	if created_at > 0 and (vim.uv.hrtime() - created_at) < 500e6 then
+	if not opts.force and created_at > 0 and (vim.uv.hrtime() - created_at) < 500e6 then
 		return
 	end
 	local filepath = placement.filepath
