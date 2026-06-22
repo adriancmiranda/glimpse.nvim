@@ -331,6 +331,11 @@ M.get_config()                                                    *M.get_config*
         (GlimpseConfig)
 
 
+M._get_user_config()                                        *M._get_user_config*
+     Return configuration values explicitly provided by the user.
+     @return GlimpseConfig
+
+
 M.get_terminal()                                                *M.get_terminal*
      Detect the current terminal emulator (including inside tmux).
      The result is cached to avoid repeated vim.fn.system calls.
