@@ -31,6 +31,9 @@ describe('auto-open', function()
 		callback({ file = '/tmp/README.md' })
 		assert.is_nil(shown)
 
+		callback({ file = '/tmp/model.obj' })
+		assert.is_nil(shown)
+
 		callback({ file = '/tmp/movie.mp4' })
 		assert.equals('/tmp/movie.mp4', shown)
 	end)
