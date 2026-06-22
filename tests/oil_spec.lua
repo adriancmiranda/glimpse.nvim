@@ -519,6 +519,59 @@ describe('oil integration', function()
 		restore_package(saved)
 	end)
 
+	it('refreshes a directly opened image after toggling the Oil float', function()
+		local saved = save_package({
+			'oil',
+			'glimpse.renderer',
+			'glimpse.integrations.oil.float',
+			'glimpse.integrations.oil.path',
+			'glimpse.integrations.oil',
+		})
+
+		local image_buf = vim.api.nvim_create_buf(false, true)
+		local oil_buf = vim.api.nvim_create_buf(false, true)
+		local filepath = vim.fn.tempname() .. '.png'
+		local original_buf = vim.api.nvim_get_current_buf()
+		local calls = {}
+
+		vim.fn.writefile({ 'png' }, filepath)
+		vim.api.nvim_set_current_buf(image_buf)
+		vim.api.nvim_buf_set_name(image_buf, filepath)
+		vim.bo[image_buf].filetype = 'image'
+
+		package.loaded['oil'] = {
+			toggle_float = function(_, _, cb)
+				vim.api.nvim_set_current_buf(oil_buf)
+				vim.bo[oil_buf].filetype = 'oil'
+				cb()
+			end,
+		}
+		package.loaded['glimpse.renderer'] = {
+			has_placement = function(buf)
+				return buf == image_buf
+			end,
+			rerender = function(buf, opts)
+				calls.buf = buf
+				calls.opts = opts
+			end,
+		}
+
+		require('glimpse.integrations.oil').toggle_float()
+
+		assert.equals(image_buf, calls.buf)
+		assert.are.same({ force = true }, calls.opts)
+
+		vim.api.nvim_set_current_buf(original_buf)
+		if vim.api.nvim_buf_is_valid(image_buf) then
+			vim.api.nvim_buf_delete(image_buf, { force = true })
+		end
+		if vim.api.nvim_buf_is_valid(oil_buf) then
+			vim.api.nvim_buf_delete(oil_buf, { force = true })
+		end
+		vim.fn.delete(filepath)
+		restore_package(saved)
+	end)
+
 	it('resolves the startup argv path when no file buffer is active', function()
 		local saved = save_package({
 			'glimpse.integrations.oil.float',

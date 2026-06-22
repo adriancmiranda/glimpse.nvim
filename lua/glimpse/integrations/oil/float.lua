@@ -2,6 +2,17 @@ local path = require('glimpse.integrations.oil.path')
 
 local M = {}
 
+local function refresh_source_image(buf)
+	if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= 'image' then
+		return
+	end
+
+	local renderer = require('glimpse.renderer')
+	if renderer.has_placement(buf) then
+		renderer.rerender(buf, { force = true })
+	end
+end
+
 local function get_process_cwd()
 	return vim.uv.cwd() or vim.fn.getcwd()
 end
@@ -88,6 +99,7 @@ end
 function M.open_float(opts)
 	opts = opts or {}
 	local oil = require('oil')
+	local source_buf = vim.api.nvim_get_current_buf()
 	local dirpath, cursor_name = M.resolve_float_dir()
 	oil.open_float(dirpath, opts.oil_opts, function()
 		if cursor_name then
@@ -96,12 +108,14 @@ function M.open_float(opts)
 		if opts.cb then
 			opts.cb(dirpath, cursor_name)
 		end
+		refresh_source_image(source_buf)
 	end)
 end
 
 function M.toggle_float(opts)
 	opts = opts or {}
 	local oil = require('oil')
+	local source_buf = vim.api.nvim_get_current_buf()
 	local dirpath, cursor_name = M.resolve_float_dir()
 	oil.toggle_float(dirpath, opts.oil_opts, function()
 		if cursor_name and vim.bo[vim.api.nvim_get_current_buf()].filetype == 'oil' then
@@ -110,6 +124,7 @@ function M.toggle_float(opts)
 		if opts.cb then
 			opts.cb(dirpath, cursor_name)
 		end
+		refresh_source_image(source_buf)
 	end)
 end
 
