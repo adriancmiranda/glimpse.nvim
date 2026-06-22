@@ -27,12 +27,19 @@ end
 
 local function apply_config(opts)
 	opts = opts or {}
-	local configured = require('glimpse').get_config().float or {}
+	local glimpse = require('glimpse')
+	local configured = glimpse.get_config().float or {}
+	local user_configured = glimpse._get_user_config().float or {}
 	local kind_config = opts.kind and configured[opts.kind] or nil
+	local user_kind_config = opts.kind and user_configured[opts.kind] or nil
 	local resolved = vim.tbl_extend('force', {}, opts)
 
 	for option, field in pairs({ max_width = 'width', max_height = 'height' }) do
-		if type(kind_config) == 'table' and kind_config[field] ~= nil then
+		if type(user_kind_config) == 'table' and user_kind_config[field] ~= nil then
+			resolved[option] = user_kind_config[field]
+		elseif user_configured[field] ~= nil then
+			resolved[option] = user_configured[field]
+		elseif type(kind_config) == 'table' and kind_config[field] ~= nil then
 			resolved[option] = kind_config[field]
 		elseif configured[field] ~= nil then
 			resolved[option] = configured[field]

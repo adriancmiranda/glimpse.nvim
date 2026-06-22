@@ -62,10 +62,18 @@ describe('public api', function()
 			config.image.formats
 		)
 		assert.are.same({ '.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v' }, config.video.formats)
+		assert.are.same({ strategy = 'auto', per_second = 10, limit = 120, width = 640 }, config.video.frames)
 		assert.is_table(config.video.keys)
 		assert.equals('<CR>', config.video.keys.toggle)
 		assert.equals('l', config.video.keys.seek_forward)
 		assert.equals('h', config.video.keys.seek_backward)
+		assert.equals(100, config.float.markdown.width)
+		assert.equals(70, config.float.archive.width)
+		assert.equals(90, config.float.cert.width)
+		assert.equals(60, config.float.font.width)
+		assert.equals(70, config.float.key.width)
+		assert.equals(80, config.float.sqlite.width)
+		assert.equals(100, config.float.binary.width)
 		assert.equals('f3d', config.pipelines.model.steps[1].command)
 		assert.equals('.png', config.pipelines.model.steps[1].output_ext)
 		assert.equals(12, config.pipelines.model.renderer.fps)
@@ -73,6 +81,20 @@ describe('public api', function()
 			{ '.zip', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.txz', '.jar', '.war', '.apk' },
 			config.archive.formats
 		)
+		assert.are.same({ enable = true, open = 'edit', follow_cwd = true }, config.integrations.oil)
+		assert.are.same({
+			enable = true,
+			pickers = { 'find_files' },
+			follow_cwd = false,
+			image = true,
+			video = true,
+			archive = true,
+			sqlite = true,
+			font = true,
+			cert = true,
+			key = true,
+			binary = true,
+		}, config.integrations.telescope)
 	end)
 
 	it('renders images that were already open before setup', function()

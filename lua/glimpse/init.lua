@@ -160,7 +160,15 @@ local config = {
 		rerender_on_tab = true,
 		close_with_q = true,
 	},
-	float = {},
+	float = {
+		markdown = { width = 100 },
+		archive = { width = 70 },
+		cert = { width = 90 },
+		font = { width = 60 },
+		key = { width = 70 },
+		sqlite = { width = 80 },
+		binary = { width = 100 },
+	},
 	keys = {
 		preview = '<leader>p',
 		open = ';',
@@ -210,6 +218,12 @@ local config = {
 			'.m4v',
 		},
 		open = nil,
+		frames = {
+			strategy = 'auto',
+			per_second = 10,
+			limit = 120,
+			width = 640,
+		},
 		keys = {
 			toggle = '<CR>',
 			seek_forward = 'l',
@@ -285,6 +299,8 @@ local config = {
 	integrations = {
 		oil = {
 			enable = true,
+			open = 'edit',
+			follow_cwd = true,
 		},
 		neotree = {
 			enable = false,
@@ -292,10 +308,21 @@ local config = {
 		},
 		telescope = {
 			enable = true,
+			pickers = { 'find_files' },
+			follow_cwd = false,
+			image = true,
+			video = true,
+			archive = true,
+			sqlite = true,
+			font = true,
+			cert = true,
+			key = true,
+			binary = true,
 		},
 	},
 }
 
+local user_config = {}
 local kind_cache = {}
 local kind_cache_revision = 0
 
@@ -343,6 +370,7 @@ end
 --- Configure the plugin.
 ---@param opts? GlimpseConfig Configuration options (merged with defaults)
 function M.setup(opts)
+	user_config = vim.tbl_deep_extend('force', user_config, opts or {})
 	config = vim.tbl_deep_extend('force', config, opts or {})
 	config.integrations.oil = normalize_oil_config(config.integrations.oil)
 	config.integrations.telescope = normalize_telescope_config(config.integrations.telescope)
@@ -637,6 +665,12 @@ M.in_tmux = detect.in_tmux
 ---@return GlimpseConfig
 function M.get_config()
 	return config
+end
+
+--- Return configuration values explicitly provided by the user.
+--- @return GlimpseConfig
+function M._get_user_config()
+	return user_config
 end
 
 return M

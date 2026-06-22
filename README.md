@@ -106,152 +106,7 @@ xxd -h
 {
   'adriancmiranda/glimpse.nvim',
   ft = { 'oil', 'neo-tree' },
-  opts = {
-    strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
-    auto_open = false,        -- render non-text previewable files when opened directly
-    pane = {
-      position = 'right',     -- 'right' | 'bottom'
-      size = 40,              -- split/pane size percentage
-    },
-    inline = {
-      rerender_on_tab = true, -- re-render when switching back to image tab
-      close_with_q = true,    -- map key to close image buffer
-    },
-    float = {
-      width = nil,            -- global max width; number or 'auto' for 100%
-      height = nil,           -- global max height; number or 'auto'
-      -- markdown = { width = 100 }, -- uncomment to override the built-in 100-column default
-      -- archive = { width = 70 },
-      -- binary = { width = 'auto' },
-    },
-    keys = {
-      preview = '<leader>p',  -- preview image/video side by side (Oil)
-      open = ';',             -- open image (configurable: current tab or new tab) (Oil)
-      close = 'q',            -- close image buffer
-    },
-    debounce = {
-      prefetch = 200,         -- ms before pre-converting on cursor move
-      resize = 100,           -- ms before re-rendering on resize
-    },
-    cell_size = {
-      width = 20,             -- estimated pixels per terminal column
-      height = 40,            -- estimated pixels per terminal row
-    },
-    cache = {
-      dir = vim.fn.stdpath('cache') .. '/glimpse',
-      max_age_days = 7,      -- auto-remove cached files older than N days (0 to disable)
-    },
-    safety = {
-      max_file_size = 50 * 1024 * 1024, -- skip files larger than 50MB
-    },
-    loading = {
-      text = '  ⏳ Loading...',
-    },
-    image = {
-      formats = {            -- supported image extensions
-        '.png', '.jpg', '.jpeg', '.gif', '.bmp',
-        '.webp', '.avif', '.svg', '.pdf', '.pict',
-      },
-    },
-    video = {
-      formats = {            -- supported video extensions (requires ffmpeg)
-        '.mp4', '.mkv', '.avi', '.mov',
-        '.webm', '.flv', '.wmv', '.m4v',
-      },
-      open = nil,            -- command or function to open videos externally
-                              -- string: 'open' (macOS), 'xdg-open' (Linux)
-                              -- function: fun(filepath) for custom logic
-                              -- nil: plays inline (Kitty/Ghostty) or shows thumbnail
-      frames = {
-        strategy   = 'auto', -- 'auto' | 'batch' | 'poll'
-                              -- auto: selects poll when ffmpeg is available
-                              -- batch: low-res preview immediately, full-res when done
-                              -- poll: frames delivered progressively as ffmpeg writes them
-        per_second = 10,     -- frames per second to extract
-        limit      = 120,    -- maximum frames to extract per video
-        width      = 640,    -- frame width in pixels; 'auto' matches the window (slower)
-      },
-      keys = {
-        toggle        = '<CR>', -- play / pause inline animation
-        seek_forward  = 'l',   -- seek forward 5 seconds
-        seek_backward = 'h',   -- seek backward 5 seconds
-      },
-    },
-    markdown = {
-      tools = {                -- first executable found wins
-        { 'leaf', '--inline', 'ansi:{width}', '{input}' },
-        { 'glow', '-s', 'dark', '--width', '{width}', '{input}' },
-        { 'mdcat', '{input}' },
-        { 'pandoc', '--to', 'plain', '--wrap', 'none', '{input}' },
-        { 'cat', '{input}' },
-      },
-    },
-    pipelines = {
-      plantuml = {             -- requires plantuml + Java
-        steps = {
-          {
-            command = 'sh',
-            args = function(input, output)
-              return { '-c', 'plantuml -tpng -pipe < "$1" > "$2"', '--', input, output }
-            end,
-          },
-        },
-      },
-      mermaid = {              -- requires mmdc (mermaid-cli)
-        steps = {
-          {
-            command = 'mmdc',
-            args = function(input, output)
-              return { '-i', input, '-o', output }
-            end,
-          },
-        },
-      },
-      model = {
-        steps = {
-          {
-            command = 'f3d',
-            output_ext = '.png',
-            args = function(input, output)
-              return {
-                input, '--output', output,
-                '--config=thumbnail',
-              }
-            end,
-          },
-        },
-        renderer = {
-          fps = 12,
-          progressive = true,
-        },
-        keys = {
-          toggle = '<CR>',
-          seek_forward = 'l',
-          seek_backward = 'h',
-        },
-      },
-    },
-    archive = {
-      formats = {            -- supported archive extensions (preview only, no extraction)
-        '.zip', '.tar', '.tar.gz', '.tgz',
-        '.tar.bz2', '.tar.xz', '.txz',
-        '.jar', '.war', '.apk',
-      },
-    },
-    integrations = {
-      oil = {
-        enable = true,        -- keymaps in Oil
-        open = 'edit',        -- 'edit' | 'tabedit' | function(filepath)
-      },
-      neotree = {             -- Neo-tree integration
-        enable = false,       -- enable auto-preview in Neo-tree
-        auto_preview = true,  -- preview on cursor move (set false to disable)
-      },
-      telescope = {
-        enable = true,        -- enables image/video previews in :Telescope find_files
-      },
-    },
-  },
+  opts = {},
 }
 ```
 
@@ -262,6 +117,165 @@ intentionally applies to every file instead of duplicating the configurable
 format list in the lazy-loading specification. `keys.preview` configures the
 mapping installed by the file explorer integration; it is not a lazy.nvim
 loading trigger.
+
+<details>
+<summary>Default configuration</summary>
+
+```lua
+{
+  strategy = 'auto',
+  auto_open = false,
+  pane = {
+    position = 'right',
+    size = 40,
+  },
+  inline = {
+    rerender_on_tab = true,
+    close_with_q = true,
+  },
+  float = {
+    markdown = { width = 100 },
+    archive = { width = 70 },
+    cert = { width = 90 },
+    font = { width = 60 },
+    key = { width = 70 },
+    sqlite = { width = 80 },
+    binary = { width = 100 },
+  },
+  keys = {
+    preview = '<leader>p',
+    open = ';',
+    close = 'q',
+  },
+  debounce = {
+    prefetch = 200,
+    resize = 100,
+  },
+  cell_size = {
+    width = 20,
+    height = 40,
+  },
+  cache = {
+    dir = vim.fn.stdpath('cache') .. '/glimpse',
+    max_age_days = 7,
+  },
+  safety = {
+    max_file_size = 50 * 1024 * 1024,
+  },
+  loading = {
+    text = '  ⏳ Loading...',
+  },
+  image = {
+    formats = {
+      '.png', '.jpg', '.jpeg', '.gif', '.bmp',
+      '.webp', '.avif', '.svg', '.pdf', '.pict',
+    },
+  },
+  video = {
+    formats = {
+      '.mp4', '.mkv', '.avi', '.mov',
+      '.webm', '.flv', '.wmv', '.m4v',
+    },
+    open = nil,
+    frames = {
+      strategy = 'auto',
+      per_second = 10,
+      limit = 120,
+      width = 640,
+    },
+    keys = {
+      toggle = '<CR>',
+      seek_forward = 'l',
+      seek_backward = 'h',
+    },
+  },
+  markdown = {
+    formats = { '.md', '.markdown', '.mdx', '.mdwn', '.mdown' },
+    tools = {
+      { 'leaf', '--inline', 'ansi:{width}', '{input}' },
+      { 'glow', '-s', 'dark', '--width', '{width}', '{input}' },
+      { 'mdcat', '{input}' },
+      { 'pandoc', '--to', 'plain', '--wrap', 'none', '{input}' },
+      { 'cat', '{input}' },
+    },
+  },
+  pipelines = {
+    plantuml = {
+      steps = {
+        {
+          command = 'sh',
+          args = function(input, output)
+            return { '-c', 'plantuml -tpng -pipe < "$1" > "$2"', '--', input, output }
+          end,
+        },
+      },
+    },
+    mermaid = {
+      steps = {
+        {
+          command = 'mmdc',
+          args = function(input, output)
+            return { '-i', input, '-o', output }
+          end,
+        },
+      },
+    },
+    model = {
+      steps = {
+        {
+          command = 'f3d',
+          output_ext = '.png',
+          args = function(input, output)
+            return { input, '--output', output, '--config=thumbnail' }
+          end,
+        },
+      },
+      renderer = {
+        fps = 12,
+        progressive = true,
+      },
+      keys = {
+        toggle = '<CR>',
+        seek_forward = 'l',
+        seek_backward = 'h',
+      },
+    },
+  },
+  archive = {
+    formats = {
+      '.zip', '.tar', '.tar.gz', '.tgz',
+      '.tar.bz2', '.tar.xz', '.txz',
+      '.jar', '.war', '.apk',
+    },
+  },
+  integrations = {
+    oil = {
+      enable = true,
+      open = 'edit',
+      follow_cwd = true,
+    },
+    neotree = {
+      enable = false,
+      auto_preview = true,
+    },
+    telescope = {
+      enable = true,
+      pickers = { 'find_files' },
+      follow_cwd = false,
+      image = true,
+      video = true,
+      archive = true,
+      sqlite = true,
+      font = true,
+      cert = true,
+      key = true,
+      binary = true,
+    },
+  },
+}
+```
+
+</details>
 
 ### Automatic opening
 
