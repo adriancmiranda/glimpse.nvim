@@ -106,27 +106,6 @@ xxd -h
 {
   'adriancmiranda/glimpse.nvim',
   ft = { 'oil', 'neo-tree' },
-  event = {
-    'BufReadPre *.png', 'BufReadPre *.jpg', 'BufReadPre *.jpeg',
-    'BufReadPre *.gif', 'BufReadPre *.bmp', 'BufReadPre *.webp',
-    'BufReadPre *.avif', 'BufReadPre *.svg', 'BufReadPre *.pdf',
-    'BufReadPre *.ttf', 'BufReadPre *.otf',
-    'BufReadPre *.crt', 'BufReadPre *.pem',
-    'BufReadPre *.zip', 'BufReadPre *.tar', 'BufReadPre *.tgz',
-    'BufReadPre *.jar', 'BufReadPre *.war', 'BufReadPre *.apk',
-    'BufReadPre *.db', 'BufReadPre *.sqlite', 'BufReadPre *.sqlite3',
-    'BufReadPre *.obj', 'BufReadPre *.fbx', 'BufReadPre *.dae',
-    'BufReadPre *.glb', 'BufReadPre *.gltf', 'BufReadPre *.stl',
-    'BufReadPre *.ply', 'BufReadPre *.3ds', 'BufReadPre *.3mf',
-    'BufReadPre *.off', 'BufReadPre *.x', 'BufReadPre *.dxf',
-    'BufReadPre *.wrl', 'BufReadPre *.vrml', 'BufReadPre *.stp',
-    'BufReadPre *.step', 'BufReadPre *.igs', 'BufReadPre *.iges',
-    'BufReadPre *.abc', 'BufReadPre *.brep',
-    'BufReadPre *.md', 'BufReadPre *.markdown', 'BufReadPre *.mdx',
-    'BufReadPre *.puml', 'BufReadPre *.plantuml', 'BufReadPre *.pu',
-    'BufReadPre *.wsd', 'BufReadPre *.iuml',
-    'BufReadPre *.mmd', 'BufReadPre *.mermaid',
-  },
   opts = {
     strategy = 'auto',        -- 'auto' | 'inline' | 'pane'
     auto_open = false,        -- render non-text previewable files when opened directly
@@ -276,7 +255,13 @@ xxd -h
 }
 ```
 
-Breaking change: the public config was reorganized into nested tables.
+The setup above loads Glimpse when entering a supported file explorer. If
+`auto_open = true`, add `event = 'BufReadPre'` to the plugin spec so Glimpse can
+register its automatic preview handler before the file finishes loading. This
+intentionally applies to every file instead of duplicating the configurable
+format list in the lazy-loading specification. `keys.preview` configures the
+mapping installed by the file explorer integration; it is not a lazy.nvim
+loading trigger.
 
 ### Automatic opening
 
