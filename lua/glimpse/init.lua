@@ -552,7 +552,7 @@ end
 ---@return boolean
 function M.can_auto_open(filepath)
 	local kind = resolve_kind(filepath)
-	return kind ~= nil and kind ~= 'markdown' and kind ~= 'plantuml' and kind ~= 'mermaid'
+	return kind ~= nil and kind ~= 'markdown' and kind ~= 'plantuml' and kind ~= 'mermaid' and kind ~= 'model'
 end
 
 --- Show a file (selects the previewer automatically).

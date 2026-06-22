@@ -19,6 +19,8 @@ describe('public api', function()
 		assert.is_false(glimpse.can_auto_open('/path/to/README.md'))
 		assert.is_false(glimpse.can_auto_open('/path/to/diagram.puml'))
 		assert.is_false(glimpse.can_auto_open('/path/to/diagram.mmd'))
+		assert.is_false(glimpse.can_auto_open('/path/to/model.obj'))
+		assert.is_false(glimpse.can_auto_open('/path/to/model.glb'))
 
 		assert.are.equal('image', glimpse.get_preview_kind('/path/to/photo.png'))
 		assert.are.equal('video', glimpse.get_preview_kind('/path/to/movie.mp4'))
