@@ -29,6 +29,7 @@
 - [`88e5573`](https://github.com/adriancmiranda/glimpse.nvim/commit/88e5573ba92ab1e87329a3b2c0ea88bb8abf87fe) *(float)* Bind close keymap in every float window
 - [`43b0ae6`](https://github.com/adriancmiranda/glimpse.nvim/commit/43b0ae6560f5fa5d01ce25e89070a9a12a0db92f) *(video)* Cancel in-flight extraction when preview window closes
 - [`cec2c46`](https://github.com/adriancmiranda/glimpse.nvim/commit/cec2c465bd90ff65761a8be658bc0d1c8842b198) *(oil)* Refresh images after toggling float
+- [`984f6b0`](https://github.com/adriancmiranda/glimpse.nvim/commit/984f6b075974f23e52a301d611df2d5b22273b58) *(auto-open)* Keep model files in text buffers
 
 ### 🚜 Refactor
 
