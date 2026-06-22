@@ -91,6 +91,20 @@ describe('pipeline', function()
 		calls.jobstart[job_id].opts.on_exit(job_id, code)
 	end
 
+	describe('M.resolve_config', function()
+		it('prefers an extension-specific pipeline over the type pipeline', function()
+			local by_type = { steps = { { command = 'f3d' } } }
+			local by_extension = { previewers = { { command = 'blender' } } }
+			local configs = {
+				model = by_type,
+				['.blend'] = by_extension,
+			}
+
+			assert.equals(by_extension, pipeline.resolve_config(configs, 'model', '/tmp/SCENE.BLEND'))
+			assert.equals(by_type, pipeline.resolve_config(configs, 'model', '/tmp/model.obj'))
+		end)
+	end)
+
 	describe('M.run_steps', function()
 		it('calls on_done with {path} when single static step succeeds', function()
 			local result, err
@@ -197,6 +211,72 @@ describe('pipeline', function()
 			end)
 			assert.is_nil(result)
 			assert.is_not_nil(err)
+		end)
+
+		it('tries previewers in order until one succeeds', function()
+			local result, err
+			local cfg = {
+				previewers = {
+					{ command = 'first', args = { '{input}', '{output}' } },
+					{ command = 'second', args = { '{input}', '{output}' } },
+				},
+			}
+			pipeline.run_steps(cfg, '/in/file', function(r, e)
+				result, err = r, e
+			end)
+
+			assert.equals('first', calls.jobstart[1].cmd[1])
+			fire_exit(1, 2)
+			assert.equals('second', calls.jobstart[2].cmd[1])
+			fire_exit(2, 0)
+
+			assert.is_nil(err)
+			assert.equals('/tmp/glimpse_test_2.png', result.path)
+			assert.equals('/tmp/glimpse_test_1.png', calls.removed[1])
+		end)
+
+		it('skips missing previewers before trying the next one', function()
+			calls.executable_result = { first = 0, second = 1 }
+			local result
+			pipeline.run_steps(
+				{
+					previewers = {
+						{ command = 'first', args = {} },
+						{ command = 'second', args = { '{input}', '{output}' } },
+					},
+				},
+				'/in/file',
+				function(r)
+					result = r
+				end
+			)
+
+			assert.equals(1, #calls.jobstart)
+			assert.equals('second', calls.jobstart[1].cmd[1])
+			fire_exit(1, 0)
+			assert.is_not_nil(result)
+		end)
+
+		it('reports every previewer failure when none succeed', function()
+			local result, err
+			pipeline.run_steps(
+				{
+					previewers = {
+						{ command = 'first', args = {} },
+						{ command = 'second', args = {} },
+					},
+				},
+				'/in/file',
+				function(r, e)
+					result, err = r, e
+				end
+			)
+			fire_exit(1, 1)
+			fire_exit(2, 2)
+
+			assert.is_nil(result)
+			assert.matches('first exited with code 1', err)
+			assert.matches('second exited with code 2', err)
 		end)
 
 		it('cancel stops in-flight job', function()

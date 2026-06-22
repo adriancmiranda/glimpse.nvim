@@ -10,7 +10,8 @@
 ---@field output_ext? string Extension for the output file when type='static' (default: '.png')
 
 ---@class GlimpsePipelineConfig
----@field steps GlimpsePipelineEntry[] Sequential chain: each step's output feeds the next
+---@field steps? GlimpsePipelineEntry[] Sequential chain: each step's output feeds the next
+---@field previewers? GlimpsePipelineEntry[] Alternative commands tried in order until one succeeds
 ---@field renderer? { type?: 'inline'|'pane', fps?: number, progressive?: boolean }
 ---@field keys? { toggle?: string, seek_forward?: string, seek_backward?: string }
 
@@ -24,6 +25,25 @@
 ---@field cleanup fun() Remove the frame directory and retained intermediate artifacts
 
 local M = {}
+
+--- Resolve an extension-specific pipeline before the type-level fallback.
+--- @param pipelines table<string, GlimpsePipelineConfig>|nil
+--- @param kind string
+--- @param filepath string
+--- @return GlimpsePipelineConfig|nil
+function M.resolve_config(pipelines, kind, filepath)
+	if not pipelines then
+		return nil
+	end
+	local ext = filepath:match('(%.[^./]+)$')
+	if ext then
+		local override = pipelines[ext:lower()]
+		if override then
+			return override
+		end
+	end
+	return pipelines[kind]
+end
 
 local function jobstart_error(job_id)
 	if job_id == 0 then
@@ -233,7 +253,7 @@ end
 --- @param on_done fun(result: table|nil, err: string|nil)
 --- @param on_frame? fun(path: string, frame_index: integer) Forwarded to sequence steps only
 --- @return fun() cancel
-function M.run_steps(config, input, on_done, on_frame)
+local function run_chain(config, input, on_done, on_frame)
 	local steps = config.steps or {}
 	local fps = (config.renderer and config.renderer.fps) or 12
 
@@ -328,6 +348,70 @@ function M.run_steps(config, input, on_done, on_frame)
 		cancelled = true
 		cancel_current()
 		cleanup_artifacts()
+	end
+end
+
+--- Run a pipeline config.
+--- `previewers` are alternatives; `steps` remain a sequential conversion chain.
+--- @param config GlimpsePipelineConfig
+--- @param input string Absolute path to the source file
+--- @param on_done fun(result: table|nil, err: string|nil)
+--- @param on_frame? fun(path: string, frame_index: integer)
+--- @return fun() cancel
+function M.run_steps(config, input, on_done, on_frame)
+	local previewers = config.previewers or {}
+	if #previewers == 0 then
+		return run_chain(config, input, on_done, on_frame)
+	end
+
+	local cancelled = false
+	local cancel_current = function() end
+	local errors = {}
+
+	local function run_previewer(i)
+		if cancelled then
+			return
+		end
+		local previewer = previewers[i]
+		if not previewer then
+			on_done(nil, 'no previewer succeeded: ' .. table.concat(errors, '; '))
+			return
+		end
+
+		local completed = false
+		local cancel = run_chain(
+			{
+				steps = { previewer },
+				renderer = config.renderer,
+			},
+			input,
+			function(result, err)
+				completed = true
+				if cancelled then
+					if result and result.cleanup then
+						result.cleanup()
+					end
+					return
+				end
+				if result then
+					on_done(result, nil)
+					return
+				end
+				errors[#errors + 1] = err or (previewer.command .. ' failed')
+				run_previewer(i + 1)
+			end,
+			on_frame
+		)
+		if not completed then
+			cancel_current = cancel
+		end
+	end
+
+	run_previewer(1)
+
+	return function()
+		cancelled = true
+		cancel_current()
 	end
 end
 

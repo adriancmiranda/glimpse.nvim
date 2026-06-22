@@ -40,7 +40,7 @@
 ---@field image? GlimpseImageConfig Image preview settings
 ---@field video? GlimpseVideoConfig Video preview settings
 ---@field archive? GlimpseArchiveConfig Archive preview settings
----@field pipelines? { model?: GlimpsePipelineConfig } Conversion pipelines by preview type
+---@field pipelines? table<string, GlimpsePipelineConfig> Conversion pipelines by preview type or extension
 ---@field integrations? GlimpseIntegrationsConfig Plugin integrations
 
 ---@class GlimpseInlineConfig

@@ -114,6 +114,25 @@ describe('markdown previewer', function()
 		assert.equals('/tmp/README.md', command[3])
 	end)
 
+	it('tries the next Markdown renderer when the first one fails', function()
+		local config = require('glimpse').get_config()
+		local saved_tools = vim.deepcopy(config.markdown.tools)
+		local filepath = vim.fn.tempname() .. '.md'
+		vim.fn.writefile({ '# fallback' }, filepath)
+		config.markdown.tools = {
+			{ 'sh', '-c', 'exit 1' },
+			{ 'cat', '{input}' },
+		}
+
+		local lines, _, err = markdown.preview_data(filepath, 40)
+
+		config.markdown.tools = saved_tools
+		vim.fn.delete(filepath)
+
+		assert.is_nil(err)
+		assert.equals('# fallback', lines[1])
+	end)
+
 	it('memoizes markdown previews by width', function()
 		local config = require('glimpse').get_config()
 		local saved_tools = vim.deepcopy(config.markdown.tools)

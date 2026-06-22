@@ -60,6 +60,13 @@ describe('model previewer', function()
 		})
 
 		stub_package('glimpse.pipeline', {
+			resolve_config = function(pipelines, kind, filepath)
+				if not pipelines then
+					return nil
+				end
+				local ext = filepath:match('(%.[^./]+)$')
+				return (ext and pipelines[ext:lower()]) or pipelines[kind]
+			end,
 			run_steps = function(cfg, input, on_done, on_frame)
 				calls.pipeline[#calls.pipeline + 1] = { cfg = cfg, input = input, on_done = on_done, on_frame = on_frame }
 				return function()
@@ -238,6 +245,25 @@ describe('model previewer', function()
 		assert.equals(1, #calls.route)
 		assert.equals('show', calls.route[1].mode)
 		assert.equals('/tmp/glimpse_model_1.png', calls.route[1].path)
+	end)
+
+	it('uses an extension-specific pipeline when configured', function()
+		stub_package('glimpse', {
+			get_config = function()
+				return {
+					pipelines = {
+						model = { steps = { { command = 'f3d' } } },
+						['.blend'] = { previewers = { { command = 'blender' } } },
+					},
+				}
+			end,
+		})
+		package.loaded['glimpse.previewer.model'] = nil
+
+		local model = require('glimpse.previewer.model')
+		model.show('/path/to/SCENE.BLEND')
+
+		assert.equals('blender', calls.pipeline[1].cfg.previewers[1].command)
 	end)
 
 	it('calls preview_route.preview when using preview()', function()
