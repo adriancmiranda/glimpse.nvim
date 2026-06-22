@@ -12,16 +12,18 @@ describe('float preview helper', function()
 	end)
 
 	it('applies global and preview-specific size configuration', function()
-		local config = require('glimpse').get_config()
+		local glimpse = require('glimpse')
+		local config = glimpse.get_config()
+		local user_config = glimpse._get_user_config()
 		local saved = vim.deepcopy(config.float)
+		local saved_user = vim.deepcopy(user_config.float)
 		local buf = vim.api.nvim_create_buf(false, true)
 		vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'one', 'two' })
-		config.float = {
-			width = 55,
-			archive = { width = 33 },
-		}
+		config.float.width = 55
+		config.float.archive.width = 33
+		user_config.float = { width = 55, archive = { width = 33 } }
 
-		local global_win = float.open(buf, { max_width = 80 })
+		local global_win = float.open(buf, { kind = 'markdown', max_width = 100 })
 		assert.equals(55, vim.api.nvim_win_get_config(global_win).width)
 		vim.api.nvim_win_close(global_win, true)
 
@@ -30,6 +32,7 @@ describe('float preview helper', function()
 		vim.api.nvim_win_close(archive_win, true)
 
 		config.float = saved
+		user_config.float = saved_user
 	end)
 
 	it('uses all available columns when width is auto', function()
