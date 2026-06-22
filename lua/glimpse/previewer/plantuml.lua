@@ -20,19 +20,20 @@
 --- <
 local M = {}
 
+local pipeline = require('glimpse.pipeline')
 local pp = require('glimpse.pipeline_previewer')
 local OPTS = { label = 'plantuml' }
 
-local function _get_cfg()
+local function _get_cfg(filepath)
 	local cfg = require('glimpse').get_config()
-	return cfg.pipelines and cfg.pipelines.plantuml
+	return pipeline.resolve_config(cfg.pipelines, 'plantuml', filepath)
 end
 
 --- Show the diagram (full view).
 --- @param filepath string
 --- @param source_win? number
 function M.show(filepath, source_win)
-	local pipeline_cfg = _get_cfg()
+	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
 		vim.notify('[glimpse] no pipeline config for plantuml preview', vim.log.levels.WARN)
 		return
@@ -44,7 +45,7 @@ end
 --- @param filepath string
 --- @param source_win? number
 function M.preview(filepath, source_win)
-	local pipeline_cfg = _get_cfg()
+	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
 		vim.notify('[glimpse] no pipeline config for plantuml preview', vim.log.levels.WARN)
 		return

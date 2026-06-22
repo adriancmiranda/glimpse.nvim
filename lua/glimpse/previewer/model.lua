@@ -1,5 +1,5 @@
 --- Previewer for 3D model files via user-configured pipeline.
---- Requires a `pipelines.model` entry in the glimpse config with at least one step.
+--- Requires a `pipelines.model` entry with `steps` or `previewers`.
 ---
 --- Static thumbnail example (f3d):
 --- >lua
@@ -73,19 +73,20 @@
 --- <
 local M = {}
 
+local pipeline = require('glimpse.pipeline')
 local pp = require('glimpse.pipeline_previewer')
 local OPTS = { label = 'model' }
 
-local function _get_cfg()
+local function _get_cfg(filepath)
 	local cfg = require('glimpse').get_config()
-	return cfg.pipelines and cfg.pipelines.model
+	return pipeline.resolve_config(cfg.pipelines, 'model', filepath)
 end
 
 --- Show the model (full view).
 --- @param filepath string
 --- @param source_win? number
 function M.show(filepath, source_win)
-	local pipeline_cfg = _get_cfg()
+	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
 		vim.notify('[glimpse] no pipeline config for model preview', vim.log.levels.WARN)
 		return
@@ -97,7 +98,7 @@ end
 --- @param filepath string
 --- @param source_win? number
 function M.preview(filepath, source_win)
-	local pipeline_cfg = _get_cfg()
+	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
 		vim.notify('[glimpse] no pipeline config for model preview', vim.log.levels.WARN)
 		return

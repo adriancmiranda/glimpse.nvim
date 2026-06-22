@@ -322,6 +322,31 @@ require('glimpse').setup({
 })
 ```
 
+`steps` form a sequential conversion chain: each output becomes the next
+step's input. `previewers` are alternatives: Glimpse tries them in order,
+skipping missing commands and continuing after failed commands until one
+produces a preview. An extension-specific entry such as `pipelines['.blend']`
+takes precedence over the type-level entry such as `pipelines.model`.
+
+```lua
+require('glimpse').setup({
+  pipelines = {
+    model = {
+      previewers = {
+        {
+          command = 'first-model-renderer',
+          args = { '{input}', '--output', '{output}' },
+        },
+        {
+          command = 'fallback-model-renderer',
+          args = { '{input}', '--output', '{output}' },
+        },
+      },
+    },
+  },
+})
+```
+
 ### Keymaps (Oil.nvim)
 
 | Key | Action |

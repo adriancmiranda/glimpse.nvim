@@ -9,16 +9,6 @@ local function strip_ansi(str)
 	return str:gsub('\27%[[%d;:]*[mKJHfABCDsuhlGr]', ''):gsub('\27%[%?[%d]*[lh]', ''):gsub('\r', '')
 end
 
--- Return the first tool whose binary is executable, or nil.
-local function resolve_tool(tools)
-	for _, args in ipairs(tools or {}) do
-		if vim.fn.executable(args[1]) == 1 then
-			return args
-		end
-	end
-	return nil
-end
-
 -- Substitute dynamic placeholders with the actual preview context.
 local function build_cmd(tool_args, filepath, width)
 	local cmd = {}
@@ -38,19 +28,25 @@ end
 local function run_tool_raw(filepath, width)
 	local cfg = require('glimpse').get_config()
 	local tools = cfg.markdown and cfg.markdown.tools
-	local tool = resolve_tool(tools)
-	if not tool then
-		return nil, 'no markdown renderer found (install leaf, glow, mdcat, or pandoc)'
-	end
 	width = width or vim.api.nvim_win_get_width(0)
 	local prev_columns = vim.env.COLUMNS
 	vim.env.COLUMNS = tostring(width)
-	local output = vim.fn.system(build_cmd(tool, filepath, width))
-	vim.env.COLUMNS = prev_columns
-	if vim.v.shell_error ~= 0 then
-		return nil, tool[1] .. ' exited with error'
+	local errors = {}
+	for _, tool in ipairs(tools or {}) do
+		if vim.fn.executable(tool[1]) == 1 then
+			local output = vim.fn.system(build_cmd(tool, filepath, width))
+			if vim.v.shell_error == 0 then
+				vim.env.COLUMNS = prev_columns
+				return output, nil
+			end
+			errors[#errors + 1] = tool[1] .. ' exited with error'
+		end
 	end
-	return output, nil
+	vim.env.COLUMNS = prev_columns
+	if #errors > 0 then
+		return nil, table.concat(errors, '; ')
+	end
+	return nil, 'no markdown renderer found (install leaf, glow, mdcat, or pandoc)'
 end
 
 -- Convert raw output to plain lines (ANSI stripped) for text-based consumers.
