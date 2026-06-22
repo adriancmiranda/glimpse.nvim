@@ -171,8 +171,6 @@ function M.setup_autocmds()
 				require('glimpse.previewer.font').show(filepath)
 			elseif util.is_archive(filepath) then
 				require('glimpse.previewer.archive').show(filepath)
-			elseif util.is_model(filepath) then
-				require('glimpse.previewer.model').show(filepath)
 			end
 		end,
 	})
