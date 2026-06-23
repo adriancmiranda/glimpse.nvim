@@ -27,7 +27,7 @@
   fingerprint for `.crt`/`.pem`
 - ⚡ Image conversion cache + background prefetch
 - 🔄 Auto re-render on window resize or tab switch
-- 💾 **Auto-refresh on save** — re-render open previews when the source file is saved
+- 💾 **Auto-refresh on save** - re-render open previews when the source file is saved
 - 📐 Contain resize (images always fully visible)
 
 ## Requirements
