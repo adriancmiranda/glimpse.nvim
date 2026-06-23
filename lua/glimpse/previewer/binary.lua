@@ -157,7 +157,7 @@ function M.can_preview(filepath)
 	return info.is_binary
 end
 
-function M.show(filepath)
+function M.show(filepath, opts)
 	local lines, _, err = _preview_data(filepath)
 	if not lines then
 		vim.notify('[glimpse] ' .. (err or 'cannot inspect file type'), vim.log.levels.WARN)
@@ -178,6 +178,7 @@ function M.show(filepath)
 		max_height = math.max(#lines, 8),
 		min_width = 40,
 		min_height = 8,
+		window = opts and opts.window,
 	})
 
 	vim.wo[win].wrap = false

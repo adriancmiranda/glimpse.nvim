@@ -124,7 +124,7 @@ end
 
 --- Display key info in a floating window.
 --- @param filepath string
-function M.show(filepath)
+function M.show(filepath, opts)
 	local config = require('glimpse').get_config()
 	local lines, highlights, err = _preview_data(filepath)
 	if not lines then
@@ -156,6 +156,7 @@ function M.show(filepath)
 		title = ' Key Info ',
 		max_width = 70,
 		max_height = #lines,
+		window = opts and opts.window,
 	})
 
 	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })

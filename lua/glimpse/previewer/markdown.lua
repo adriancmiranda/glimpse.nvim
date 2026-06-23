@@ -153,11 +153,13 @@ end
 --- Preview in a floating window using a terminal buffer so ANSI colors,
 --- bold, italic and other attributes are rendered faithfully.
 --- @param filepath string
-function M.preview(filepath)
+--- @param opts? { window?: string }
+function M.preview(filepath, opts)
 	local source_buf = vim.api.nvim_get_current_buf()
 	local float_opts = {
 		kind = 'markdown',
 		max_width = 100,
+		window = opts and opts.window,
 	}
 	local state = {
 		width = nil,
@@ -211,16 +213,42 @@ function M.preview(filepath)
 		end
 		return display_height(state.lines or {}, width)
 	end
-	float_opts.on_resize = function()
+	local win
+	local user_cursor = nil
+	float_opts.on_resize = function(new_width)
 		if not chan or not vim.api.nvim_buf_is_valid(buf) or state.writing then
 			return
 		end
+		if new_width and new_width ~= state.width then
+			local _, rerender_err = render(new_width)
+			if rerender_err then
+				vim.notify('[glimpse] ' .. rerender_err, vim.log.levels.WARN)
+				return
+			end
+		end
 		write_preview(state.raw)
+		local cursor = user_cursor
+		if cursor and win and vim.api.nvim_win_is_valid(win) then
+			vim.defer_fn(function()
+				if vim.api.nvim_win_is_valid(win) then
+					pcall(vim.api.nvim_win_set_cursor, win, cursor)
+				end
+			end, 50)
+		end
 	end
-	local win = float.open(buf, float_opts)
+	win = float.open(buf, float_opts)
 
 	chan = vim.api.nvim_open_term(buf, {})
 	write_preview(raw)
+
+	vim.api.nvim_create_autocmd('CursorMoved', {
+		buffer = buf,
+		callback = function()
+			if not state.writing and win and vim.api.nvim_win_is_valid(win) then
+				user_cursor = vim.api.nvim_win_get_cursor(win)
+			end
+		end,
+	})
 
 	if vim.api.nvim_buf_is_valid(source_buf) and util.same_path(vim.api.nvim_buf_get_name(source_buf), filepath) then
 		auto_refresh.register(source_buf, filepath, function()

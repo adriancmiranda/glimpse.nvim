@@ -43,7 +43,7 @@ describe('GlimpsePreview command', function()
 
 	it('registers with an optional file argument and file completion', function()
 		assert.is_table(command)
-		assert.equals('?', command.opts.nargs)
+		assert.equals('*', command.opts.nargs)
 		assert.equals('file', command.opts.complete)
 	end)
 
