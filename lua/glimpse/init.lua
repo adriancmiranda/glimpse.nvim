@@ -46,6 +46,7 @@
 
 ---@class GlimpsePreviewOptions
 ---@field target? 'auto' Reserved preview target (default: 'auto')
+---@field window? 'float'|'right'|'left'|'bottom'|'top' Where to open the preview (default: 'float')
 
 ---@class GlimpseInlineConfig
 ---@field rerender_on_tab? boolean Re-render when returning to an image tab (default: true)
@@ -639,22 +640,30 @@ setup_auto_open = function()
 	})
 end
 
+local WINDOW_VALUES = { float = true, right = true, left = true, bottom = true, top = true }
+
 setup_commands = function()
 	vim.api.nvim_create_user_command('GlimpsePreview', function(command)
-		local filepath = vim.trim(command.args)
-		if filepath == '' then
-			filepath = vim.api.nvim_buf_get_name(0)
+		local args = vim.trim(command.args)
+		local window, filepath_arg
+
+		local first, rest = args:match('^(%S+)%s*(.*)')
+		if first and WINDOW_VALUES[first] then
+			window = first
+			filepath_arg = vim.trim(rest or '')
 		else
-			filepath = vim.fn.expand(filepath)
+			filepath_arg = args
 		end
+
+		local filepath = filepath_arg ~= '' and vim.fn.expand(filepath_arg) or vim.api.nvim_buf_get_name(0)
 		if filepath == '' then
 			vim.notify('[glimpse] current buffer has no file', vim.log.levels.WARN)
 			return
 		end
 		filepath = vim.fn.fnamemodify(filepath, ':p')
-		M.preview(filepath, { target = 'auto' })
+		M.preview(filepath, { target = 'auto', window = window })
 	end, {
-		nargs = '?',
+		nargs = '*',
 		complete = 'file',
 		desc = 'Preview a file with Glimpse',
 		force = true,
@@ -682,7 +691,7 @@ function M.preview(filepath, opts)
 	if not safe then
 		return
 	end
-	previewer.preview(filepath)
+	previewer.preview(filepath, { window = opts and opts.window })
 end
 
 --- Close the active preview.

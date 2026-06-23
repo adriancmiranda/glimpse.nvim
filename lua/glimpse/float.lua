@@ -5,11 +5,15 @@ local tracked = {}
 local augroup_name = 'GlimpseFloatPreview'
 local autocmds_ready = false
 
+---@alias GlimpseWindowPosition 'float'|'right'|'left'|'bottom'|'top'
+
 ---@class GlimpseFloatOptions
 ---@field title? string
 ---@field title_pos? string
 ---@field border? string
 ---@field kind? GlimpseFloatKind Preview type used for type-specific configuration
+---@field window? GlimpseWindowPosition Where to open the preview (default: 'float')
+---@field size? number Split size in columns (right/left) or lines (bottom/top)
 ---@field max_width? number|'auto'
 ---@field max_height? number|'auto'
 ---@field min_width? number
@@ -49,8 +53,22 @@ local function apply_config(opts)
 	return resolved
 end
 
+local SPLIT_CMDS = {
+	right = 'rightbelow vsplit',
+	left = 'leftabove vsplit',
+	bottom = 'rightbelow split',
+	top = 'leftabove split',
+}
+
 local function resolve_width(opts)
 	opts = apply_config(opts)
+	local window = opts.window or 'float'
+	if window == 'bottom' or window == 'top' then
+		return vim.o.columns, opts
+	end
+	if window == 'right' or window == 'left' then
+		return opts.size or math.floor(vim.o.columns / 2), opts
+	end
 	local margin_x = opts.margin_x or 4
 	local min_width = opts.min_width or 20
 	local max_width = opts.max_width or 80
@@ -120,10 +138,19 @@ local function reflow_win(win, meta)
 		return
 	end
 
+	local on_resize = meta.opts and meta.opts.on_resize
+	if meta.is_split then
+		if type(on_resize) == 'function' then
+			local width = vim.api.nvim_win_get_width(win)
+			local height = vim.api.nvim_win_get_height(win)
+			pcall(on_resize, width, height, win, meta.buf)
+		end
+		return
+	end
+
 	local config, width, height = build_config(meta.buf, meta.opts)
 	vim.api.nvim_win_set_config(win, config)
 
-	local on_resize = meta.opts and meta.opts.on_resize
 	if type(on_resize) == 'function' then
 		pcall(on_resize, width, height, win, meta.buf)
 	end
@@ -155,19 +182,51 @@ local function setup_autocmds()
 	})
 end
 
+local function open_split(buf, opts)
+	local window = opts.window
+	local split_cmd = SPLIT_CMDS[window]
+	if not split_cmd then
+		vim.notify('[glimpse] unknown window position: ' .. tostring(window), vim.log.levels.WARN)
+		return
+	end
+	setup_autocmds()
+	if opts.size then
+		vim.cmd(opts.size .. split_cmd)
+	else
+		vim.cmd(split_cmd)
+	end
+	local win = vim.api.nvim_get_current_win()
+	vim.api.nvim_win_set_buf(win, buf)
+	tracked[win] = { buf = buf, opts = opts, is_split = true }
+	local close_key = opts.close_key or require('glimpse').get_config().keys.close
+	if close_key then
+		vim.keymap.set('n', close_key, function()
+			if vim.api.nvim_win_is_valid(win) then
+				vim.api.nvim_win_close(win, false)
+			end
+		end, { buffer = buf, silent = true })
+	end
+	return win
+end
+
 --- Open a centered floating window for preview content.
 --- @param buf number
 --- @param opts? GlimpseFloatOptions
 --- @return number win
 function M.open(buf, opts)
+	opts = opts or {}
+	local window = opts.window or 'float'
+	if window ~= 'float' then
+		return open_split(buf, opts)
+	end
 	setup_autocmds()
 	local config = build_config(buf, opts)
 	local win = vim.api.nvim_open_win(buf, true, config)
 	tracked[win] = {
 		buf = buf,
-		opts = opts or {},
+		opts = opts,
 	}
-	local close_key = (opts and opts.close_key) or require('glimpse').get_config().keys.close
+	local close_key = opts.close_key or require('glimpse').get_config().keys.close
 	if close_key then
 		vim.keymap.set('n', close_key, function()
 			if vim.api.nvim_win_is_valid(win) then

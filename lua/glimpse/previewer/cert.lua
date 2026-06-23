@@ -191,7 +191,7 @@ end
 
 --- Display certificate info in a floating window.
 --- @param filepath string
-function M.show(filepath)
+function M.show(filepath, opts)
 	local lines, highlights, err = _preview_data(filepath)
 	if not lines then
 		vim.notify('[glimpse] ' .. (err or 'failed to read certificate'), vim.log.levels.WARN)
@@ -224,6 +224,7 @@ function M.show(filepath)
 		title = ' Certificate ',
 		max_width = 90,
 		max_height = #lines,
+		window = opts and opts.window,
 	})
 
 	local config = require('glimpse').get_config()

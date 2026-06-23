@@ -84,7 +84,7 @@ end
 
 --- Preview metadata in a floating window.
 --- @param filepath string
-function M.preview(filepath)
+function M.preview(filepath, opts)
 	local config = require('glimpse').get_config()
 	local lines, highlights, err = _preview_data(filepath)
 	if not lines then
@@ -116,6 +116,7 @@ function M.preview(filepath)
 		title = ' Font ',
 		max_width = 60,
 		max_height = #lines,
+		window = opts and opts.window,
 	})
 
 	vim.keymap.set('n', config.keys.close, '<cmd>close<CR>', { buffer = buf, silent = true })
