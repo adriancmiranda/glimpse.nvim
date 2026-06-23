@@ -662,5 +662,61 @@ describe('model previewer', function()
 			end
 			assert.is_true(setup_on_existing)
 		end)
+
+		it('re-runs the preview pipeline when the source file is saved', function()
+			local filepath = '/path/to/model.obj'
+			local source_buf = vim.api.nvim_create_buf(false, true)
+			local original_get_config = package.loaded.glimpse.get_config
+			local original_buf_get_name = stub_fn(vim.api, 'nvim_buf_get_name', function(buf)
+				if buf == source_buf then
+					return filepath
+				end
+				return ''
+			end)
+			local original_win_get_buf = stub_fn(vim.api, 'nvim_win_get_buf', function()
+				return source_buf
+			end)
+			local autocmds = {}
+			local original_create_autocmd = vim.api.nvim_create_autocmd
+
+			package.loaded.glimpse.get_config = function()
+				local cfg = original_get_config()
+				cfg.auto_refresh = true
+				return cfg
+			end
+
+			vim.api.nvim_create_autocmd = function(event, spec)
+				if event == 'BufWritePost' then
+					autocmds[event] = autocmds[event] or {}
+					autocmds[event][#autocmds[event] + 1] = spec
+					return #autocmds[event]
+				end
+				return original_create_autocmd(event, spec)
+			end
+
+			local ok, err = pcall(function()
+				local model = require('glimpse.previewer.model')
+				model.preview(filepath)
+
+				assert.is_not_nil(autocmds.BufWritePost)
+				assert.equals(1, #autocmds.BufWritePost)
+
+				autocmds.BufWritePost[1].callback()
+			end)
+
+			package.loaded.glimpse.get_config = original_get_config
+			vim.api.nvim_buf_get_name = original_buf_get_name
+			vim.api.nvim_win_get_buf = original_win_get_buf
+			vim.api.nvim_create_autocmd = original_create_autocmd
+			pcall(vim.api.nvim_buf_delete, source_buf, { force = true })
+
+			if not ok then
+				error(err)
+			end
+
+			assert.equals(2, #calls.pipeline)
+			assert.equals(filepath, calls.pipeline[1].input)
+			assert.equals(filepath, calls.pipeline[2].input)
+		end)
 	end)
 end)

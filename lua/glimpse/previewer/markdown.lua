@@ -1,8 +1,10 @@
 --- Previewer for Markdown files via a configurable CLI renderer.
 local M = {}
 
+local auto_refresh = require('glimpse.auto_refresh')
 local float = require('glimpse.float')
 local preview_cache = require('glimpse.preview_cache')
+local util = require('glimpse.util')
 
 -- Strip ANSI escape sequences — used only for plain-text consumers (Telescope).
 local function strip_ansi(str)
@@ -10,9 +12,28 @@ local function strip_ansi(str)
 end
 
 -- Substitute dynamic placeholders with the actual preview context.
+local function normalize_tool(tool_args)
+	local normalized = vim.deepcopy(tool_args)
+	if normalized[1] == 'leaf' then
+		local has_inline = false
+		for _, arg in ipairs(normalized) do
+			if arg == '--inline' then
+				has_inline = true
+				break
+			end
+		end
+		if not has_inline then
+			table.insert(normalized, 2, '--inline')
+			table.insert(normalized, 3, 'ansi:{width}')
+		end
+	end
+
+	return normalized
+end
+
 local function build_cmd(tool_args, filepath, width)
 	local cmd = {}
-	for _, arg in ipairs(tool_args) do
+	for _, arg in ipairs(normalize_tool(tool_args)) do
 		cmd[#cmd + 1] = arg
 			:gsub('{input}', function()
 				return filepath
@@ -78,6 +99,18 @@ local function render_lines(filepath, width)
 	return raw, to_lines(raw), nil
 end
 
+local function write_term(chan, raw)
+	if not chan or not raw then
+		return
+	end
+	vim.api.nvim_chan_send(chan, '\27[3J\27[2J\27[H')
+	vim.api.nvim_chan_send(chan, raw)
+end
+
+local function redraw()
+	pcall(vim.cmd, 'redraw')
+end
+
 --- Return rendered lines for Telescope and other text-based consumers.
 --- @param filepath string
 ---@param width? number
@@ -121,6 +154,7 @@ end
 --- bold, italic and other attributes are rendered faithfully.
 --- @param filepath string
 function M.preview(filepath)
+	local source_buf = vim.api.nvim_get_current_buf()
 	local float_opts = {
 		kind = 'markdown',
 		max_width = 100,
@@ -129,7 +163,10 @@ function M.preview(filepath)
 		width = nil,
 		raw = nil,
 		lines = nil,
+		writing = false,
+		last_written_raw = nil,
 	}
+	local chan
 	local render_err
 	local function render(width)
 		local raw, lines, err = render_lines(filepath, width)
@@ -140,6 +177,22 @@ function M.preview(filepath)
 		state.raw = raw
 		state.lines = lines
 		return raw, nil
+	end
+
+	local function write_preview(raw_to_write)
+		if raw_to_write == state.last_written_raw then
+			return
+		end
+		state.last_written_raw = raw_to_write
+		state.writing = true
+		local ok, err = pcall(function()
+			write_term(chan, raw_to_write)
+			redraw()
+		end)
+		state.writing = false
+		if not ok then
+			error(err)
+		end
 	end
 
 	local raw, err = render(float.resolve_width(float_opts))
@@ -158,20 +211,33 @@ function M.preview(filepath)
 		end
 		return display_height(state.lines or {}, width)
 	end
-	local chan
 	float_opts.on_resize = function()
-		if not chan or not vim.api.nvim_buf_is_valid(buf) then
+		if not chan or not vim.api.nvim_buf_is_valid(buf) or state.writing then
 			return
 		end
-		if state.raw then
-			vim.api.nvim_chan_send(chan, '\27[2J\27[H')
-			vim.api.nvim_chan_send(chan, state.raw)
-		end
+		write_preview(state.raw)
 	end
-	float.open(buf, float_opts)
+	local win = float.open(buf, float_opts)
 
 	chan = vim.api.nvim_open_term(buf, {})
-	vim.api.nvim_chan_send(chan, raw)
+	write_preview(raw)
+
+	if vim.api.nvim_buf_is_valid(source_buf) and util.same_path(vim.api.nvim_buf_get_name(source_buf), filepath) then
+		auto_refresh.register(source_buf, filepath, function()
+			return vim.api.nvim_win_is_valid(win) and vim.api.nvim_buf_is_valid(buf) and chan ~= nil
+		end, function()
+			if not vim.api.nvim_win_is_valid(win) or not vim.api.nvim_buf_is_valid(buf) or chan == nil then
+				return
+			end
+			local width = state.width or float.resolve_width(float_opts)
+			local rerendered, rerender_err = render(width)
+			if not rerendered then
+				vim.notify('[glimpse] ' .. (rerender_err or 'failed to render markdown'), vim.log.levels.WARN)
+				return
+			end
+			write_preview(state.raw)
+		end)
+	end
 end
 
 return M

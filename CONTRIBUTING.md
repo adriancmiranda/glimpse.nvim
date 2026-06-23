@@ -49,6 +49,7 @@ lua/glimpse/
 ├── magickwand.lua        -- ImageMagick interface for conversion
 ├── pipeline.lua          -- Steps-based conversion pipeline (run_steps, run_sequence)
 ├── pipeline_previewer.lua -- Shared runtime for pipeline-based previewers (tokens, animation, cleanup)
+├── auto_refresh.lua      -- BufWritePost hook: re-renders active previews on save (opt-in via auto_refresh)
 ├── util.lua              -- Format detection (image, video, model, diagram, markdown...)
 ├── archive.lua           -- Archive listing and suspicious path detection
 ├── font.lua              -- Font metadata extraction and rendering

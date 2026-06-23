@@ -37,6 +37,7 @@
 ---@field cache? GlimpseCacheConfig Cache settings
 ---@field safety? GlimpseSafetyConfig Safety settings
 ---@field loading? GlimpseLoadingConfig Loading text
+---@field auto_refresh? boolean Re-render open previews on save (default: false)
 ---@field image? GlimpseImageConfig Image preview settings
 ---@field video? GlimpseVideoConfig Video preview settings
 ---@field archive? GlimpseArchiveConfig Archive preview settings
@@ -196,6 +197,7 @@ local config = {
 	loading = {
 		text = '  ⏳ Loading...',
 	},
+	auto_refresh = false,
 	image = {
 		formats = {
 			'.png',
