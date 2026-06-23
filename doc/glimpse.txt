@@ -42,6 +42,12 @@ GlimpseConfig                                                    *GlimpseConfig*
         {integrations?}  (GlimpseIntegrationsConfig)            Plugin integrations
 
 
+GlimpsePreviewOptions                                    *GlimpsePreviewOptions*
+
+    Fields: ~
+        {target?}  ("auto")  Reserved preview target (default: 'auto')
+
+
 GlimpseInlineConfig                                        *GlimpseInlineConfig*
 
     Fields: ~
@@ -247,11 +253,12 @@ M.show({filepath})                                                      *M.show*
         {filepath}  (string)  Absolute file path
 
 
-M.preview({filepath})                                                *M.preview*
+M.preview({filepath}, {opts?})                                       *M.preview*
      Quick preview (reuses an existing window or opens a float).
 
     Parameters: ~
-        {filepath}  (string)  Absolute file path
+        {filepath}  (string)                 Absolute file path
+        {opts?}     (GlimpsePreviewOptions)  Preview options reserved for target selection
 
 
 M.close()                                                              *M.close*
