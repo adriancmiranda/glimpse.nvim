@@ -18,6 +18,7 @@
 - [`285c8fd`](https://github.com/adriancmiranda/glimpse.nvim/commit/285c8fd90e7d0e3c127e2f73ce75e0cce28d9506) *(pipeline)* Add previewer fallback chains
 - [`e3d99b5`](https://github.com/adriancmiranda/glimpse.nvim/commit/e3d99b5f221f5c7f8444867f3db4ed22981f6d4e) *(model)* Add Blender fallback for blend files
 - [`74f2ace`](https://github.com/adriancmiranda/glimpse.nvim/commit/74f2acefce2a3a2dba3ed5fa6805d6dd104747ae) Add GlimpsePreview command
+- [`9f0dd91`](https://github.com/adriancmiranda/glimpse.nvim/commit/9f0dd918baa7a44959c9417aca5658dad569c08f) Auto-refresh previews on save
 
 ### 🐛 Bug Fixes
 
