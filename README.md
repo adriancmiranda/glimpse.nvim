@@ -27,6 +27,7 @@
   fingerprint for `.crt`/`.pem`
 - ⚡ Image conversion cache + background prefetch
 - 🔄 Auto re-render on window resize or tab switch
+- 💾 **Auto-refresh on save** — re-render open previews when the source file is saved
 - 📐 Contain resize (images always fully visible)
 
 ## Requirements
@@ -52,20 +53,20 @@
 
 ### Feature Dependencies
 
-| Feature | Dependency | Required |
-|---|---|---|
-| Inline image preview | `magick` | Yes |
-| Font rendering | `magick` | Yes, with textual fallback if unavailable |
-| Video preview | `ffmpeg` | No |
-| 3D model preview | `f3d`, with optional `blender` fallback for `.blend` | No |
-| Archive preview | `zipinfo`, `tar` | Yes when the archive type is used |
-| SQLite preview | `sqlite3` | Yes when the SQLite preview is used |
-| Certificate preview | `openssl` | Yes when the certificate preview is used |
-| Binary preview | `file`, `xxd` | Yes when the binary preview is used |
-| SSH/GPG key preview | `ssh-keygen`, `gpg` | Yes when the key preview is used |
-| Markdown preview | `leaf`, `glow`, `mdcat`, `pandoc`, or `cat` | First executable found wins |
-| PlantUML preview | `plantuml` + Java runtime | Yes when the PlantUML previewer is used |
-| Mermaid preview | `mmdc` | Yes when the Mermaid previewer is used |
+| Feature              | Dependency                                           | Required                                  |
+| -------------------- | ---------------------------------------------------- | ----------------------------------------- |
+| Inline image preview | `magick`                                             | Yes                                       |
+| Font rendering       | `magick`                                             | Yes, with textual fallback if unavailable |
+| Video preview        | `ffmpeg`                                             | No                                        |
+| 3D model preview     | `f3d`, with optional `blender` fallback for `.blend` | No                                        |
+| Archive preview      | `zipinfo`, `tar`                                     | Yes when the archive type is used         |
+| SQLite preview       | `sqlite3`                                            | Yes when the SQLite preview is used       |
+| Certificate preview  | `openssl`                                            | Yes when the certificate preview is used  |
+| Binary preview       | `file`, `xxd`                                        | Yes when the binary preview is used       |
+| SSH/GPG key preview  | `ssh-keygen`, `gpg`                                  | Yes when the key preview is used          |
+| Markdown preview     | `leaf`, `glow`, `mdcat`, `pandoc`, or `cat`          | First executable found wins               |
+| PlantUML preview     | `plantuml` + Java runtime                            | Yes when the PlantUML previewer is used   |
+| Mermaid preview      | `mmdc`                                               | Yes when the Mermaid previewer is used    |
 
 ## Installing dependencies
 
@@ -126,6 +127,7 @@ loading trigger.
 {
   strategy = 'auto',
   auto_open = false,
+  auto_refresh = false,
   pane = {
     position = 'right',
     size = 40,
@@ -310,6 +312,13 @@ Set `auto_open = true` to render non-text previewable files opened directly with
 Neovim or selected normally in a file explorer. Native text formats such as
 Markdown and PlantUML remain editable; use the preview key to render them.
 
+### Auto-refresh on save
+
+Set `auto_refresh = true` to re-render open previews whenever the source file is
+saved. Supports Markdown floats and pipeline-based previewers (PlantUML, Mermaid,
+3D models). The refresh only runs while the preview window is still open; closing
+the preview stops the hook automatically.
+
 ### Explicit preview command
 
 Use `:GlimpsePreview` to preview the current buffer without depending on a file
@@ -396,11 +405,11 @@ require('glimpse').setup({
 
 ### Keymaps (Oil.nvim)
 
-| Key | Action |
-|-----|--------|
-| `<leader>p` | Preview image/video side by side (reuses window) |
-| `;` | Open image (configurable: current tab or new tab) |
-| `q` | Close image buffer and residual empty window |
+| Key         | Action                                            |
+| ----------- | ------------------------------------------------- |
+| `<leader>p` | Preview image/video side by side (reuses window)  |
+| `;`         | Open image (configurable: current tab or new tab) |
+| `q`         | Close image buffer and residual empty window      |
 
 When an image is opened, the current window follows that file's directory, so `Oil.nvim` opens in the same folder.
 
@@ -429,10 +438,10 @@ close keymap (default `q` inside the float).
 
 Enable with `integrations = { neotree = { enable = true } }` in setup.
 
-| Key | Action |
-|-------|------|
-| `<leader>p` | Preview image/video side by side |
-| `;` | Open image inline or video with external player |
+| Key         | Action                                          |
+| ----------- | ----------------------------------------------- |
+| `<leader>p` | Preview image/video side by side                |
+| `;`         | Open image inline or video with external player |
 
 ### Telescope
 
@@ -545,17 +554,17 @@ It never makes network requests or sends data externally.
 
 ### External tools used
 
-| Tool | Purpose | When |
-|------|---------|------|
-| magick (ImageMagick) | Image resize/conversion | Image preview |
-| ffmpeg | Video thumbnail extraction | Video preview |
-| openssl | X.509 certificate metadata extraction | Certificate preview |
-| zipinfo | Archive listing (read-only) | Archive preview |
-| tar | Archive listing (read-only) | tar/tgz preview |
-| sqlite3 | Schema listing (read-only) | SQLite preview |
-| leaf / glow / mdcat / pandoc / cat | Markdown rendering | Markdown preview |
-| plantuml | PlantUML diagram rendering | PlantUML preview |
-| mmdc | Mermaid diagram rendering | Mermaid preview |
+| Tool                               | Purpose                               | When                |
+| ---------------------------------- | ------------------------------------- | ------------------- |
+| magick (ImageMagick)               | Image resize/conversion               | Image preview       |
+| ffmpeg                             | Video thumbnail extraction            | Video preview       |
+| openssl                            | X.509 certificate metadata extraction | Certificate preview |
+| zipinfo                            | Archive listing (read-only)           | Archive preview     |
+| tar                                | Archive listing (read-only)           | tar/tgz preview     |
+| sqlite3                            | Schema listing (read-only)            | SQLite preview      |
+| leaf / glow / mdcat / pandoc / cat | Markdown rendering                    | Markdown preview    |
+| plantuml                           | PlantUML diagram rendering            | PlantUML preview    |
+| mmdc                               | Mermaid diagram rendering             | Mermaid preview     |
 
 No files are extracted, modified, or uploaded. All processing is local and read-only.
 
@@ -600,13 +609,13 @@ Optional extra protection: place this in `~/.config/ImageMagick/policy.xml`.
 
 ## Supported terminals
 
-| Terminal | Strategy | Method |
-|----------|----------|--------|
-| Kitty | inline | Kitty Graphics + unicode placeholders |
-| Ghostty | inline | Kitty Graphics + unicode placeholders |
-| WezTerm | pane | `wezterm cli split-pane` + `wezterm imgcat` |
-| iTerm2 | pane | `imgcat` |
-| xterm/foot/mlterm | pane (sixel) | `magick ... sixel:-` via tmux |
+| Terminal          | Strategy     | Method                                      |
+| ----------------- | ------------ | ------------------------------------------- |
+| Kitty             | inline       | Kitty Graphics + unicode placeholders       |
+| Ghostty           | inline       | Kitty Graphics + unicode placeholders       |
+| WezTerm           | pane         | `wezterm cli split-pane` + `wezterm imgcat` |
+| iTerm2            | pane         | `imgcat`                                    |
+| xterm/foot/mlterm | pane (sixel) | `magick ... sixel:-` via tmux               |
 
 ### WezTerm + tmux
 

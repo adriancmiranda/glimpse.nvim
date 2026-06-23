@@ -7,8 +7,10 @@
 --- same animation machinery.
 local M = {}
 
+local auto_refresh = require('glimpse.auto_refresh')
 local preview_route = require('glimpse.preview_route')
 local pipeline = require('glimpse.pipeline')
+local util = require('glimpse.util')
 
 -- Token ownership: each _run call stamps a unique table into _tokens[winid].
 -- Stale callbacks self-cancel by checking _tokens[winid] == token.
@@ -102,6 +104,42 @@ end
 function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 	local label = (opts and opts.label) or 'pipeline'
 	local winid = source_win or vim.api.nvim_get_current_win()
+	local source_buf = vim.api.nvim_win_is_valid(winid) and vim.api.nvim_win_get_buf(winid) or nil
+	local session = {
+		filepath = filepath,
+		source_buf = source_buf,
+		source_win = winid,
+		preview_buf = nil,
+		preview_path = nil,
+	}
+
+	local function preview_is_active()
+		if mode ~= 'preview' then
+			return false
+		end
+		if _states[winid] then
+			return true
+		end
+		if session.preview_buf and vim.api.nvim_buf_is_valid(session.preview_buf) then
+			return true
+		end
+		if session.preview_path then
+			local buf = require('glimpse.renderer').find_by_filepath(session.preview_path)
+			return buf ~= nil and vim.api.nvim_buf_is_valid(buf)
+		end
+		return false
+	end
+
+	local function rerun()
+		M.run(pipeline_cfg, filepath, mode, source_win, opts)
+	end
+
+	if mode == 'preview' and source_buf and vim.api.nvim_buf_is_valid(source_buf) then
+		local ok_name, current_name = pcall(vim.api.nvim_buf_get_name, source_buf)
+		if ok_name and current_name ~= '' and util.same_path(current_name, filepath) then
+			auto_refresh.register(source_buf, filepath, preview_is_active, rerun)
+		end
+	end
 
 	if _states[winid] then
 		_states[winid].stop(false)
@@ -216,6 +254,8 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 		kitty.retransmit_frame(id, path)
 		require('glimpse.renderer').setup_animation_buf(b, w, id, gc, gr, wc, wr, filepath)
 		require('glimpse.preview_state').mark(b)
+		session.preview_buf = b
+		session.preview_path = path
 		vim.cmd('redraw')
 		cur_id = id
 		vim.api.nvim_create_autocmd('BufDelete', {
@@ -354,6 +394,8 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 			end
 			if mode == 'preview' then
 				preview_route.preview(result.path)
+				session.preview_path = result.path
+				session.preview_buf = require('glimpse.renderer').find_by_filepath(result.path)
 			else
 				preview_route.show(result.path)
 			end

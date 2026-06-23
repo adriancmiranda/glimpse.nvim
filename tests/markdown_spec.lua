@@ -114,6 +114,50 @@ describe('markdown previewer', function()
 		assert.equals('/tmp/README.md', command[3])
 	end)
 
+	it('forces leaf renderers into inline mode inside the float preview', function()
+		local config = require('glimpse').get_config()
+		local saved_tools = vim.deepcopy(config.markdown.tools)
+		local saved_float = vim.deepcopy(config.float)
+		local original_executable = vim.fn.executable
+		local original_system = vim.fn.system
+		local command
+		config.markdown.tools = { { 'leaf', '{input}' } }
+		config.float = { markdown = { width = 47 } }
+		vim.fn.executable = function(command_name)
+			if command_name == 'leaf' then
+				return 1
+			end
+			return original_executable(command_name)
+		end
+		vim.fn.system = function(cmd)
+			command = cmd
+			return 'rendered'
+		end
+
+		local ok, err = pcall(markdown.preview, '/tmp/README.md')
+		vim.fn.executable = original_executable
+		vim.fn.system = original_system
+		config.markdown.tools = saved_tools
+		config.float = saved_float
+
+		local win = vim.api.nvim_get_current_win()
+		if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_config(win).relative ~= '' then
+			local buf = vim.api.nvim_win_get_buf(win)
+			vim.api.nvim_win_close(win, true)
+			if vim.api.nvim_buf_is_valid(buf) then
+				vim.api.nvim_buf_delete(buf, { force = true })
+			end
+		end
+		if not ok then
+			error(err)
+		end
+
+		assert.equals('leaf', command[1])
+		assert.equals('--inline', command[2])
+		assert.equals('ansi:47', command[3])
+		assert.equals('/tmp/README.md', command[4])
+	end)
+
 	it('tries the next Markdown renderer when the first one fails', function()
 		local config = require('glimpse').get_config()
 		local saved_tools = vim.deepcopy(config.markdown.tools)
@@ -214,5 +258,74 @@ describe('markdown previewer', function()
 		assert.equals('width=96', widths[1])
 		assert.equals('width=76', widths[2])
 		assert.equals(76, win_config.width)
+	end)
+
+	it('rerenders markdown floats when the source file is saved', function()
+		local config = require('glimpse').get_config()
+		local saved_tools = vim.deepcopy(config.markdown.tools)
+		local saved_float = vim.deepcopy(config.float)
+		local saved_auto_refresh = config.auto_refresh
+		local original_create_autocmd = vim.api.nvim_create_autocmd
+		local original_chan_send = vim.api.nvim_chan_send
+		local filepath = vim.fn.tempname() .. '.md'
+		local source_buf = vim.api.nvim_create_buf(false, true)
+		local autocmds = {}
+		local sent = {}
+
+		vim.fn.writefile({ 'before' }, filepath)
+		vim.api.nvim_buf_set_name(source_buf, filepath)
+		vim.api.nvim_set_current_buf(source_buf)
+		config.markdown.tools = { { 'cat', '{input}' } }
+		config.float = {}
+		config.auto_refresh = true
+
+		vim.api.nvim_create_autocmd = function(event, spec)
+			if event == 'BufWritePost' then
+				autocmds[event] = autocmds[event] or {}
+				autocmds[event][#autocmds[event] + 1] = spec
+				return #autocmds[event]
+			end
+			return original_create_autocmd(event, spec)
+		end
+
+		vim.api.nvim_chan_send = function(_, data)
+			sent[#sent + 1] = data
+		end
+
+		local win
+		local buf
+		local ok, err = pcall(function()
+			local preview_ok, preview_err = pcall(markdown.preview, filepath)
+			assert.is_true(preview_ok, preview_err)
+			win = vim.api.nvim_get_current_win()
+			buf = vim.api.nvim_win_get_buf(win)
+			vim.fn.writefile({ 'after' }, filepath)
+
+			assert.is_not_nil(autocmds.BufWritePost)
+			autocmds.BufWritePost[1].callback()
+		end)
+
+		vim.api.nvim_create_autocmd = original_create_autocmd
+		vim.api.nvim_chan_send = original_chan_send
+		config.markdown.tools = saved_tools
+		config.float = saved_float
+		config.auto_refresh = saved_auto_refresh
+		vim.fn.delete(filepath)
+
+		if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_config(win).relative ~= '' then
+			vim.api.nvim_win_close(win, true)
+		end
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+		if vim.api.nvim_buf_is_valid(source_buf) then
+			vim.api.nvim_buf_delete(source_buf, { force = true })
+		end
+		if not ok then
+			error(err)
+		end
+
+		assert.equals(4, #sent)
+		assert.equals('after', vim.trim((sent[#sent] or ''):gsub('\27%[2J\27%[H', '')))
 	end)
 end)
