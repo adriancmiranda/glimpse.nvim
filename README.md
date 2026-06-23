@@ -310,6 +310,22 @@ Set `auto_open = true` to render non-text previewable files opened directly with
 Neovim or selected normally in a file explorer. Native text formats such as
 Markdown and PlantUML remain editable; use the preview key to render them.
 
+### Explicit preview command
+
+Use `:GlimpsePreview` to preview the current buffer without depending on a file
+explorer integration:
+
+```vim
+:GlimpsePreview
+:GlimpsePreview README.md
+:GlimpsePreview %
+:GlimpsePreview ~/models/scene.blend
+```
+
+The optional path supports file completion and expands relative paths, `~`, and
+`%`. Glimpse currently selects the preview destination automatically according
+to the file type.
+
 ### Float sizing
 
 `float.width` and `float.height` override every floating preview. A preview-specific

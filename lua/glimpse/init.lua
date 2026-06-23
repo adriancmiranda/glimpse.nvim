@@ -43,6 +43,9 @@
 ---@field pipelines? table<string, GlimpsePipelineConfig> Conversion pipelines by preview type or extension
 ---@field integrations? GlimpseIntegrationsConfig Plugin integrations
 
+---@class GlimpsePreviewOptions
+---@field target? 'auto' Reserved preview target (default: 'auto')
+
 ---@class GlimpseInlineConfig
 ---@field rerender_on_tab? boolean Re-render when returning to an image tab (default: true)
 ---@field close_with_q? boolean Map a key to close the image buffer (default: true)
@@ -147,6 +150,7 @@ local inline = require('glimpse.strategy.inline')
 ---@class Glimpse
 local M = {}
 local setup_auto_open
+local setup_commands
 
 ---@type GlimpseConfig
 local config = {
@@ -406,6 +410,7 @@ function M.setup(opts)
 	config.integrations.telescope = normalize_telescope_config(config.integrations.telescope)
 	kind_cache = {}
 	kind_cache_revision = kind_cache_revision + 1
+	setup_commands()
 	setup_auto_open()
 	if M._should_use_inline() and config.inline.rerender_on_tab then
 		inline.setup_autocmds()
@@ -632,9 +637,37 @@ setup_auto_open = function()
 	})
 end
 
+setup_commands = function()
+	vim.api.nvim_create_user_command('GlimpsePreview', function(command)
+		local filepath = vim.trim(command.args)
+		if filepath == '' then
+			filepath = vim.api.nvim_buf_get_name(0)
+		else
+			filepath = vim.fn.expand(filepath)
+		end
+		if filepath == '' then
+			vim.notify('[glimpse] current buffer has no file', vim.log.levels.WARN)
+			return
+		end
+		filepath = vim.fn.fnamemodify(filepath, ':p')
+		M.preview(filepath, { target = 'auto' })
+	end, {
+		nargs = '?',
+		complete = 'file',
+		desc = 'Preview a file with Glimpse',
+		force = true,
+	})
+end
+
 --- Quick preview (reuses an existing window or opens a float).
 ---@param filepath string Absolute file path
-function M.preview(filepath)
+---@param opts? GlimpsePreviewOptions Preview options reserved for target selection
+function M.preview(filepath, opts)
+	local target = (opts and opts.target) or 'auto'
+	if target ~= 'auto' then
+		vim.notify('[glimpse] unsupported preview target: ' .. target, vim.log.levels.WARN)
+		return
+	end
 	if util.is_image(filepath) and util.is_git_lfs_pointer(filepath) then
 		return
 	end
