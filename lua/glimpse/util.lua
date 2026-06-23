@@ -241,6 +241,7 @@ local _model_exts = {
 	iges = true,
 	abc = true,
 	brep = true,
+	blend = true,
 }
 
 --- Check whether the file is a supported 3D model.

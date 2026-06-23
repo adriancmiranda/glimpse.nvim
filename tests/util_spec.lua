@@ -161,6 +161,7 @@ describe('util', function()
 			assert.is_true(util.is_model('/path/to/model.iges'))
 			assert.is_true(util.is_model('/path/to/model.abc'))
 			assert.is_true(util.is_model('/path/to/model.brep'))
+			assert.is_true(util.is_model('/path/to/scene.blend'))
 		end)
 
 		it('is case-insensitive', function()

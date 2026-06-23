@@ -271,6 +271,36 @@ local config = {
 				seek_backward = 'h',
 			},
 		},
+		['.blend'] = {
+			previewers = {
+				{
+					command = 'f3d',
+					output_ext = '.png',
+					args = function(input, output)
+						return { input, '--output', output, '--config=thumbnail' }
+					end,
+				},
+				{
+					command = 'blender',
+					output_ext = '.png',
+					args = function(input, output)
+						return {
+							'--background',
+							input,
+							'--render-output',
+							output:gsub('%.png$', '_'),
+							'--render-format',
+							'PNG',
+							'--render-frame',
+							'1',
+						}
+					end,
+					output_pattern = function(output)
+						return output:gsub('%.png$', '_0001.png')
+					end,
+				},
+			},
+		},
 	},
 	markdown = {
 		formats = { '.md', '.markdown', '.mdx', '.mdwn', '.mdown' },
