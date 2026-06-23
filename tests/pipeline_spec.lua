@@ -163,6 +163,29 @@ describe('pipeline', function()
 			assert.is_not_nil(calls.jobstart[1].cmd[4]:match('%.svg$'))
 		end)
 
+		it('uses output_pattern to find and retain the actual output', function()
+			local result
+			local cfg = {
+				steps = {
+					{
+						command = 'blender',
+						args = { '{input}', '{output}' },
+						output_pattern = function(output)
+							return output:gsub('%.png$', '_0001.png')
+						end,
+					},
+				},
+			}
+			pipeline.run_steps(cfg, '/in/scene.blend', function(r)
+				result = r
+			end)
+			fire_exit(1, 0)
+
+			assert.equals('/tmp/glimpse_test_1_0001.png', result.path)
+			result.cleanup()
+			assert.equals('/tmp/glimpse_test_1_0001.png', calls.removed[1])
+		end)
+
 		it('returns error when step fails', function()
 			local result, err
 			local cfg = {

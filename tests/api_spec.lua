@@ -79,6 +79,9 @@ describe('public api', function()
 		assert.equals('f3d', config.pipelines.model.steps[1].command)
 		assert.equals('.png', config.pipelines.model.steps[1].output_ext)
 		assert.equals(12, config.pipelines.model.renderer.fps)
+		assert.equals('f3d', config.pipelines['.blend'].previewers[1].command)
+		assert.equals('blender', config.pipelines['.blend'].previewers[2].command)
+		assert.is_function(config.pipelines['.blend'].previewers[2].output_pattern)
 		assert.are.same(
 			{ '.zip', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.txz', '.jar', '.war', '.apk' },
 			config.archive.formats

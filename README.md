@@ -11,7 +11,7 @@
 
 - 🖼️ Inline rendering via **Kitty Graphics Protocol** (Kitty, Ghostty)
 - 🎬 **Inline video playback** via Kitty Animation Protocol (play/pause, seek); thumbnail fallback for other terminals
-- 🧊 **3D model preview** via f3d, with configurable turntable animation
+- 🧊 **3D model preview** via f3d, with Blender fallback for `.blend` files and configurable turntable animation
 - 📝 **Markdown preview** via a configurable CLI renderer (leaf, glow, mdcat, pandoc) with full ANSI color support
 - 📊 **Diagram preview** - PlantUML (`.puml`) and Mermaid (`.mmd`) rendered as inline images
 - 📦 **Archive preview** - list contents of zip/tar without extraction
@@ -35,6 +35,7 @@
 - [ImageMagick](https://imagemagick.org/) (`magick` CLI) - inline image conversion and font rendering
 - [ffmpeg](https://ffmpeg.org/) (optional) - video thumbnail extraction
 - [f3d](https://f3d.app/) (optional) - 3D model thumbnails and turntable frames
+- [Blender](https://www.blender.org/) (optional) - fallback renderer for `.blend` files
 - [plantuml](https://plantuml.com/) (optional) - PlantUML diagram rendering (requires Java)
 - [mmdc](https://github.com/mermaid-js/mermaid-cli) (optional) - Mermaid diagram rendering
 - One of [leaf](https://github.com/rivolink/leaf), [glow](https://github.com/charmbracelet/glow), [mdcat](https://github.com/BIRSAx2/mdcat), or [pandoc](https://pandoc.org/) (optional) - Markdown rendering
@@ -56,7 +57,7 @@
 | Inline image preview | `magick` | Yes |
 | Font rendering | `magick` | Yes, with textual fallback if unavailable |
 | Video preview | `ffmpeg` | No |
-| 3D model preview | `f3d` | No |
+| 3D model preview | `f3d`, with optional `blender` fallback for `.blend` | No |
 | Archive preview | `zipinfo`, `tar` | Yes when the archive type is used |
 | SQLite preview | `sqlite3` | Yes when the SQLite preview is used |
 | Certificate preview | `openssl` | Yes when the certificate preview is used |
@@ -240,6 +241,32 @@ loading trigger.
         seek_backward = 'h',
       },
     },
+    ['.blend'] = {
+      previewers = {
+        {
+          command = 'f3d',
+          output_ext = '.png',
+          args = function(input, output)
+            return { input, '--output', output, '--config=thumbnail' }
+          end,
+        },
+        {
+          command = 'blender',
+          output_ext = '.png',
+          args = function(input, output)
+            return {
+              '--background', input,
+              '--render-output', output:gsub('%.png$', '_'),
+              '--render-format', 'PNG',
+              '--render-frame', '1',
+            }
+          end,
+          output_pattern = function(output)
+            return output:gsub('%.png$', '_0001.png')
+          end,
+        },
+      },
+    },
   },
   archive = {
     formats = {
@@ -321,6 +348,10 @@ require('glimpse').setup({
   },
 })
 ```
+
+`.blend` files try f3d first, then Blender when f3d is unavailable or fails.
+Blender renders frame 1 with the camera and render settings stored in the
+scene.
 
 `steps` form a sequential conversion chain: each output becomes the next
 step's input. `previewers` are alternatives: Glimpse tries them in order,

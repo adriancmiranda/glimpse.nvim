@@ -8,6 +8,7 @@
 ---@field type? 'static'|'sequence' Default: 'static'
 ---@field frames? integer Number of frames to generate when type='sequence' (default: 36)
 ---@field output_ext? string Extension for the output file when type='static' (default: '.png')
+---@field output_pattern? string|fun(output: string, extra: integer): string File path actually produced by the command
 
 ---@class GlimpsePipelineConfig
 ---@field steps? GlimpsePipelineEntry[] Sequential chain: each step's output feeds the next
@@ -78,6 +79,23 @@ local function resolve_args(entry, input, output, extra)
 		end
 	end
 	return resolved
+end
+
+--- Resolve the file path a static command actually produces.
+--- @param entry GlimpsePipelineEntry
+--- @param output string Requested output path
+--- @param extra? integer
+--- @return string
+local function resolve_output(entry, output, extra)
+	if type(entry.output_pattern) == 'function' then
+		return entry.output_pattern(output, extra or 0)
+	end
+	if type(entry.output_pattern) == 'string' then
+		return entry.output_pattern:gsub('{output}', function()
+			return output
+		end)
+	end
+	return output
 end
 
 --- Run one frame of a sequence entry (one jobstart per frame).
@@ -154,6 +172,7 @@ local function run_entry(entry, input, output, on_done, extra)
 
 	local args = resolve_args(entry, input, output, extra)
 	local cmd = vim.list_extend({ entry.command }, args)
+	local actual_output = resolve_output(entry, output, extra)
 	local cancelled = false
 
 	local job_id = vim.fn.jobstart(cmd, {
@@ -167,14 +186,14 @@ local function run_entry(entry, input, output, on_done, extra)
 				end)
 				return
 			end
-			if not vim.uv.fs_stat(output) then
+			if not vim.uv.fs_stat(actual_output) then
 				vim.schedule(function()
 					on_done(nil, entry.command .. ' did not produce output')
 				end)
 				return
 			end
 			vim.schedule(function()
-				on_done(output, nil)
+				on_done(actual_output, nil)
 			end)
 		end,
 	})
@@ -324,7 +343,7 @@ local function run_chain(config, input, on_done, on_frame)
 		else
 			local ext = step.output_ext or '.png'
 			local output = vim.fn.tempname() .. ext
-			track(output, 'file')
+			track(resolve_output(step, output, fps), 'file')
 			cancel_current = run_entry(step, current_input, output, function(out, err)
 				if cancelled then
 					return
