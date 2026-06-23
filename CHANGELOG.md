@@ -16,6 +16,7 @@
 - [`264f9f9`](https://github.com/adriancmiranda/glimpse.nvim/commit/264f9f93624dfa2acff25269f5e569ee0ba4768a) *(mermaid)* Add Mermaid diagram previewer via pipeline
 - [`178ad46`](https://github.com/adriancmiranda/glimpse.nvim/commit/178ad46fa19e801db06f16d9653393acbc595e4d) Add safe automatic preview opening
 - [`285c8fd`](https://github.com/adriancmiranda/glimpse.nvim/commit/285c8fd90e7d0e3c127e2f73ce75e0cce28d9506) *(pipeline)* Add previewer fallback chains
+- [`e3d99b5`](https://github.com/adriancmiranda/glimpse.nvim/commit/e3d99b5f221f5c7f8444867f3db4ed22981f6d4e) *(model)* Add Blender fallback for blend files
 
 ### 🐛 Bug Fixes
 
