@@ -35,6 +35,7 @@ GlimpseConfig                                                    *GlimpseConfig*
         {cache?}         (GlimpseCacheConfig)                   Cache settings
         {safety?}        (GlimpseSafetyConfig)                  Safety settings
         {loading?}       (GlimpseLoadingConfig)                 Loading text
+        {auto_refresh?}  (boolean)                              Re-render open previews on save (default: false)
         {image?}         (GlimpseImageConfig)                   Image preview settings
         {video?}         (GlimpseVideoConfig)                   Video preview settings
         {archive?}       (GlimpseArchiveConfig)                 Archive preview settings
