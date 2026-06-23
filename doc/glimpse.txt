@@ -46,7 +46,8 @@ GlimpseConfig                                                    *GlimpseConfig*
 GlimpsePreviewOptions                                    *GlimpsePreviewOptions*
 
     Fields: ~
-        {target?}  ("auto")  Reserved preview target (default: 'auto')
+        {target?}  ("auto")                                 Reserved preview target (default: 'auto')
+        {window?}  ("float"|"right"|"left"|"bottom"|"top")  Where to open the preview (default: 'float')
 
 
 GlimpseInlineConfig                                        *GlimpseInlineConfig*
