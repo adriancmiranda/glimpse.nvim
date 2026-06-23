@@ -35,6 +35,7 @@
 - [`cec2c46`](https://github.com/adriancmiranda/glimpse.nvim/commit/cec2c465bd90ff65761a8be658bc0d1c8842b198) *(oil)* Refresh images after toggling float
 - [`984f6b0`](https://github.com/adriancmiranda/glimpse.nvim/commit/984f6b075974f23e52a301d611df2d5b22273b58) *(auto-open)* Keep model files in text buffers
 - [`78c150c`](https://github.com/adriancmiranda/glimpse.nvim/commit/78c150c43086f37fb6dd0ce7f7e8accc2d53f804) *(auto-open)* Keep models as text inline
+- [`98b9f59`](https://github.com/adriancmiranda/glimpse.nvim/commit/98b9f593885ba692f2a819e98a6551cd3a3d642f) Replace em dash with hyphen in auto-refresh feature bullet
 
 ### 🚜 Refactor
 
