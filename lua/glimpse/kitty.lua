@@ -480,4 +480,24 @@ function M.prefetch(filepath, opts)
 	})
 end
 
+--- Clear the in-memory conversion and dimension caches, and delete all converted
+--- files from the cache directory on disk.
+function M.clear_cache()
+	convert_cache = {}
+	dims_cache = {}
+	local cache_dir = get_cache_dir()
+	local handle = vim.uv.fs_scandir(cache_dir)
+	if handle then
+		while true do
+			local name, ftype = vim.uv.fs_scandir_next(handle)
+			if not name then
+				break
+			end
+			if ftype == 'file' then
+				vim.uv.fs_unlink(cache_dir .. '/' .. name)
+			end
+		end
+	end
+end
+
 return M

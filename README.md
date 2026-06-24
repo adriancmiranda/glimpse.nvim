@@ -335,6 +335,28 @@ The optional path supports file completion and expands relative paths, `~`, and
 `%`. Glimpse currently selects the preview destination automatically according
 to the file type.
 
+An optional `[window]` argument controls where the preview opens:
+
+```vim
+:GlimpsePreview right
+:GlimpsePreview left README.md
+:GlimpsePreview bottom ~/models/scene.blend
+```
+
+Valid values are `float` (default), `right`, `left`, `bottom`, and `top`.
+
+### Cache management
+
+`:GlimpseClearCache` removes cached conversions so the next preview re-runs from
+scratch. Useful when a file has changed on disk but the cached version is stale,
+or to free up disk space.
+
+```vim
+:GlimpseClearCache           " clear everything
+:GlimpseClearCache images    " image conversions only (disk + memory)
+:GlimpseClearCache previews  " text preview cache only (markdown, sqlite, etc.)
+```
+
 ### Float sizing
 
 `float.width` and `float.height` override every floating preview. A preview-specific
