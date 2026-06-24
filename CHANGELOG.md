@@ -8,6 +8,13 @@
 
 ### 🚀 Features
 
+- [`7cd0126`](https://github.com/adriancmiranda/glimpse.nvim/commit/7cd0126961c8e6aed2cd0b2bca0a215f8f13b4cf) Add :GlimpseClearCache command with optional images/previews argument
+
+
+## [2.2.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v2.1.0..v2.2.0) - 2026-06-23
+
+### 🚀 Features
+
 - [`bb0577e`](https://github.com/adriancmiranda/glimpse.nvim/commit/bb0577e664dbbbb37438455a52b1f40ed85157a3) *(video)* Add configurable frame extraction width
 - [`35fe92c`](https://github.com/adriancmiranda/glimpse.nvim/commit/35fe92c4a2a4eee76254be3cde273f5d6eaacc40) *(model)* Add 3D model previews via conversion pipeline
 - [`70430c7`](https://github.com/adriancmiranda/glimpse.nvim/commit/70430c732d5b17bfb678287e69aca6e4d6de5353) *(markdown)* Add Markdown previewer with configurable CLI renderer
