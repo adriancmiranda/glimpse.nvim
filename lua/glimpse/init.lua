@@ -643,6 +643,26 @@ end
 local WINDOW_VALUES = { float = true, right = true, left = true, bottom = true, top = true }
 
 setup_commands = function()
+	vim.api.nvim_create_user_command('GlimpseClearCache', function(command)
+		local arg = vim.trim(command.args)
+		local clear_images = arg == '' or arg == 'images'
+		local clear_previews = arg == '' or arg == 'previews'
+		if clear_images then
+			require('glimpse.kitty').clear_cache()
+		end
+		if clear_previews then
+			require('glimpse.preview_cache').clear()
+		end
+		vim.notify('[glimpse] cache cleared', vim.log.levels.INFO)
+	end, {
+		nargs = '?',
+		complete = function()
+			return { 'images', 'previews' }
+		end,
+		desc = 'Clear the Glimpse cache (images, previews, or all)',
+		force = true,
+	})
+
 	vim.api.nvim_create_user_command('GlimpsePreview', function(command)
 		local args = vim.trim(command.args)
 		local window, filepath_arg
