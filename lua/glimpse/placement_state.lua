@@ -12,6 +12,7 @@ local M = {}
 --- @field win_cols number|nil Window width when the image was last rendered
 --- @field win_rows number|nil Window height when the image was last rendered
 --- @field job_id number|nil Active transmit job ID
+--- @field suppressed boolean|nil When true, rerenders are blocked (e.g. while an Oil float is open)
 
 --- @type table<number, ImagePlacement>
 local placements = {}

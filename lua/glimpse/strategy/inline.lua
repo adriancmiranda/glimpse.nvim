@@ -222,15 +222,26 @@ function M.setup_autocmds()
 	})
 
 	local resize_timer = nil
+	local resized_wins = {}
 	vim.api.nvim_create_autocmd('WinResized', {
 		group = group,
 		callback = function()
+			-- Accumulate only the windows that actually changed size.
+			-- vim.v.event.windows lists them; without it every image rerenders
+			-- whenever any window is created (e.g. an Oil float), causing a
+			-- flash of the image inside the new window.
+			local evwins = vim.v.event and vim.v.event.windows or {}
+			for _, w in ipairs(evwins) do
+				resized_wins[w] = true
+			end
 			if resize_timer then
 				resize_timer:stop()
 			end
 			resize_timer = vim.defer_fn(function()
 				resize_timer = nil
-				for _, win in ipairs(vim.api.nvim_list_wins()) do
+				local wins = resized_wins
+				resized_wins = {}
+				for win, _ in pairs(wins) do
 					if vim.api.nvim_win_is_valid(win) then
 						local buf = vim.api.nvim_win_get_buf(win)
 						if vim.bo[buf].filetype == 'image' and renderer.has_placement(buf) then

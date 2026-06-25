@@ -233,6 +233,41 @@ function M.find_by_filepath(filepath)
 	return placement_state.find_by_filepath(filepath)
 end
 
+--- Suppress an image: hide it and block all rerenders until unsuppressed.
+--- Used when a float (e.g. Oil) opens over the image window so neither the
+--- original placement nor any in-flight async callback bleeds through the float.
+--- @param buf number
+function M.suppress(buf)
+	local placement = placement_state.get(buf)
+	if not placement then
+		return
+	end
+	-- Cancel any in-flight transmit job and invalidate request_id so its
+	-- callback is discarded even if the job already completed.
+	if placement.job_id then
+		pcall(vim.fn.jobstop, placement.job_id)
+		placement.job_id = nil
+	end
+	_pending_rerender[buf] = nil
+	request_counter = request_counter + 1
+	placement.request_id = request_counter
+	if placement.image_id then
+		kitty.delete(placement.image_id)
+		placement.image_id = nil
+	end
+	vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+	placement.suppressed = true
+end
+
+--- Lift suppression so rerenders are allowed again.
+--- @param buf number
+function M.unsuppress(buf)
+	local placement = placement_state.get(buf)
+	if placement then
+		placement.suppressed = false
+	end
+end
+
 --- Close and clean up a placement.
 --- @param buf number
 function M.close(buf)
@@ -277,6 +312,9 @@ function M.rerender(buf, opts)
 	if not placement then
 		return
 	end
+	if placement.suppressed then
+		return
+	end
 	-- Skip if it was created less than 500ms ago
 	local created_at = placement.created_at or 0
 	if not opts.force and created_at > 0 and (vim.uv.hrtime() - created_at) < 500e6 then
@@ -316,7 +354,7 @@ function M.rerender(buf, opts)
 		if _pending_rerender[buf] and not placement.closed and vim.api.nvim_buf_is_valid(buf) then
 			_pending_rerender[buf] = nil
 			vim.schedule(function()
-				M.rerender(buf)
+				M.rerender(buf, { force = true })
 			end)
 		end
 	end

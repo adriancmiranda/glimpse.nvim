@@ -6,11 +6,53 @@ local function refresh_source_image(buf)
 	if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= 'image' then
 		return
 	end
-
 	local renderer = require('glimpse.renderer')
 	if renderer.has_placement(buf) then
 		renderer.rerender(buf, { force = true })
 	end
+end
+
+local function find_oil_float()
+	for _, win in ipairs(vim.api.nvim_list_wins()) do
+		if vim.api.nvim_win_is_valid(win) then
+			local buf = vim.api.nvim_win_get_buf(win)
+			local cfg = vim.api.nvim_win_get_config(win)
+			if vim.bo[buf].filetype == 'oil' and cfg.relative ~= '' then
+				return win
+			end
+		end
+	end
+end
+
+-- Register a WinClosed autocmd that unsuppresses and re-renders when the Oil float closes.
+-- suppress() must already have been called BEFORE oil.toggle_float/open_float to avoid flash.
+local function watch_oil_float(source_buf)
+	local win = find_oil_float()
+	if not win then
+		-- toggle_float closed the float instead of opening it
+		local renderer = require('glimpse.renderer')
+		renderer.unsuppress(source_buf)
+		refresh_source_image(source_buf)
+		return
+	end
+	local renderer = require('glimpse.renderer')
+	vim.api.nvim_create_autocmd('WinClosed', {
+		pattern = tostring(win),
+		once = true,
+		callback = function()
+			-- Run synchronously: the image window is still valid at WinClosed time
+			-- and we need to start the job before WinResized fires and invalidates request_id.
+			renderer.unsuppress(source_buf)
+			refresh_source_image(source_buf)
+		end,
+	})
+end
+
+local function suppress_image(buf)
+	if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= 'image' then
+		return
+	end
+	require('glimpse.renderer').suppress(buf)
 end
 
 local function get_process_cwd()
@@ -96,19 +138,39 @@ function M.resolve_float_dir()
 	return vim.fs.dirname(target) or cwd, nil
 end
 
+-- Register a one-shot User OilEnter autocmd to position the cursor after Oil
+-- finishes rendering its directory listing (get_entry_on_line returns nil until then).
+local function register_cursor_on_open(name)
+	if not name then
+		return
+	end
+	vim.api.nvim_create_autocmd('User', {
+		pattern = 'OilEnter',
+		once = true,
+		callback = function()
+			if vim.bo[vim.api.nvim_get_current_buf()].filetype == 'oil' then
+				set_cursor_to_entry(name)
+			end
+		end,
+	})
+end
+
 function M.open_float(opts)
 	opts = opts or {}
 	local oil = require('oil')
 	local source_buf = vim.api.nvim_get_current_buf()
+	-- Suppress before Oil opens so no in-flight transmit job flashes through the float.
+	suppress_image(source_buf)
 	local dirpath, cursor_name = M.resolve_float_dir()
-	oil.open_float(dirpath, opts.oil_opts, function()
-		if cursor_name then
-			set_cursor_to_entry(cursor_name)
-		end
+	-- open_float always opens; register cursor handler before the call so it
+	-- fires on the imminent OilEnter (Oil renders asynchronously).
+	register_cursor_on_open(cursor_name)
+	oil.open_float(dirpath)
+	vim.schedule(function()
 		if opts.cb then
 			opts.cb(dirpath, cursor_name)
 		end
-		refresh_source_image(source_buf)
+		watch_oil_float(source_buf)
 	end)
 end
 
@@ -116,15 +178,21 @@ function M.toggle_float(opts)
 	opts = opts or {}
 	local oil = require('oil')
 	local source_buf = vim.api.nvim_get_current_buf()
+	-- Suppress before Oil opens so no in-flight transmit job flashes through the float.
+	suppress_image(source_buf)
 	local dirpath, cursor_name = M.resolve_float_dir()
-	oil.toggle_float(dirpath, opts.oil_opts, function()
-		if cursor_name and vim.bo[vim.api.nvim_get_current_buf()].filetype == 'oil' then
-			set_cursor_to_entry(cursor_name)
-		end
+	-- Only register cursor handler when toggle will open Oil (not close it).
+	-- If Oil is already open, toggle closes it and OilEnter will never fire.
+	local is_opening = (find_oil_float() == nil)
+	if is_opening then
+		register_cursor_on_open(cursor_name)
+	end
+	oil.toggle_float(dirpath)
+	vim.schedule(function()
 		if opts.cb then
 			opts.cb(dirpath, cursor_name)
 		end
-		refresh_source_image(source_buf)
+		watch_oil_float(source_buf)
 	end)
 end
 
