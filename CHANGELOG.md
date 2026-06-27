@@ -10,6 +10,10 @@
 
 - [`7cd0126`](https://github.com/adriancmiranda/glimpse.nvim/commit/7cd0126961c8e6aed2cd0b2bca0a215f8f13b4cf) Add :GlimpseClearCache command with optional images/previews argument
 
+### 🐛 Bug Fixes
+
+- [`2cbec35`](https://github.com/adriancmiranda/glimpse.nvim/commit/2cbec35d3bc37fa17d26d83a4d2b32332f40fba1) Handle opts table in model.preview and model.show
+
 
 ## [2.2.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v2.1.0..v2.2.0) - 2026-06-23
 
