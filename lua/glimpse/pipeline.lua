@@ -10,11 +10,22 @@
 ---@field output_ext? string Extension for the output file when type='static' (default: '.png')
 ---@field output_pattern? string|fun(output: string, extra: integer): string File path actually produced by the command
 
+---@class GlimpsePipelineRendererConfig
+---@field type? 'inline'|'pane' Rendering target (default: 'inline')
+---@field fps? number Animation frame rate (default: 12)
+---@field progressive? boolean Start playing before all frames are ready (default: true)
+---@field auto_play? boolean Start animation automatically; false = manual seek with h/l, CR toggles (default: true)
+
+---@class GlimpsePipelineKeysConfig
+---@field toggle? string Keymap to toggle play/pause (default: '<CR>')
+---@field seek_forward? string Keymap to advance one frame (default: 'l')
+---@field seek_backward? string Keymap to go back one frame (default: 'h')
+
 ---@class GlimpsePipelineConfig
 ---@field steps? GlimpsePipelineEntry[] Sequential chain: each step's output feeds the next
 ---@field previewers? GlimpsePipelineEntry[] Alternative commands tried in order until one succeeds
----@field renderer? { type?: 'inline'|'pane', fps?: number, progressive?: boolean }
----@field keys? { toggle?: string, seek_forward?: string, seek_backward?: string }
+---@field renderer? GlimpsePipelineRendererConfig Animation and rendering options
+---@field keys? GlimpsePipelineKeysConfig Keymaps for animation playback
 
 ---@class GlimpsePipelineResult
 ---@field path string Final output file path

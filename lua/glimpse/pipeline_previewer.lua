@@ -160,11 +160,12 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 	local anim_frames = {}
 	local anim_started = false
 	local anim_frame_idx = 1
-	local paused = false
 
 	local fps = (pipeline_cfg.renderer and pipeline_cfg.renderer.fps) or 12
 	local delay_ms = math.max(1, math.floor(1000 / fps))
 	local progressive = not (pipeline_cfg.renderer and pipeline_cfg.renderer.progressive == false)
+	local auto_play = not (pipeline_cfg.renderer and pipeline_cfg.renderer.auto_play == false)
+	local paused = not auto_play
 
 	local function ensure_window()
 		if anim_buf and vim.api.nvim_buf_is_valid(anim_buf) then
@@ -429,8 +430,10 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 		if not anim_started then
 			if #anim_frames >= 2 then
 				anim_started = true
-				anim_timer = vim.uv.new_timer()
-				anim_timer:start(delay_ms, 0, vim.schedule_wrap(advance))
+				if auto_play then
+					anim_timer = vim.uv.new_timer()
+					anim_timer:start(delay_ms, 0, vim.schedule_wrap(advance))
+				end
 			else
 				_states[winid] = nil
 				_tokens[winid] = nil
@@ -451,7 +454,10 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 				local seek_bwd_key = pkeys.seek_backward or 'h'
 				vim.keymap.set('n', toggle_key, function()
 					paused = not paused
-					if not paused and anim_timer then
+					if not paused then
+						if not anim_timer then
+							anim_timer = vim.uv.new_timer()
+						end
 						anim_timer:start(delay_ms, 0, vim.schedule_wrap(advance))
 					end
 				end, { buffer = anim_buf, silent = true, desc = 'Toggle animation' })
@@ -463,7 +469,7 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 				end, { buffer = anim_buf, silent = true, desc = 'Seek backward 1 frame' })
 			end
 		end
-		if progressive and #anim_frames == 2 and not anim_started then
+		if progressive and auto_play and #anim_frames == 2 and not anim_started then
 			anim_started = true
 			anim_timer = vim.uv.new_timer()
 			anim_timer:start(delay_ms, 0, vim.schedule_wrap(advance))
