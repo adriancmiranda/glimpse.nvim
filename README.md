@@ -120,22 +120,37 @@ format list in the lazy-loading specification. `keys.preview` configures the
 mapping installed by the file explorer integration; it is not a lazy.nvim
 loading trigger.
 
+The full default setup is available here as a reference when overriding only
+part of the configuration:
+
 <details>
 <summary>Default configuration</summary>
 
 ```lua
 {
+  -- Rendering backend: 'auto', 'inline', or 'pane'. 'auto' uses inline
+  -- terminal graphics when supported, otherwise it falls back to a pane.
   strategy = 'auto',
+
+  -- Render non-text previewable files as soon as they are opened.
   auto_open = false,
+
+  -- Re-render open previews when the source file is saved.
   auto_refresh = false,
+
+  -- External pane settings used when inline rendering is unavailable.
   pane = {
     position = 'right',
     size = 40,
   },
+
+  -- Inline image buffer behavior.
   inline = {
     rerender_on_tab = true,
     close_with_q = true,
   },
+
+  -- Default floating window sizes for text-like previews.
   float = {
     markdown = { width = 100 },
     archive = { width = 70 },
@@ -145,40 +160,58 @@ loading trigger.
     sqlite = { width = 80 },
     binary = { width = 100 },
   },
+
+  -- File explorer mappings installed by integrations such as Oil.nvim.
   keys = {
     preview = '<leader>p',
     open = ';',
     close = 'q',
   },
+
+  -- Debounce intervals in milliseconds for background work.
   debounce = {
     prefetch = 200,
     resize = 100,
   },
+
+  -- Estimated terminal cell size in pixels, used for image scaling.
   cell_size = {
     width = 20,
     height = 40,
   },
+
+  -- Cache directory and expiration for generated preview artifacts.
   cache = {
     dir = vim.fn.stdpath('cache') .. '/glimpse',
     max_age_days = 7,
   },
+
+  -- Safety limits before invoking external tools on a file.
   safety = {
-    max_file_size = 50 * 1024 * 1024,
+    max_file_size = 50 * 1024 * 1024, -- 50 MiB
   },
+
+  -- Placeholder shown while an async preview is being generated.
   loading = {
     text = '  ⏳ Loading...',
   },
+
+  -- Image formats rendered directly through the selected strategy.
   image = {
     formats = {
       '.png', '.jpg', '.jpeg', '.gif', '.bmp',
       '.webp', '.avif', '.svg', '.pdf', '.pict',
     },
   },
+
+  -- Video formats and inline animation settings.
   video = {
     formats = {
       '.mp4', '.mkv', '.avi', '.mov',
       '.webm', '.flv', '.wmv', '.m4v',
     },
+    -- Optional external video opener: command string or function(filepath).
+    -- nil keeps videos in the inline preview flow.
     open = nil,
     frames = {
       -- 'auto' | 'pipe' | 'poll' | 'batch'
@@ -196,6 +229,8 @@ loading trigger.
       seek_backward = 'h',
     },
   },
+
+  -- Markdown renderers are fallback candidates tried in order.
   markdown = {
     formats = { '.md', '.markdown', '.mdx', '.mdwn', '.mdown' },
     tools = {
@@ -206,8 +241,12 @@ loading trigger.
       { 'cat', '{input}' },
     },
   },
+
+  -- Conversion pipelines map preview kinds or extensions to external commands.
   pipelines = {
+    -- PlantUML reads from stdin and writes a PNG to the requested output file.
     plantuml = {
+      -- steps run sequentially; each output becomes the next step's input.
       steps = {
         {
           command = 'sh',
@@ -217,7 +256,9 @@ loading trigger.
         },
       },
     },
+    -- Mermaid CLI writes the rendered diagram directly to the output path.
     mermaid = {
+      -- args receives the source path and the output path Glimpse expects.
       steps = {
         {
           command = 'mmdc',
@@ -227,7 +268,9 @@ loading trigger.
         },
       },
     },
+    -- 3D models render to a static thumbnail by default.
     model = {
+      -- A single static step produces one image for the preview.
       steps = {
         {
           command = 'f3d',
@@ -237,18 +280,23 @@ loading trigger.
           end,
         },
       },
+      -- renderer controls sequence playback when a pipeline produces frames.
       renderer = {
         fps = 12,
         progressive = true,
       },
+      -- keys apply to animated previews created from frame sequences.
       keys = {
         toggle = '<CR>',
         seek_forward = 'l',
         seek_backward = 'h',
       },
     },
+    -- Extension-specific pipelines override the generic model pipeline.
     ['.blend'] = {
+      -- previewers are fallbacks: Glimpse tries each command until one works.
       previewers = {
+        -- Try f3d first for Blender files.
         {
           command = 'f3d',
           output_ext = '.png',
@@ -256,6 +304,7 @@ loading trigger.
             return { input, '--output', output, '--config=thumbnail' }
           end,
         },
+        -- Fall back to Blender itself when f3d is unavailable or fails.
         {
           command = 'blender',
           output_ext = '.png',
@@ -274,6 +323,8 @@ loading trigger.
       },
     },
   },
+
+  -- Archive formats shown as read-only file listings.
   archive = {
     formats = {
       '.zip', '.tar', '.tar.gz', '.tgz',
@@ -281,6 +332,8 @@ loading trigger.
       '.jar', '.war', '.apk',
     },
   },
+
+  -- Optional integrations with file explorers and pickers.
   integrations = {
     oil = {
       enable = true,
@@ -293,8 +346,10 @@ loading trigger.
     },
     telescope = {
       enable = true,
+      -- Limit Glimpse previews to these Telescope pickers.
       pickers = { 'find_files' },
       follow_cwd = false,
+      -- Toggle individual preview kinds inside Telescope.
       image = true,
       video = true,
       archive = true,
@@ -309,6 +364,8 @@ loading trigger.
 ```
 
 </details>
+
+---
 
 ### Automatic opening
 
