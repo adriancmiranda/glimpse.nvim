@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   changelog:
@@ -35,11 +36,18 @@ jobs:
         env:
           GITHUB_REPO: ${{ github.repository }}
 
+      - name: Link pull requests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: sh .github/scripts/link-changelog-prs.sh CHANGELOG.md
+
       - name: Lint changelog
         run: make lint-changelog
 
       - name: Commit changelog
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPO: ${{ github.repository }}
         run: |
           git config user.name "github-actions[bot]"
@@ -59,6 +67,7 @@ jobs:
 
             echo "Regenerating changelog after sync"
             git cliff --config cliff.toml -o CHANGELOG.md
+            sh .github/scripts/link-changelog-prs.sh CHANGELOG.md
             make lint-changelog
             git add CHANGELOG.md
             git diff --cached --quiet || git commit -m "docs: update CHANGELOG.md"

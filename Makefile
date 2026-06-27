@@ -2,6 +2,11 @@ PLENARY_PATH ?= $(firstword $(wildcard $(HOME)/.local/share/nvim/packages/plenar
 MARKDOWNLINT_FILES ?= README.md CONTRIBUTING.md
 MARKDOWNLINT_VERSION ?= 0.48.0
 
+define generate_changelog
+	@git cliff -o $(1)
+	@sh .github/scripts/link-changelog-prs.sh $(1)
+endef
+
 .PHONY: test bench setup-hooks docs lint lint-fix lint-types lint-changelog changelog changelog-check release-notes
 
 test:
@@ -51,10 +56,10 @@ lint-changelog:
 	@npx --yes markdownlint-cli@$(MARKDOWNLINT_VERSION) CHANGELOG.md
 
 changelog:
-	@git cliff -o CHANGELOG.md
+	$(call generate_changelog,CHANGELOG.md)
 
 changelog-check:
-	@git cliff -o /tmp/CHANGELOG.md
+	$(call generate_changelog,/tmp/CHANGELOG.md)
 
 release-notes:
 	@git cliff --config cliff.toml --latest --strip header
