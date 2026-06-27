@@ -19,6 +19,7 @@
 ### 📚 Documentation
 
 - [`99ffe33`](https://github.com/adriancmiranda/glimpse.nvim/commit/99ffe33fb1890e6898226e9e604326e01d065018) Document pipe as default frame extraction strategy
+- [`b014357`](https://github.com/adriancmiranda/glimpse.nvim/commit/b01435703240a8f7e30ea4e4ec3f06a615bff27f) Highlight default configuration
 
 
 ## [2.2.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v2.1.0..v2.2.0) - 2026-06-23
