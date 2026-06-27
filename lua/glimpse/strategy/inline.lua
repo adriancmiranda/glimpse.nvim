@@ -18,21 +18,32 @@ local function debug_log(message)
 	end)
 end
 
-local function resolve_size(cfg_size, mode)
-	if type(cfg_size) == 'number' then
-		return cfg_size
-	end
-	if type(cfg_size) == 'table' then
-		return cfg_size[mode]
-	end
-end
-
 local function window_col(win)
 	local ok, pos = pcall(vim.api.nvim_win_get_position, win)
 	if not ok or type(pos) ~= 'table' then
 		return nil
 	end
 	return pos[2]
+end
+
+local function resolve_vsplit_size(cfg_size, source_win, preview_win)
+	if type(cfg_size) == 'number' then
+		return cfg_size
+	end
+	if type(cfg_size) ~= 'table' then
+		return nil
+	end
+
+	local source_col = window_col(source_win)
+	local preview_col = window_col(preview_win)
+	if source_col == nil or preview_col == nil then
+		return cfg_size.right
+	end
+
+	if preview_col < source_col then
+		return cfg_size.left
+	end
+	return cfg_size.right
 end
 
 local function _render_existing_buffer(buf)
@@ -132,7 +143,7 @@ function M.preview(filepath)
 	debug_log('preview create new split')
 	vim.cmd('vsplit')
 	local cfg = require('glimpse').get_config()
-	local win_size = resolve_size(cfg.size, 'right')
+	local win_size = resolve_vsplit_size(cfg.size, oil_win, vim.api.nvim_get_current_win())
 	if win_size then
 		vim.api.nvim_win_set_width(0, win_size)
 	end
@@ -142,6 +153,8 @@ function M.preview(filepath)
 	preview_state.mark(buf)
 	vim.api.nvim_set_current_win(oil_win)
 end
+
+M._resolve_vsplit_size = resolve_vsplit_size
 
 --- Show an image in the current buffer.
 --- @param filepath string

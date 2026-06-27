@@ -200,10 +200,7 @@ local function _show_animated(filepath, mode, source_win)
 			anim_win = vim.api.nvim_get_current_win()
 			vim.api.nvim_win_set_buf(anim_win, anim_buf)
 			if mode == 'preview' then
-				local raw_size = config.size
-				local win_size = type(raw_size) == 'number' and raw_size
-					or (type(raw_size) == 'table' and raw_size['right'])
-					or nil
+				local win_size = require('glimpse.strategy.inline')._resolve_vsplit_size(config.size, oil_win, anim_win)
 				if win_size then
 					vim.api.nvim_win_set_width(anim_win, win_size)
 				end
