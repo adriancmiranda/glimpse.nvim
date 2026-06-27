@@ -18,6 +18,15 @@ local function debug_log(message)
 	end)
 end
 
+local function resolve_size(cfg_size, mode)
+	if type(cfg_size) == 'number' then
+		return cfg_size
+	end
+	if type(cfg_size) == 'table' then
+		return cfg_size[mode]
+	end
+end
+
 local function window_col(win)
 	local ok, pos = pcall(vim.api.nvim_win_get_position, win)
 	if not ok or type(pos) ~= 'table' then
@@ -122,6 +131,11 @@ function M.preview(filepath)
 	-- Create a vsplit with a new buffer
 	debug_log('preview create new split')
 	vim.cmd('vsplit')
+	local cfg = require('glimpse').get_config()
+	local win_size = resolve_size(cfg.size, 'right')
+	if win_size then
+		vim.api.nvim_win_set_width(0, win_size)
+	end
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_win_set_buf(0, buf)
 	renderer.render(buf, filepath, { bufname = util.preview_buf_name(filepath, buf) })
