@@ -142,6 +142,7 @@
 ---@field oil? GlimpseOilConfig Keymaps in Oil.nvim (default: enabled)
 ---@field neotree? {enable?:boolean, auto_preview?:boolean} NeoTree integration config
 ---@field telescope? GlimpseTelescopeConfig Preview in Telescope (default: enabled)
+---@field lir? boolean|{enable?:boolean} lir.nvim integration (default: disabled)
 
 local detect = require('glimpse.detect')
 local safety = require('glimpse.safety')
@@ -339,6 +340,7 @@ local config = {
 			open = 'edit',
 			follow_cwd = true,
 		},
+		lir = false,
 		neotree = {
 			enable = false,
 			auto_preview = true,
@@ -411,6 +413,7 @@ function M.setup(opts)
 	config = vim.tbl_deep_extend('force', config, opts or {})
 	config.integrations.oil = normalize_oil_config(config.integrations.oil)
 	config.integrations.telescope = normalize_telescope_config(config.integrations.telescope)
+	config.integrations.lir = normalize_telescope_config(config.integrations.lir)
 	kind_cache = {}
 	kind_cache_revision = kind_cache_revision + 1
 	setup_commands()
@@ -450,6 +453,9 @@ function M.setup(opts)
 		vim.defer_fn(function()
 			require('glimpse.cache').cleanup(config.cache.dir, config.cache.max_age_days)
 		end, 0)
+	end
+	if config.integrations.lir.enable ~= false then
+		require('glimpse.integrations.lir').setup()
 	end
 end
 

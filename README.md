@@ -22,6 +22,7 @@
 - 🎨 **Sixel** fallback for terminals without Kitty Graphics support
 - 📂 **Oil.nvim** integration (`<leader>p` for preview, `;` to open)
 - 🔭 **Telescope** integration (scoped previews for images, videos, archives, SQLite, fonts, keys, certificates, and binaries)
+- 🧩 **lir.nvim** integration (`<leader>p` for preview, `;` to open)
 - 🌳 **Neo-tree** integration
 - 🔐 **Certificate preview** - show subject, issuer, validity, and
   fingerprint for `.crt`/`.pem`
@@ -340,6 +341,7 @@ part of the configuration:
       open = 'edit',
       follow_cwd = true,
     },
+    lir = false,
     neotree = {
       enable = false,
       auto_preview = true,
@@ -533,6 +535,15 @@ Enable with `integrations = { neotree = { enable = true } }` in setup.
 | ----------- | ----------------------------------------------- |
 | `<leader>p` | Preview image/video side by side                |
 | `;`         | Open image inline or video with external player |
+
+### Keymaps (lir.nvim)
+
+Enable with `integrations = { lir = true }` in setup.
+
+| Key | Action |
+|-----|--------|
+| `<leader>p` | Preview image/video side by side |
+| `;` | Open image inline or video with external player |
 
 ### Telescope
 
@@ -776,6 +787,7 @@ lua/
 │   │   └── pane.lua          -- External pane rendering (WezTerm, iTerm2)
 │   └── integrations/
 │       ├── oil.lua           -- Oil.nvim integration
+│       ├── lir.lua           -- lir.nvim integration
 │       ├── neotree.lua       -- Neo-tree integration (auto-preview)
 │       └── telescope.lua     -- Telescope integration (scoped picker preview)
 ```
