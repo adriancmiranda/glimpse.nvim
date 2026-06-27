@@ -113,7 +113,7 @@ describe('frames', function()
 			end
 			package.loaded['glimpse'] = {
 				get_config = function()
-					return { video = { frames = { strategy = 'pipe' } } }
+					return { video = { frames = { strategy = 'unknown' } } }
 				end,
 			}
 			package.loaded['glimpse.frames'] = nil
@@ -123,7 +123,7 @@ describe('frames', function()
 			end)
 
 			assert.is_function(cancel)
-			assert.equals("unsupported frame strategy 'pipe'", err)
+			assert.equals("unsupported frame strategy 'unknown'", err)
 
 			vim.schedule = original_schedule
 		end)
