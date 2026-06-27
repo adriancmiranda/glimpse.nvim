@@ -11,8 +11,9 @@ end
 
 --- Preview an image in the current preview target.
 --- @param filepath string
-function M.preview(filepath)
-	preview_route.preview(filepath)
+--- @param opts? { window?: string }
+function M.preview(filepath, opts)
+	preview_route.preview(filepath, opts)
 end
 
 return M

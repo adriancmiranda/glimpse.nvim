@@ -157,6 +157,7 @@ local setup_commands
 ---@type GlimpseConfig
 local config = {
 	strategy = 'auto',
+	window = nil,
 	auto_open = false,
 	pane = {
 		position = 'right',
@@ -711,7 +712,8 @@ function M.preview(filepath, opts)
 	if not safe then
 		return
 	end
-	previewer.preview(filepath, { window = opts and opts.window })
+	local cfg = M.get_config()
+	previewer.preview(filepath, { window = (opts and opts.window) or cfg.window })
 end
 
 --- Close the active preview.

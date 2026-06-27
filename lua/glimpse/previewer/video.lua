@@ -42,7 +42,7 @@ end
 --- Exposed for tests only.
 M._temp_registry = _temp_registry
 
-local function _show_thumbnail(filepath, mode, source_win)
+local function _show_thumbnail(filepath, mode, source_win, opts)
 	local winid = source_win or vim.api.nvim_get_current_win()
 	local token = {}
 	_tokens[winid] = token
@@ -62,7 +62,7 @@ local function _show_thumbnail(filepath, mode, source_win)
 			vim.api.nvim_set_current_win(winid)
 		end
 		if mode == 'preview' then
-			preview_route.preview(thumb)
+			preview_route.preview(thumb, opts)
 		else
 			preview_route.show(thumb)
 		end
@@ -75,7 +75,7 @@ end
 --- Animate: collect all frames via poll strategy and transmit directly via
 --- Kitty animation protocol. All frames use the same ffmpeg dimensions so
 --- Kitty receives consistent pixel sizes across the full sequence.
-local function _show_animated(filepath, mode, source_win)
+local function _show_animated(filepath, mode, source_win, opts)
 	local winid = source_win or vim.api.nvim_get_current_win()
 	local token = {}
 
@@ -153,6 +153,8 @@ local function _show_animated(filepath, mode, source_win)
 		end
 	end
 
+	local window_mode = (opts and opts.window) or 'right'
+
 	-- Find or create the image window; memoized so preview and full animation
 	-- share the same buf/win without opening a second split.
 	local function ensure_window()
@@ -194,7 +196,7 @@ local function _show_animated(filepath, mode, source_win)
 			anim_buf = target_buf
 		else
 			if mode == 'preview' then
-				vim.cmd('vsplit')
+				vim.cmd(window_mode == 'left' and 'leftabove vsplit' or 'vsplit')
 			end
 			anim_buf = vim.api.nvim_create_buf(false, true)
 			anim_win = vim.api.nvim_get_current_win()
@@ -511,7 +513,7 @@ local function _show_animated(filepath, mode, source_win)
 						if s then
 							s.stop(false)
 						end
-						_show_animated(filepath, mode, winid)
+						_show_animated(filepath, mode, winid, opts)
 					end)
 				)
 			end,
@@ -575,15 +577,16 @@ end
 
 --- Quick preview of a video using inline animation when supported, thumbnail otherwise.
 --- @param filepath string
-function M.preview(filepath)
+--- @param opts? { window?: 'right'|'left' }
+function M.preview(filepath, opts)
 	local glimpse = require('glimpse')
 	local use_anim = glimpse._should_use_inline()
 		and require('glimpse.detect').supports_animation()
 		and vim.fn.has('ttyin') == 1
 	if use_anim then
-		_show_animated(filepath, 'preview')
+		_show_animated(filepath, 'preview', nil, opts)
 	else
-		_show_thumbnail(filepath, 'preview')
+		_show_thumbnail(filepath, 'preview', nil, opts)
 	end
 end
 

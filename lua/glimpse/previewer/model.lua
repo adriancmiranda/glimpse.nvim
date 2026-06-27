@@ -87,7 +87,7 @@ end
 --- @param source_win? number|{window?: number}
 function M.show(filepath, source_win)
 	if type(source_win) == 'table' then
-		source_win = source_win.window
+		source_win = type(source_win.window) == 'number' and source_win.window or nil
 	end
 	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
@@ -102,7 +102,7 @@ end
 --- @param source_win? number|{window?: number}
 function M.preview(filepath, source_win)
 	if type(source_win) == 'table' then
-		source_win = source_win.window
+		source_win = type(source_win.window) == 'number' and source_win.window or nil
 	end
 	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
