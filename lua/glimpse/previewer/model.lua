@@ -84,8 +84,11 @@ end
 
 --- Show the model (full view).
 --- @param filepath string
---- @param source_win? number
+--- @param source_win? number|{window?: number}
 function M.show(filepath, source_win)
+	if type(source_win) == 'table' then
+		source_win = source_win.window
+	end
 	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
 		vim.notify('[glimpse] no pipeline config for model preview', vim.log.levels.WARN)
@@ -96,8 +99,11 @@ end
 
 --- Preview the model in the current preview target.
 --- @param filepath string
---- @param source_win? number
+--- @param source_win? number|{window?: number}
 function M.preview(filepath, source_win)
+	if type(source_win) == 'table' then
+		source_win = source_win.window
+	end
 	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
 		vim.notify('[glimpse] no pipeline config for model preview', vim.log.levels.WARN)
