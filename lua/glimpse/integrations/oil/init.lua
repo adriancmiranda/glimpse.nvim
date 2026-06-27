@@ -52,8 +52,9 @@ function M.setup()
 				require('glimpse.previewer.model').cancel()
 				require('glimpse.previewer.video').cancel()
 				local fpath = vim.fs.joinpath(current_dir, entry.name)
+				local window_opts = { window = require('glimpse').get_config().window }
 				if util.is_video(fpath) then
-					require('glimpse.previewer.video').preview(fpath)
+					require('glimpse.previewer.video').preview(fpath, window_opts)
 				else
 					require('glimpse').preview(fpath)
 				end

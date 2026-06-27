@@ -55,49 +55,63 @@ end
 
 --- Show an image in a vsplit, reusing an existing window.
 --- @param filepath string
-function M.preview(filepath)
+--- @param opts? { window?: 'right'|'left' }
+function M.preview(filepath, opts)
 	local oil_win = vim.api.nvim_get_current_win()
+	local oil_col = window_col(oil_win) or 0
+	local window_mode = (opts and opts.window) or 'right'
 	local existing_buf = renderer.find_by_filepath(filepath)
 	local target_win = nil
 	local target_buf = nil
 	local target_col = nil
 	debug_log(
 		string.format(
-			'preview filepath=%s oil_win=%d current_win=%d existing_buf=%s',
+			'preview filepath=%s oil_win=%d oil_col=%d mode=%s existing_buf=%s',
 			filepath,
 			oil_win,
-			vim.api.nvim_get_current_win(),
+			oil_col,
+			window_mode,
 			tostring(existing_buf)
 		)
 	)
 
 	-- Single pass:
-	--   (1) Prefer a window showing the same file that is also a preview —
-	--       same file opened via keys.open (not marked) is NOT reused so
-	--       that buffer stays untouched and a fresh preview split is created.
-	--   (2) Otherwise pick the rightmost marked preview window.
+	--   (1) Prefer a marked window showing the same file — reuse it wherever it is.
+	--   (2) Otherwise pick the best marked preview window: rightmost for 'right',
+	--       leftmost for 'left'. window_mode only affects the initial split direction;
+	--       once a preview is open we always reuse it on its current side.
+	--   (3) Unmarked buffers are the user's own buffers and must not be touched.
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
 		if win ~= oil_win and vim.bo[vim.api.nvim_win_get_buf(win)].filetype == 'image' then
 			local buf = vim.api.nvim_win_get_buf(win)
 			local marked = preview_state.is_marked(buf)
+			local col = window_col(win)
 			debug_log(
 				string.format(
-					'preview inspect win=%d buf=%d ft=%s marked=%s same=%s',
+					'preview inspect win=%d buf=%d marked=%s col=%s same=%s',
 					win,
 					buf,
-					vim.bo[buf].filetype,
 					tostring(marked),
+					tostring(col),
 					tostring(existing_buf == buf)
 				)
 			)
-			if existing_buf == buf and marked then
-				target_win = win
-				target_buf = buf
-				break
-			end
 			if marked then
-				local col = window_col(win)
-				if target_win == nil or (col ~= nil and (target_col == nil or col > target_col)) then
+				if existing_buf == buf then
+					target_win = win
+					target_buf = buf
+					break
+				end
+				local better = target_win == nil
+					or (
+						col ~= nil
+						and (
+							target_col == nil
+							or (window_mode == 'right' and col > target_col)
+							or (window_mode == 'left' and col < target_col)
+						)
+					)
+				if better then
 					target_win = win
 					target_buf = buf
 					target_col = col
@@ -119,9 +133,9 @@ function M.preview(filepath)
 		return
 	end
 
-	-- Create a vsplit with a new buffer
-	debug_log('preview create new split')
-	vim.cmd('vsplit')
+	-- Create a new split on the requested side
+	debug_log('preview create new split side=' .. window_mode)
+	vim.cmd(window_mode == 'left' and 'leftabove vsplit' or 'vsplit')
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_win_set_buf(0, buf)
 	renderer.render(buf, filepath, { bufname = util.preview_buf_name(filepath, buf) })

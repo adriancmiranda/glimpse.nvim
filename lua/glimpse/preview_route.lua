@@ -19,10 +19,11 @@ function M.show(filepath)
 	end
 end
 
-function M.preview(filepath)
+--- @param opts? { window?: string }
+function M.preview(filepath, opts)
 	local glimpse = require('glimpse')
 	if glimpse._should_use_inline() then
-		require('glimpse.strategy.inline').preview(filepath)
+		require('glimpse.strategy.inline').preview(filepath, opts)
 	else
 		require('glimpse.strategy.pane').show(filepath, pane_opts())
 	end
