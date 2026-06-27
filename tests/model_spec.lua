@@ -663,6 +663,118 @@ describe('model previewer', function()
 			assert.is_true(setup_on_existing)
 		end)
 
+		describe('renderer.auto_play = false', function()
+			local function stub_auto_play_config()
+				stub_package('glimpse', {
+					get_config = function()
+						return {
+							pipelines = {
+								model = {
+									steps = { { command = 'f3d', type = 'sequence', frames = 2, args = { '{input}', '{output}' } } },
+									renderer = { fps = 12, auto_play = false },
+								},
+							},
+						}
+					end,
+				})
+				package.loaded['glimpse.previewer.model'] = nil
+			end
+
+			local function write_frame(path)
+				local fh = io.open(path, 'wb')
+				if fh then
+					fh:write(string.rep('\0', 24))
+					fh:close()
+				end
+			end
+
+			it('timer does not start automatically after progressive frames', function()
+				stub_auto_play_config()
+				local p = '/tmp/glimpse_autoplay_prog_test.png'
+				write_frame(p)
+
+				local model = require('glimpse.previewer.model')
+				model.show('/path/to/model.obj')
+
+				calls.pipeline[1].on_frame(p, 0)
+				calls.pipeline[1].on_frame(p, 1)
+				os.remove(p)
+
+				assert.is_nil(calls.timer_cb)
+			end)
+
+			it('timer does not start automatically after on_done', function()
+				stub_auto_play_config()
+				local p = '/tmp/glimpse_autoplay_done_test.png'
+				write_frame(p)
+
+				local model = require('glimpse.previewer.model')
+				model.show('/path/to/model.obj')
+
+				calls.pipeline[1].on_frame(p, 0)
+				calls.pipeline[1].on_frame(p, 1)
+				calls.pipeline[1].on_done({ frames = { p, p }, tmpdir = '/tmp/seq_autoplay' }, nil)
+				os.remove(p)
+
+				assert.is_nil(calls.timer_cb)
+			end)
+
+			it('CR starts the timer on first press', function()
+				stub_auto_play_config()
+				local p = '/tmp/glimpse_autoplay_cr_test.png'
+				write_frame(p)
+
+				local model = require('glimpse.previewer.model')
+				model.show('/path/to/model.obj')
+
+				calls.pipeline[1].on_frame(p, 0)
+				calls.pipeline[1].on_frame(p, 1)
+				os.remove(p)
+
+				assert.is_nil(calls.timer_cb)
+
+				local toggle_rhs = nil
+				for _, km in ipairs(calls.keymaps or {}) do
+					if km.lhs == '<CR>' then
+						toggle_rhs = km.rhs
+						break
+					end
+				end
+				assert.is_not_nil(toggle_rhs)
+
+				toggle_rhs()
+				assert.is_not_nil(calls.timer_cb)
+			end)
+
+			it('CR on then off stops auto-play (timer not restarted)', function()
+				stub_auto_play_config()
+				local p = '/tmp/glimpse_autoplay_cr2_test.png'
+				write_frame(p)
+
+				local model = require('glimpse.previewer.model')
+				model.show('/path/to/model.obj')
+
+				calls.pipeline[1].on_frame(p, 0)
+				calls.pipeline[1].on_frame(p, 1)
+				os.remove(p)
+
+				local toggle_rhs = nil
+				for _, km in ipairs(calls.keymaps or {}) do
+					if km.lhs == '<CR>' then
+						toggle_rhs = km.rhs
+						break
+					end
+				end
+
+				toggle_rhs()
+				assert.is_not_nil(calls.timer_cb)
+
+				calls.timer_cb = nil
+				toggle_rhs()
+				assert.is_nil(calls.timer_cb)
+			end)
+		end)
+
 		it('re-runs the preview pipeline when the source file is saved', function()
 			local filepath = '/path/to/model.obj'
 			local source_buf = vim.api.nvim_create_buf(false, true)

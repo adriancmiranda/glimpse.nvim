@@ -400,6 +400,14 @@ require('glimpse').setup({
 })
 ```
 
+To start the turntable paused and rotate manually, disable autoplay. The default
+keys seek one frame backward/forward with `h`/`l`, and `<CR>` toggles playback:
+
+```lua
+renderer = { fps = 12, progressive = true, auto_play = false }
+keys = { seek_backward = 'h', seek_forward = 'l', toggle = '<CR>' }
+```
+
 `.blend` files try f3d first, then Blender when f3d is unavailable or fails.
 Blender renders frame 1 with the camera and render settings stored in the
 scene.
