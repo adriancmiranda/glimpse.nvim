@@ -15,6 +15,10 @@
 
 - [`2cbec35`](https://github.com/adriancmiranda/glimpse.nvim/commit/2cbec35d3bc37fa17d26d83a4d2b32332f40fba1) Handle opts table in model.preview and model.show
 
+### 📚 Documentation
+
+- [`99ffe33`](https://github.com/adriancmiranda/glimpse.nvim/commit/99ffe33fb1890e6898226e9e604326e01d065018) Document pipe as default frame extraction strategy
+
 
 ## [2.2.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v2.1.0..v2.2.0) - 2026-06-23
 
