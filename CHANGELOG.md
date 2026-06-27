@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - [`7cd0126`](https://github.com/adriancmiranda/glimpse.nvim/commit/7cd0126961c8e6aed2cd0b2bca0a215f8f13b4cf) Add :GlimpseClearCache command with optional images/previews argument
+- [`e87b0d8`](https://github.com/adriancmiranda/glimpse.nvim/commit/e87b0d8ec5b4e07ce6d7a674660a52ff891f9b04) Add pipe frame extraction strategy
 
 ### 🐛 Bug Fixes
 
