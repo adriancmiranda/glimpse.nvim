@@ -1,6 +1,6 @@
 --- Auto frame extraction strategy.
 --- Selects the best available strategy based on environment heuristics.
---- Currently delegates to poll when ffmpeg is available.
+--- Prefers pipe (no temp files, lower first-frame latency) when ffmpeg is available.
 local M = {}
 
 --- @param filepath string
@@ -16,7 +16,7 @@ function M.extract(filepath, opts, on_frame, on_done)
 		return function() end
 	end
 
-	return require('glimpse.frames.poll').extract(filepath, opts, on_frame, on_done)
+	return require('glimpse.frames.pipe').extract(filepath, opts, on_frame, on_done)
 end
 
 return M
