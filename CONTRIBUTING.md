@@ -57,10 +57,10 @@ lua/glimpse/
 ├── safety.lua            -- File validation and safety checks
 ├── frames/
 │   ├── init.lua          -- Router: selects strategy from config (auto/batch/poll/pipe)
-│   ├── auto.lua          -- Selects poll when ffmpeg is available
+│   ├── auto.lua          -- Selects pipe when ffmpeg is available
 │   ├── batch.lua         -- Low-res preview immediately, full-res all at once when done
 │   ├── poll.lua          -- Progressive delivery as ffmpeg writes files to temp dir
-│   └── pipe.lua          -- Binary stream via image2pipe (not yet implemented)
+│   └── pipe.lua          -- Binary-safe streaming via image2pipe + temp file polling (default)
 ├── previewer/
 │   ├── archive.lua       -- Archive previewer
 │   ├── cert.lua          -- X.509 certificate previewer

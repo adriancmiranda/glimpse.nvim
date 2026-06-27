@@ -181,6 +181,10 @@ loading trigger.
     },
     open = nil,
     frames = {
+      -- 'auto' | 'pipe' | 'poll' | 'batch'
+      -- 'pipe' streams frames via image2pipe (default, binary-safe, single temp file)
+      -- 'poll' writes numbered PNGs to a temp dir and polls for each
+      -- 'batch' extracts all frames first, then plays
       strategy = 'auto',
       per_second = 10,
       limit = 120,
