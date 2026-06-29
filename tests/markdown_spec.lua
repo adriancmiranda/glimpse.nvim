@@ -177,6 +177,23 @@ describe('markdown previewer', function()
 		assert.equals('# fallback', lines[1])
 	end)
 
+	it('falls back to raw Markdown when no renderer is installed', function()
+		local config = require('glimpse').get_config()
+		local saved_tools = vim.deepcopy(config.markdown.tools)
+		local filepath = vim.fn.tempname() .. '.md'
+		vim.fn.writefile({ '# title', '', '- item' }, filepath)
+		config.markdown.tools = { { 'glimpse-missing-markdown-renderer', '{input}' } }
+
+		local lines, highlights, err = markdown.preview_data(filepath, 40)
+
+		config.markdown.tools = saved_tools
+		vim.fn.delete(filepath)
+
+		assert.is_nil(err)
+		assert.same({ '# title', '', '- item' }, lines)
+		assert.same({}, highlights)
+	end)
+
 	it('converts ANSI rendered output into highlights for text consumers', function()
 		local config = require('glimpse').get_config()
 		local saved_tools = vim.deepcopy(config.markdown.tools)

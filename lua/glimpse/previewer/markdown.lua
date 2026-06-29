@@ -255,6 +255,14 @@ local function build_cmd(tool_args, filepath, width)
 	return cmd
 end
 
+local function read_file_raw(filepath)
+	local ok, lines = pcall(vim.fn.readfile, filepath)
+	if not ok then
+		return nil, 'failed to read markdown file'
+	end
+	return table.concat(lines, '\n'), nil
+end
+
 -- Run the configured tool and return raw output (may contain ANSI codes).
 local function run_tool_raw(filepath, width)
 	local cfg = require('glimpse').get_config()
@@ -277,7 +285,7 @@ local function run_tool_raw(filepath, width)
 	if #errors > 0 then
 		return nil, table.concat(errors, '; ')
 	end
-	return nil, 'no markdown renderer found (install leaf, glow, mdcat, or pandoc)'
+	return read_file_raw(filepath)
 end
 
 -- Convert raw output to plain lines for text-based consumers.
