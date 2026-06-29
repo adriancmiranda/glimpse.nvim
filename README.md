@@ -575,6 +575,7 @@ require('glimpse').setup({
       image = true,
       video = true,
       markdown = true,
+      model = true,
       archive = true,
       sqlite = false,
       font = false,
@@ -600,6 +601,7 @@ require('telescope').setup({
 
 - **Images** are rendered inline via Kitty Graphics Protocol with a 100ms debounce
 - **Videos** extract a thumbnail via ffmpeg before rendering
+- **3D models** render through the configured model pipeline inside the Telescope preview pane
 - **Archives, SQLite databases, fonts, keys, certificates, and binaries** use the matching Glimpse previewer inside the Telescope preview pane
 - **Other files** fall back to Telescope's default previewer
 

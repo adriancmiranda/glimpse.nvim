@@ -1,14 +1,21 @@
+local missing = {}
+
 local function save_package(names)
 	local saved = {}
 	for _, name in ipairs(names) do
-		saved[name] = package.loaded[name]
+		local value = package.loaded[name]
+		saved[name] = value == nil and missing or value
 	end
 	return saved
 end
 
 local function restore_package(saved)
 	for name, value in pairs(saved) do
-		package.loaded[name] = value
+		if value == missing then
+			package.loaded[name] = nil
+		else
+			package.loaded[name] = value
+		end
 	end
 end
 
@@ -279,6 +286,78 @@ describe('telescope integration', function()
 		end
 		if vim.api.nvim_win_is_valid(original_win) then
 			vim.api.nvim_set_current_win(original_win)
+		end
+		restore_package(saved)
+	end)
+
+	it('renders model previews through the pipeline previewer path', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.renderer',
+			'glimpse.previewer.model',
+			'telescope.previewers',
+			'telescope.from_entry',
+			'telescope.config',
+			'glimpse.integrations.telescope',
+		})
+
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = vim.api.nvim_get_current_win()
+		local preview_calls = {}
+		local fallback_calls = {}
+
+		stub_package('telescope.previewers', {
+			buffer_previewer_maker = function(filepath, bufnr, opts)
+				fallback_calls[#fallback_calls + 1] = { filepath = filepath, bufnr = bufnr, opts = opts }
+			end,
+			new_buffer_previewer = function(spec)
+				return spec
+			end,
+		})
+		stub_package('telescope.from_entry', {
+			path = function(entry)
+				return entry.path
+			end,
+		})
+		stub_package('telescope.config', {
+			pickers = {},
+			set_pickers = function()
+				return true
+			end,
+		})
+		stub_package('glimpse.renderer', {
+			close = function()
+				return true
+			end,
+		})
+		stub_package('glimpse.previewer.model', {
+			preview = function(filepath, opts)
+				preview_calls[#preview_calls + 1] = { filepath = filepath, opts = opts }
+				vim.bo[opts.target_buf].modifiable = true
+				vim.api.nvim_buf_set_lines(opts.target_buf, 0, -1, false, { 'model:' .. filepath })
+				vim.bo[opts.target_buf].modifiable = false
+			end,
+		})
+		stub_package('glimpse', {
+			get_preview_kind = function()
+				return 'model'
+			end,
+		})
+
+		local telescope = require('glimpse.integrations.telescope')
+		telescope.buffer_previewer_maker('/tmp/example.obj', buf, { winid = win })
+
+		assert.is_true(wait_for(function()
+			return preview_calls[1] ~= nil and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'model:/tmp/example.obj'
+		end))
+		assert.equals(0, #fallback_calls)
+		assert.equals('/tmp/example.obj', preview_calls[1].filepath)
+		assert.equals(win, preview_calls[1].opts.window)
+		assert.equals(buf, preview_calls[1].opts.target_buf)
+		assert.equals(win, preview_calls[1].opts.target_win)
+
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
 		end
 		restore_package(saved)
 	end)

@@ -82,34 +82,43 @@ local function _get_cfg(filepath)
 	return pipeline.resolve_config(cfg.pipelines, 'model', filepath)
 end
 
+local function _normalize_opts(opts)
+	if type(opts) ~= 'table' then
+		return opts, OPTS
+	end
+
+	local source_win = opts.window
+	local pp_opts = vim.tbl_extend('force', OPTS, opts)
+	pp_opts.window = nil
+	return source_win, pp_opts
+end
+
 --- Show the model (full view).
 --- @param filepath string
 --- @param source_win? number|{window?: number}
 function M.show(filepath, source_win)
-	if type(source_win) == 'table' then
-		source_win = source_win.window
-	end
+	local pp_opts
+	source_win, pp_opts = _normalize_opts(source_win)
 	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
 		vim.notify('[glimpse] no pipeline config for model preview', vim.log.levels.WARN)
 		return
 	end
-	pp.show(pipeline_cfg, filepath, source_win, OPTS)
+	pp.show(pipeline_cfg, filepath, source_win, pp_opts)
 end
 
 --- Preview the model in the current preview target.
 --- @param filepath string
 --- @param source_win? number|{window?: number}
 function M.preview(filepath, source_win)
-	if type(source_win) == 'table' then
-		source_win = source_win.window
-	end
+	local pp_opts
+	source_win, pp_opts = _normalize_opts(source_win)
 	local pipeline_cfg = _get_cfg(filepath)
 	if not pipeline_cfg then
 		vim.notify('[glimpse] no pipeline config for model preview', vim.log.levels.WARN)
 		return
 	end
-	pp.preview(pipeline_cfg, filepath, source_win, OPTS)
+	pp.preview(pipeline_cfg, filepath, source_win, pp_opts)
 end
 
 --- Cancel any in-flight render for the given window.

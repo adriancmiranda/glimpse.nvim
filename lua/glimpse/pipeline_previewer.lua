@@ -100,9 +100,11 @@ end
 --- @param filepath string Source file path
 --- @param mode 'show'|'preview'
 --- @param source_win? number Defaults to current window
---- @param opts? { label?: string } label used in error notifications
+--- @param opts? { label?: string, target_buf?: number, target_win?: number } label used in error notifications
 function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 	local label = (opts and opts.label) or 'pipeline'
+	local target_buf = opts and opts.target_buf
+	local target_win = opts and opts.target_win
 	local winid = source_win or vim.api.nvim_get_current_win()
 	local source_buf = vim.api.nvim_win_is_valid(winid) and vim.api.nvim_win_get_buf(winid) or nil
 	local session = {
@@ -187,18 +189,27 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 			return anim_buf, anim_win
 		end
 
+		if target_buf and target_win then
+			if not vim.api.nvim_buf_is_valid(target_buf) or not vim.api.nvim_win_is_valid(target_win) then
+				return nil, nil
+			end
+			anim_buf = target_buf
+			anim_win = target_win
+			return anim_buf, anim_win
+		end
+
 		if not vim.api.nvim_win_is_valid(winid) then
 			return nil, nil
 		end
 
 		local ps = require('glimpse.preview_state')
-		local target_win = nil
-		local target_buf = nil
+		local marked_win = nil
+		local marked_buf = nil
 		for _, w in ipairs(vim.api.nvim_list_wins()) do
 			local cbuf = vim.api.nvim_win_get_buf(w)
 			if w ~= winid and ps.is_marked(cbuf) then
-				target_win = w
-				target_buf = cbuf
+				marked_win = w
+				marked_buf = cbuf
 				break
 			end
 		end
@@ -209,9 +220,9 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 			vim.api.nvim_set_current_win(winid)
 		end
 
-		if target_win then
-			anim_win = target_win
-			anim_buf = target_buf
+		if marked_win then
+			anim_win = marked_win
+			anim_buf = marked_buf
 		else
 			vim.cmd('vsplit')
 			anim_buf = vim.api.nvim_create_buf(false, true)
@@ -388,6 +399,30 @@ function M.run(pipeline_cfg, filepath, mode, source_win, opts)
 		end
 
 		if result.path then
+			if target_buf and target_win then
+				if not vim.api.nvim_buf_is_valid(target_buf) or not vim.api.nvim_win_is_valid(target_win) then
+					if result.cleanup then
+						result.cleanup()
+					end
+					_states[winid] = nil
+					_tokens[winid] = nil
+					return
+				end
+				require('glimpse.renderer').render(target_buf, result.path, {
+					bufname = util.preview_buf_name(filepath),
+					winid = target_win,
+				})
+				require('glimpse.preview_state').mark(target_buf)
+				session.preview_path = result.path
+				session.preview_buf = target_buf
+				if result.cleanup then
+					_retain_static_result(winid, result)
+				end
+				_states[winid] = nil
+				_tokens[winid] = nil
+				return
+			end
+
 			local current_win = vim.api.nvim_get_current_win()
 			local restore_win = current_win ~= winid and vim.api.nvim_win_is_valid(winid)
 			if restore_win then
