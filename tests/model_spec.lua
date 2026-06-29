@@ -92,6 +92,9 @@ describe('model previewer', function()
 		})
 
 		stub_package('glimpse.renderer', {
+			render = function(b, path, opts)
+				calls.renderer[#calls.renderer + 1] = { op = 'render', buf = b, path = path, opts = opts }
+			end,
 			setup_animation_buf = function(b, w, id, _gc, _gr, _wc, _wr)
 				calls.renderer[#calls.renderer + 1] = { op = 'setup', buf = b, win = w, id = id }
 			end,
@@ -273,6 +276,20 @@ describe('model previewer', function()
 		calls.pipeline[1].on_done({ path = '/tmp/glimpse_model_1.png' }, nil)
 
 		assert.equals('preview', calls.route[1].mode)
+	end)
+
+	it('renders preview results into an explicit target buffer and window', function()
+		local model = require('glimpse.previewer.model')
+		model.preview('/path/to/model.obj', { window = 1, target_buf = 20, target_win = 2 })
+
+		calls.pipeline[1].on_done({ path = '/tmp/glimpse_model_1.png' }, nil)
+
+		assert.equals(0, #calls.route)
+		assert.equals('render', calls.renderer[1].op)
+		assert.equals(20, calls.renderer[1].buf)
+		assert.equals('/tmp/glimpse_model_1.png', calls.renderer[1].path)
+		assert.equals(2, calls.renderer[1].opts.winid)
+		assert.is_not_nil(calls.renderer[1].opts.bufname:match('^glimpse://preview/'))
 	end)
 
 	it('cleans a retained static result when the preview is cancelled', function()

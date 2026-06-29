@@ -201,6 +201,22 @@ local function _render_preview(filepath, bufnr, opts, request_id, kind)
 		return
 	end
 
+	if kind == 'model' then
+		if not vim.api.nvim_win_is_valid(win) or not vim.api.nvim_buf_is_valid(bufnr) then
+			return
+		end
+		_attach_preview_cleanup(win, bufnr)
+		require('glimpse.previewer.model').preview(filepath, {
+			window = win,
+			target_buf = bufnr,
+			target_win = win,
+		})
+		if _should_follow_cwd() then
+			dir.follow(filepath)
+		end
+		return
+	end
+
 	local previewers = {
 		markdown = require('glimpse.previewer.markdown'),
 		archive = require('glimpse.previewer.archive'),

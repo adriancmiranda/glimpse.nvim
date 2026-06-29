@@ -128,6 +128,7 @@
 ---@field pickers? string|string[]|table
 ---@field previewer? table
 ---@field previewer_opts? table
+---@field model? boolean
 ---@field follow_cwd? boolean Keep the tab cwd in sync with the previewed file (default: false)
 ---@field image? boolean
 ---@field video? boolean
@@ -351,6 +352,7 @@ local config = {
 			image = true,
 			video = true,
 			markdown = true,
+			model = true,
 			archive = true,
 			sqlite = true,
 			font = true,

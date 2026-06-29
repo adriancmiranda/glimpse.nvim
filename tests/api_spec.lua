@@ -94,6 +94,7 @@ describe('public api', function()
 			image = true,
 			video = true,
 			markdown = true,
+			model = true,
 			archive = true,
 			sqlite = true,
 			font = true,
