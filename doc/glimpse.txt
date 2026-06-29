@@ -188,6 +188,7 @@ GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
         {follow_cwd?}      (boolean)                Keep the tab cwd in sync with the previewed file (default: false)
         {image?}           (boolean)
         {video?}           (boolean)
+        {markdown?}        (boolean)
         {archive?}         (boolean)
         {sqlite?}          (boolean)
         {font?}            (boolean)
