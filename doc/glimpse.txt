@@ -185,6 +185,7 @@ GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
         {pickers?}         (string|string[]|table)
         {previewer?}       (table)
         {previewer_opts?}  (table)
+        {model?}           (boolean)
         {follow_cwd?}      (boolean)                Keep the tab cwd in sync with the previewed file (default: false)
         {image?}           (boolean)
         {video?}           (boolean)
