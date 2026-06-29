@@ -12,6 +12,7 @@
 - [`e87b0d8`](https://github.com/adriancmiranda/glimpse.nvim/commit/e87b0d8ec5b4e07ce6d7a674660a52ff891f9b04) [#124](https://github.com/adriancmiranda/glimpse.nvim/pull/124 "PR de @adriancmiranda") Add pipe frame extraction strategy
 - [`dfd96dd`](https://github.com/adriancmiranda/glimpse.nvim/commit/dfd96ddcb377411b4bf31fc8cd2b0cb2a87c9c45) [#128](https://github.com/adriancmiranda/glimpse.nvim/pull/128 "PR de @adriancmiranda") Add manual playback for pipeline animations
 - [`f153495`](https://github.com/adriancmiranda/glimpse.nvim/commit/f1534955d338997edcab568eacc6d0a93ec281f3) [#133](https://github.com/adriancmiranda/glimpse.nvim/pull/133 "PR de @adriancmiranda") *(telescope)* Render markdown previews
+- [`555bbd7`](https://github.com/adriancmiranda/glimpse.nvim/commit/555bbd708eab7747aa1a298637aaeb5e1f3f9c1a) [#135](https://github.com/adriancmiranda/glimpse.nvim/pull/135 "PR de @adriancmiranda") *(telescope)* Render model previews
 
 ### 🐛 Bug Fixes
 
