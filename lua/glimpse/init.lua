@@ -726,29 +726,40 @@ function M.close()
 	end
 end
 
+---@private
 ---@type fun(filepath: string): boolean Check whether the file is a supported image.
 M.is_image = util.is_image
+---@private
 ---@type fun(filepath: string): boolean|nil Check whether the file is a Git LFS pointer.
 M.is_git_lfs_pointer = util.is_git_lfs_pointer
 
+---@private
 ---@type fun(filepath: string): boolean Check whether the file is a supported video.
 M.is_video = util.is_video
+---@private
 ---@type fun(filepath: string): boolean Check whether the file is a Markdown document.
 M.is_markdown = util.is_markdown
+---@private
 ---@type fun(filepath: string): boolean
 M.is_archive = util.is_archive
+---@private
 ---@type fun(filepath: string): boolean
 M.is_sqlite = util.is_sqlite
 
+---@private
 ---@type fun(filepath: string): boolean Check whether the file is previewable.
 M.is_previewable = util.is_previewable
 
+---@private
 ---@type fun(filepath: string): boolean Check whether the file is an X.509 certificate.
 M.is_cert = util.is_cert
+---@private
 ---@type fun(filepath: string): boolean
 M.is_font = util.is_font
+---@private
 ---@type fun(filepath: string): boolean
 M.is_key = util.is_key
+---@private
 ---@type fun(filepath: string): boolean Check whether the file is a supported 3D model.
 M.is_model = util.is_model
 
