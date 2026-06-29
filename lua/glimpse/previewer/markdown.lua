@@ -6,9 +6,219 @@ local float = require('glimpse.float')
 local preview_cache = require('glimpse.preview_cache')
 local util = require('glimpse.util')
 
--- Strip ANSI escape sequences — used only for plain-text consumers (Telescope).
-local function strip_ansi(str)
-	return str:gsub('\27%[[%d;:]*[mKJHfABCDsuhlGr]', ''):gsub('\27%[%?[%d]*[lh]', ''):gsub('\r', '')
+local ANSI_16_COLORS = {
+	[0] = '#000000',
+	[1] = '#800000',
+	[2] = '#008000',
+	[3] = '#808000',
+	[4] = '#000080',
+	[5] = '#800080',
+	[6] = '#008080',
+	[7] = '#c0c0c0',
+	[8] = '#808080',
+	[9] = '#ff0000',
+	[10] = '#00ff00',
+	[11] = '#ffff00',
+	[12] = '#0000ff',
+	[13] = '#ff00ff',
+	[14] = '#00ffff',
+	[15] = '#ffffff',
+}
+
+local ansi_hl_cache = {}
+
+local function rgb_hex(red, green, blue)
+	if not red or not green or not blue then
+		return nil
+	end
+	red = math.max(0, math.min(255, red))
+	green = math.max(0, math.min(255, green))
+	blue = math.max(0, math.min(255, blue))
+	return string.format('#%02x%02x%02x', red, green, blue)
+end
+
+local function xterm_color(index)
+	if not index or index < 0 or index > 255 then
+		return nil
+	end
+	if ANSI_16_COLORS[index] then
+		return ANSI_16_COLORS[index]
+	end
+	if index >= 16 and index <= 231 then
+		local value = index - 16
+		local steps = { 0, 95, 135, 175, 215, 255 }
+		local red = steps[math.floor(value / 36) + 1]
+		local green = steps[math.floor((value % 36) / 6) + 1]
+		local blue = steps[(value % 6) + 1]
+		return rgb_hex(red, green, blue)
+	end
+	local level = 8 + ((index - 232) * 10)
+	return rgb_hex(level, level, level)
+end
+
+local function parse_sgr_params(params)
+	if params == '' then
+		return { 0 }
+	end
+
+	local parsed = {}
+	for param in params:gsub(':', ';'):gmatch('[^;]+') do
+		parsed[#parsed + 1] = tonumber(param) or 0
+	end
+	return parsed
+end
+
+local function ansi_group(style)
+	if not style.fg and not style.bg and not style.bold and not style.italic and not style.underline then
+		return nil
+	end
+
+	local key = table.concat({
+		style.fg or 'none',
+		style.bg or 'none',
+		style.bold and 'bold' or 'plain',
+		style.italic and 'italic' or 'roman',
+		style.underline and 'underline' or 'none',
+	}, ':')
+	if ansi_hl_cache[key] then
+		return ansi_hl_cache[key]
+	end
+
+	local name = 'GlimpseAnsi' .. tostring(vim.tbl_count(ansi_hl_cache) + 1)
+	vim.api.nvim_set_hl(0, name, {
+		fg = style.fg,
+		bg = style.bg,
+		bold = style.bold or nil,
+		italic = style.italic or nil,
+		underline = style.underline or nil,
+	})
+	ansi_hl_cache[key] = name
+	return name
+end
+
+local function apply_sgr(style, params)
+	local parsed = parse_sgr_params(params)
+	local index = 1
+	while index <= #parsed do
+		local code = parsed[index]
+		if code == 0 then
+			style.fg = nil
+			style.bg = nil
+			style.bold = false
+			style.italic = false
+			style.underline = false
+		elseif code == 1 then
+			style.bold = true
+		elseif code == 3 then
+			style.italic = true
+		elseif code == 4 then
+			style.underline = true
+		elseif code == 22 then
+			style.bold = false
+		elseif code == 23 then
+			style.italic = false
+		elseif code == 24 then
+			style.underline = false
+		elseif code == 39 then
+			style.fg = nil
+		elseif code == 49 then
+			style.bg = nil
+		elseif code >= 30 and code <= 37 then
+			style.fg = xterm_color(code - 30)
+		elseif code >= 40 and code <= 47 then
+			style.bg = xterm_color(code - 40)
+		elseif code >= 90 and code <= 97 then
+			style.fg = xterm_color(code - 90 + 8)
+		elseif code >= 100 and code <= 107 then
+			style.bg = xterm_color(code - 100 + 8)
+		elseif code == 38 or code == 48 then
+			local is_foreground = code == 38
+			local mode = parsed[index + 1]
+			if mode == 5 then
+				local color = xterm_color(parsed[index + 2])
+				if is_foreground then
+					style.fg = color
+				else
+					style.bg = color
+				end
+				index = index + 2
+			elseif mode == 2 then
+				local color = rgb_hex(parsed[index + 2], parsed[index + 3], parsed[index + 4])
+				if is_foreground then
+					style.fg = color
+				else
+					style.bg = color
+				end
+				index = index + 4
+			end
+		end
+		index = index + 1
+	end
+end
+
+local function ansi_to_lines(raw)
+	local lines = { '' }
+	local highlights = {}
+	local style = { fg = nil, bg = nil, bold = false, italic = false, underline = false }
+	local row = 0
+	local col = 0
+	local segment_start
+	local segment_group
+	local index = 1
+
+	local function close_segment()
+		if segment_group and segment_start and col > segment_start then
+			highlights[#highlights + 1] = { row, segment_start, col, segment_group }
+		end
+		segment_start = nil
+		segment_group = nil
+	end
+
+	local function refresh_segment()
+		local group = ansi_group(style)
+		if group ~= segment_group then
+			close_segment()
+			segment_group = group
+			segment_start = group and col or nil
+		end
+	end
+
+	while index <= #raw do
+		local esc_start, esc_end, params, command = raw:find('\27%[([%?%d;:]*)([%a])', index)
+		if esc_start == index then
+			if command == 'm' then
+				apply_sgr(style, params or '')
+				refresh_segment()
+			end
+			index = esc_end + 1
+		else
+			local next_index = esc_start or (#raw + 1)
+			local text = raw:sub(index, next_index - 1):gsub('\r', '')
+			for chunk, newline in text:gmatch('([^\n]*)(\n?)') do
+				if chunk ~= '' then
+					refresh_segment()
+					lines[#lines] = lines[#lines] .. chunk
+					col = col + #chunk
+				end
+				if newline == '\n' then
+					close_segment()
+					lines[#lines + 1] = ''
+					row = row + 1
+					col = 0
+				end
+				if newline == '' then
+					break
+				end
+			end
+			index = next_index
+		end
+	end
+
+	close_segment()
+	while #lines > 0 and lines[#lines] == '' do
+		lines[#lines] = nil
+	end
+	return lines, highlights
 end
 
 -- Substitute dynamic placeholders with the actual preview context.
@@ -70,16 +280,9 @@ local function run_tool_raw(filepath, width)
 	return nil, 'no markdown renderer found (install leaf, glow, mdcat, or pandoc)'
 end
 
--- Convert raw output to plain lines (ANSI stripped) for text-based consumers.
+-- Convert raw output to plain lines for text-based consumers.
 local function to_lines(raw)
-	local clean = strip_ansi(raw)
-	local lines = {}
-	for line in (clean .. '\n'):gmatch('([^\n]*)\n') do
-		lines[#lines + 1] = line
-	end
-	while #lines > 0 and lines[#lines] == '' do
-		lines[#lines] = nil
-	end
+	local lines = ansi_to_lines(raw)
 	return lines
 end
 
@@ -115,21 +318,22 @@ end
 --- @param filepath string
 ---@param width? number
 --- @return string[]|nil lines
---- @return nil highlights  (treesitter handles markdown highlighting)
+--- @return table[]|nil highlights
 --- @return string|nil err
 function M.preview_data(filepath, width)
 	width = width or vim.api.nvim_win_get_width(0)
-	local lines, err = preview_cache.memoize(filepath, 'markdown:' .. tostring(width), function()
-		local _, rendered_lines, run_err = render_lines(filepath, width)
+	local rendered, err = preview_cache.memoize(filepath, 'markdown:' .. tostring(width), function()
+		local raw, rendered_lines, run_err = render_lines(filepath, width)
 		if not rendered_lines then
 			return nil, run_err
 		end
-		return rendered_lines, nil
+		local _, highlights = ansi_to_lines(raw)
+		return { lines = rendered_lines, highlights = highlights }, nil
 	end)
-	if not lines then
+	if not rendered then
 		return nil, nil, err
 	end
-	return lines, nil, nil
+	return rendered.lines, rendered.highlights, nil
 end
 
 --- Render into the current buffer (direct :edit workflow).

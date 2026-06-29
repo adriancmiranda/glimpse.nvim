@@ -93,6 +93,7 @@ describe('public api', function()
 			follow_cwd = false,
 			image = true,
 			video = true,
+			markdown = true,
 			archive = true,
 			sqlite = true,
 			font = true,

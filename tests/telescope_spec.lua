@@ -104,6 +104,71 @@ describe('telescope integration', function()
 		restore_package(saved)
 	end)
 
+	it('renders markdown output with ANSI highlights in the Telescope buffer', function()
+		local saved = save_package({
+			'glimpse',
+			'glimpse.previewer.markdown',
+			'telescope.previewers',
+			'telescope.from_entry',
+			'telescope.config',
+			'glimpse.integrations.telescope',
+		})
+
+		local buf = vim.api.nvim_create_buf(false, true)
+		local win = vim.api.nvim_get_current_win()
+		local preview_width
+
+		stub_package('telescope.previewers', {
+			buffer_previewer_maker = function()
+				error('fallback previewer should not be called for markdown')
+			end,
+			new_buffer_previewer = function(spec)
+				return spec
+			end,
+		})
+		stub_package('telescope.from_entry', {
+			path = function(entry)
+				return entry.path
+			end,
+		})
+		stub_package('telescope.config', {
+			pickers = {},
+			set_pickers = function()
+				return true
+			end,
+		})
+		stub_package('glimpse', {
+			get_preview_kind = function()
+				return 'markdown'
+			end,
+		})
+		stub_package('glimpse.previewer.markdown', {
+			preview_data = function(_, width)
+				preview_width = width
+				return { 'Rendered Heading', '', 'item' }, {
+					{ 0, 0, 16, 'Title' },
+				}
+			end,
+		})
+
+		local telescope = require('glimpse.integrations.telescope')
+		telescope.buffer_previewer_maker('/tmp/example.md', buf, { winid = win })
+
+		assert.is_true(wait_for(function()
+			return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == 'Rendered Heading'
+		end))
+		assert.equals(vim.api.nvim_win_get_width(win), preview_width)
+		assert.equals('glimpse_markdown', vim.bo[buf].filetype)
+		local ns = vim.api.nvim_create_namespace('glimpse_telescope')
+		local extmarks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, {})
+		assert.is_true(#extmarks > 0)
+
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+		restore_package(saved)
+	end)
+
 	it('renders image and video previews through the media path', function()
 		local saved = save_package({
 			'glimpse',

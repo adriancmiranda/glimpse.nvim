@@ -574,6 +574,7 @@ require('glimpse').setup({
       pickers = { 'find_files', 'git_files' },
       image = true,
       video = true,
+      markdown = true,
       archive = true,
       sqlite = false,
       font = false,
