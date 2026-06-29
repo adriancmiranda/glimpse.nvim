@@ -131,6 +131,7 @@
 ---@field follow_cwd? boolean Keep the tab cwd in sync with the previewed file (default: false)
 ---@field image? boolean
 ---@field video? boolean
+---@field markdown? boolean
 ---@field archive? boolean
 ---@field sqlite? boolean
 ---@field font? boolean
@@ -349,6 +350,7 @@ local config = {
 			follow_cwd = false,
 			image = true,
 			video = true,
+			markdown = true,
 			archive = true,
 			sqlite = true,
 			font = true,

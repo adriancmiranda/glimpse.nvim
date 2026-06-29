@@ -177,6 +177,92 @@ describe('markdown previewer', function()
 		assert.equals('# fallback', lines[1])
 	end)
 
+	it('converts ANSI rendered output into highlights for text consumers', function()
+		local config = require('glimpse').get_config()
+		local saved_tools = vim.deepcopy(config.markdown.tools)
+		local filepath = vim.fn.tempname() .. '.md'
+		vim.fn.writefile({ '# colored' }, filepath)
+		config.markdown.tools = { { 'sh', '{input}' } }
+
+		local original_system = vim.fn.system
+		vim.fn.system = function()
+			return '\27[31mred\27[0m plain \27[1;34mbold blue\27[0m'
+		end
+
+		local lines, highlights, err = markdown.preview_data(filepath, 41)
+
+		vim.fn.system = original_system
+		config.markdown.tools = saved_tools
+		vim.fn.delete(filepath)
+
+		assert.is_nil(err)
+		assert.equals('red plain bold blue', lines[1])
+		assert.is_true(#highlights >= 2)
+		assert.equals(0, highlights[1][1])
+		assert.equals(0, highlights[1][2])
+		assert.equals(3, highlights[1][3])
+	end)
+
+	it('strips private CSI sequences from text consumers', function()
+		local config = require('glimpse').get_config()
+		local saved_tools = vim.deepcopy(config.markdown.tools)
+		local filepath = vim.fn.tempname() .. '.md'
+		vim.fn.writefile({ '# hidden cursor' }, filepath)
+		config.markdown.tools = { { 'sh', '{input}' } }
+
+		local original_system = vim.fn.system
+		vim.fn.system = function()
+			return '\27[?25lrendered\27[?25h'
+		end
+
+		local lines, highlights, err = markdown.preview_data(filepath, 43)
+
+		vim.fn.system = original_system
+		config.markdown.tools = saved_tools
+		vim.fn.delete(filepath)
+
+		assert.is_nil(err)
+		assert.equals('rendered', lines[1])
+		assert.equals(0, #highlights)
+	end)
+
+	it('supports ANSI 256-color and truecolor highlights', function()
+		local config = require('glimpse').get_config()
+		local saved_tools = vim.deepcopy(config.markdown.tools)
+		local filepath = vim.fn.tempname() .. '.md'
+		vim.fn.writefile({ '# colored' }, filepath)
+		config.markdown.tools = { { 'sh', '{input}' } }
+
+		local original_system = vim.fn.system
+		vim.fn.system = function()
+			return '\27[38;2;12;34;56mtrue\27[0m \27[38;5;196mred256\27[0m \27[48;2;1;2;3mbackground\27[0m'
+		end
+
+		local lines, highlights, err = markdown.preview_data(filepath, 42)
+
+		vim.fn.system = original_system
+		config.markdown.tools = saved_tools
+		vim.fn.delete(filepath)
+
+		assert.is_nil(err)
+		assert.equals('true red256 background', lines[1])
+		assert.equals(3, #highlights)
+		assert.equals(0, highlights[1][1])
+		assert.equals(0, highlights[1][2])
+		assert.equals(4, highlights[1][3])
+		assert.equals(5, highlights[2][2])
+		assert.equals(11, highlights[2][3])
+		assert.equals(12, highlights[3][2])
+		assert.equals(22, highlights[3][3])
+
+		local truecolor = vim.api.nvim_get_hl(0, { name = highlights[1][4] })
+		local color256 = vim.api.nvim_get_hl(0, { name = highlights[2][4] })
+		local background = vim.api.nvim_get_hl(0, { name = highlights[3][4] })
+		assert.equals(0x0c2238, truecolor.fg)
+		assert.equals(0xff0000, color256.fg)
+		assert.equals(0x010203, background.bg)
+	end)
+
 	it('memoizes markdown previews by width', function()
 		local config = require('glimpse').get_config()
 		local saved_tools = vim.deepcopy(config.markdown.tools)

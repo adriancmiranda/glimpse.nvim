@@ -202,6 +202,7 @@ local function _render_preview(filepath, bufnr, opts, request_id, kind)
 	end
 
 	local previewers = {
+		markdown = require('glimpse.previewer.markdown'),
 		archive = require('glimpse.previewer.archive'),
 		sqlite = require('glimpse.previewer.sqlite'),
 		font = require('glimpse.previewer.font'),
@@ -217,7 +218,8 @@ local function _render_preview(filepath, bufnr, opts, request_id, kind)
 		return
 	end
 
-	local lines, highlights, err = previewer.preview_data(filepath)
+	local preview_width = vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_width(win) or nil
+	local lines, highlights, err = previewer.preview_data(filepath, preview_width)
 	if not lines then
 		_set_text_preview(bufnr, { '[glimpse] ' .. (err or 'failed to render preview') }, nil, 'glimpse_preview')
 		return
