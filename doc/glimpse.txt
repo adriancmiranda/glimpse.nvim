@@ -185,6 +185,7 @@ GlimpseTelescopeConfig                                  *GlimpseTelescopeConfig*
         {pickers?}         (string|string[]|table)
         {previewer?}       (table)
         {previewer_opts?}  (table)
+        {model?}           (boolean)
         {follow_cwd?}      (boolean)                Keep the tab cwd in sync with the previewed file (default: false)
         {image?}           (boolean)
         {video?}           (boolean)
@@ -266,72 +267,6 @@ M.preview({filepath}, {opts?})                                       *M.preview*
 
 M.close()                                                              *M.close*
      Close the active preview.
-
-
-M.is_image                                                          *M.is_image*
-
-    Type: ~
-        (fun(filepath:string):boolean)  Check whether the file is a supported image.
-
-
-M.is_git_lfs_pointer                                      *M.is_git_lfs_pointer*
-
-    Type: ~
-        (fun(filepath:string):boolean|nil)  Check whether the file is a Git LFS pointer.
-
-
-M.is_video                                                          *M.is_video*
-
-    Type: ~
-        (fun(filepath:string):boolean)  Check whether the file is a supported video.
-
-
-M.is_markdown                                                    *M.is_markdown*
-
-    Type: ~
-        (fun(filepath:string):boolean)  Check whether the file is a Markdown document.
-
-
-M.is_archive                                                      *M.is_archive*
-
-    Type: ~
-        (fun(filepath:string):boolean)
-
-
-M.is_sqlite                                                        *M.is_sqlite*
-
-    Type: ~
-        (fun(filepath:string):boolean)
-
-
-M.is_previewable                                              *M.is_previewable*
-
-    Type: ~
-        (fun(filepath:string):boolean)  Check whether the file is previewable.
-
-
-M.is_cert                                                            *M.is_cert*
-
-    Type: ~
-        (fun(filepath:string):boolean)  Check whether the file is an X.509 certificate.
-
-
-M.is_font                                                            *M.is_font*
-
-    Type: ~
-        (fun(filepath:string):boolean)
-
-
-M.is_key                                                              *M.is_key*
-
-    Type: ~
-        (fun(filepath:string):boolean)
-
-
-M.is_model                                                          *M.is_model*
-
-    Type: ~
-        (fun(filepath:string):boolean)  Check whether the file is a supported 3D model.
 
 
 M.get_config()                                                    *M.get_config*
