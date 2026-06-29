@@ -18,6 +18,7 @@
 
 - [`2cbec35`](https://github.com/adriancmiranda/glimpse.nvim/commit/2cbec35d3bc37fa17d26d83a4d2b32332f40fba1) [#125](https://github.com/adriancmiranda/glimpse.nvim/pull/125 "PR de @adriancmiranda") Handle opts table in model.preview and model.show
 - [`5507509`](https://github.com/adriancmiranda/glimpse.nvim/commit/55075090b9b37b903c7665813057fa546a73789f) [#134](https://github.com/adriancmiranda/glimpse.nvim/pull/134 "PR de @adriancmiranda") *(markdown)* Fall back to raw text without renderer
+- [`80723ae`](https://github.com/adriancmiranda/glimpse.nvim/commit/80723ae5cafb1f0cfc02d15c8312affa579b2cbc) [#136](https://github.com/adriancmiranda/glimpse.nvim/pull/136 "PR de @adriancmiranda") *(docs)* Avoid duplicate vimdoc tags
 
 ### 📚 Documentation
 
