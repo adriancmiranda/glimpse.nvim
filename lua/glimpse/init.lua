@@ -517,6 +517,8 @@ local function resolve_kind(filepath)
 	return kind
 end
 
+---@private
+---@return boolean
 function M._should_use_inline()
 	if config.strategy == 'inline' then
 		return true
@@ -776,8 +778,8 @@ function M.get_config()
 	return config
 end
 
---- Return configuration values explicitly provided by the user.
---- @return GlimpseConfig
+---@private
+---@return GlimpseConfig
 function M._get_user_config()
 	return user_config
 end
