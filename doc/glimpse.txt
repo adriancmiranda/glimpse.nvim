@@ -216,9 +216,6 @@ M.setup({opts?})                                                       *M.setup*
         {opts?}  (GlimpseConfig)  Configuration options (merged with defaults)
 
 
-M._should_use_inline()                                    *M._should_use_inline*
-
-
 M.can_preview({filepath})                                        *M.can_preview*
      Return whether the file has a known previewer.
 
@@ -274,11 +271,6 @@ M.get_config()                                                    *M.get_config*
 
     Returns: ~
         (GlimpseConfig)
-
-
-M._get_user_config()                                        *M._get_user_config*
-     Return configuration values explicitly provided by the user.
-     @return GlimpseConfig
 
 
 M.get_terminal()                                                *M.get_terminal*
