@@ -27,6 +27,7 @@
 - [`99ffe33`](https://github.com/adriancmiranda/glimpse.nvim/commit/99ffe33fb1890e6898226e9e604326e01d065018) Document pipe as default frame extraction strategy
 - [`b014357`](https://github.com/adriancmiranda/glimpse.nvim/commit/b01435703240a8f7e30ea4e4ec3f06a615bff27f) [#129](https://github.com/adriancmiranda/glimpse.nvim/pull/129 "PR de @adriancmiranda") Highlight default configuration
 - [`3ddd930`](https://github.com/adriancmiranda/glimpse.nvim/commit/3ddd9302d6ea70736e427d8e1886f63c7a96973b) [#130](https://github.com/adriancmiranda/glimpse.nvim/pull/130 "PR de @adriancmiranda") Link pull requests in changelog
+- [`8a7e01f`](https://github.com/adriancmiranda/glimpse.nvim/commit/8a7e01fda07457fdd0f0d482504941a7d04c0dc3) [#141](https://github.com/adriancmiranda/glimpse.nvim/pull/141 "PR de @adriancmiranda") Document markdown renderer installation
 
 
 ## [2.2.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v2.1.0..v2.2.0) - 2026-06-23
