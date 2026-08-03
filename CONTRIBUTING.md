@@ -25,6 +25,20 @@
 | `wezterm` CLI | External pane in WezTerm |
 | `imgcat` | Included with iTerm2 shell integration |
 
+### Markdown renderer installation
+
+Install at least one Markdown renderer for local preview testing. The default configuration tries renderers in this order: `leaf`, `glow`, `mdcat`, `pandoc`, then `cat`.
+
+```bash
+# macOS (Homebrew): choose one
+brew install leaf-markdown-viewer
+# brew install glow
+# brew install mdcat
+# brew install pandoc
+```
+
+For Linux, the official installer commands include `curl .../leaf/main/scripts/install.sh | sh` for `leaf`, `go install github.com/charmbracelet/glow/v2@latest` for `glow`, `cargo install mdcat` for `mdcat`, and `sudo apt install pandoc` for Debian or Ubuntu. See the upstream installation guides for [leaf](https://github.com/rivolink/leaf#install), [glow](https://github.com/charmbracelet/glow#installation), [mdcat](https://github.com/swsnr/mdcat#installation), and [pandoc](https://pandoc.org/installing.html) when using another platform.
+
 ### tmux configuration (optional)
 
 ```bash

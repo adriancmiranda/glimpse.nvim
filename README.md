@@ -49,6 +49,11 @@
   - **Sixel**: xterm, foot, mlterm, contour
 
 > [!NOTE]
+> Windows is not currently a fully validated platform. Markdown previews may work
+> when a supported CLI renderer is available, but image protocols, terminal panes,
+> video previews, and external integrations may require additional setup or may not
+> work.
+> [!NOTE]
 > `magick` is required for inline image rendering and font rendering. Font preview still has a textual fallback if rendering is unavailable.
 
 ### Feature Dependencies
@@ -91,6 +96,38 @@ sudo apt install imagemagick ffmpeg
 sudo pacman -S imagemagick ffmpeg
 ```
 
+### Markdown renderer
+
+Markdown previews use the first executable found in the configured list. Install at least one renderer.
+
+```bash
+# macOS (Homebrew): choose one
+brew install leaf-markdown-viewer
+# brew install glow
+# brew install mdcat
+# brew install pandoc
+```
+
+On Linux, use the command for the renderer you want:
+
+```bash
+# leaf (Linux or macOS)
+curl -fsSL https://raw.githubusercontent.com/RivoLink/leaf/main/scripts/install.sh | sh
+
+# glow (requires Go)
+go install github.com/charmbracelet/glow/v2@latest
+
+# mdcat (requires Rust and Cargo)
+cargo install mdcat
+
+# pandoc (Debian or Ubuntu)
+sudo apt install pandoc
+```
+
+Other platform-specific options are documented in the [leaf installation guide](https://github.com/rivolink/leaf#install), [glow installation guide](https://github.com/charmbracelet/glow#installation), [mdcat installation guide](https://github.com/swsnr/mdcat#installation), and [pandoc installation guide](https://pandoc.org/installing.html).
+
+You do not need to install every renderer. The default fallback order is `leaf`, `glow`, `mdcat`, `pandoc`, then `cat`.
+
 ### Verify installation
 
 ```bash
@@ -98,6 +135,23 @@ magick --version
 f3d --version
 file --version
 xxd -h
+
+# Check whichever Markdown renderers are installed.
+for cmd in leaf glow mdcat pandoc; do
+  if command -v "$cmd" >/dev/null 2>&1; then
+    "$cmd" --version
+  fi
+done
+```
+
+PowerShell:
+
+```powershell
+'leaf', 'glow', 'mdcat', 'pandoc' | ForEach-Object {
+  if (Get-Command $_ -ErrorAction SilentlyContinue) {
+    & $_ --version
+  }
+}
 ```
 
 ## Usage
