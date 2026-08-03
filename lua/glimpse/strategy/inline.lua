@@ -26,6 +26,26 @@ local function window_col(win)
 	return pos[2]
 end
 
+local function resolve_vsplit_size(cfg_size, source_win, preview_win)
+	if type(cfg_size) == 'number' then
+		return cfg_size
+	end
+	if type(cfg_size) ~= 'table' then
+		return nil
+	end
+
+	local source_col = window_col(source_win)
+	local preview_col = window_col(preview_win)
+	if source_col == nil or preview_col == nil then
+		return cfg_size.right
+	end
+
+	if preview_col < source_col then
+		return cfg_size.left
+	end
+	return cfg_size.right
+end
+
 local function _render_existing_buffer(buf)
 	if not vim.api.nvim_buf_is_valid(buf) or renderer.has_placement(buf) then
 		return
@@ -122,12 +142,19 @@ function M.preview(filepath)
 	-- Create a vsplit with a new buffer
 	debug_log('preview create new split')
 	vim.cmd('vsplit')
+	local cfg = require('glimpse').get_config()
+	local win_size = resolve_vsplit_size(cfg.size, oil_win, vim.api.nvim_get_current_win())
+	if win_size then
+		vim.api.nvim_win_set_width(0, win_size)
+	end
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_win_set_buf(0, buf)
 	renderer.render(buf, filepath, { bufname = util.preview_buf_name(filepath, buf) })
 	preview_state.mark(buf)
 	vim.api.nvim_set_current_win(oil_win)
 end
+
+M._resolve_vsplit_size = resolve_vsplit_size
 
 --- Show an image in the current buffer.
 --- @param filepath string

@@ -199,6 +199,12 @@ local function _show_animated(filepath, mode, source_win)
 			anim_buf = vim.api.nvim_create_buf(false, true)
 			anim_win = vim.api.nvim_get_current_win()
 			vim.api.nvim_win_set_buf(anim_win, anim_buf)
+			if mode == 'preview' then
+				local win_size = require('glimpse.strategy.inline')._resolve_vsplit_size(config.size, oil_win, anim_win)
+				if win_size then
+					vim.api.nvim_win_set_width(anim_win, win_size)
+				end
+			end
 		end
 		if restore_win and vim.api.nvim_win_is_valid(current_win) then
 			vim.api.nvim_set_current_win(current_win)

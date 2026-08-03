@@ -24,6 +24,8 @@
 --- @see credits https://github.com/folke/snacks.nvim (snacks.image)
 --- @see source https://www.reddit.com/r/neovim/comments/1e1txpz/some_fun_with_oilnvim_and_wezterm_for_image/
 
+---@alias GlimpseSizeConfig number|{left?:number,right?:number,bottom?:number,top?:number}
+
 --- glimpse.nvim configuration.
 ---@class GlimpseConfig
 ---@field strategy? 'auto'|'inline'|'pane' Rendering method (default: 'auto')
@@ -43,6 +45,7 @@
 ---@field archive? GlimpseArchiveConfig Archive preview settings
 ---@field pipelines? table<string, GlimpsePipelineConfig> Conversion pipelines by preview type or extension
 ---@field integrations? GlimpseIntegrationsConfig Plugin integrations
+---@field size? GlimpseSizeConfig Split size: number for all positions, table for per-position
 
 ---@class GlimpsePreviewOptions
 ---@field target? 'auto' Reserved preview target (default: 'auto')
