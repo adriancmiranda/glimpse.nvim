@@ -4,6 +4,10 @@
 
 ## Development environment
 
+### Branch naming
+
+Use a change-oriented prefix followed by a short kebab-case description, for example `feat/telescope-model-preview`, `fix/markdown-renderer-fallback`, or `docs/markdown-renderers`. Accepted prefixes are `feat/`, `fix/`, `docs/`, `chore/`, `refactor/`, `test/`, `ci/`, `perf/`, and `revert/`. Run `make setup-hooks` to enable the local pre-push check. CI applies the same validation to pull requests from branches in this repository; pull requests from forks retain their contributor branch namespace.
+
 ### Required dependencies
 
 - **Neovim** >= 0.10

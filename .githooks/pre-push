@@ -1,0 +1,7 @@
+#!/bin/sh
+
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+[ -z "$branch" ] && exit 0
+
+repo_root=$(git rev-parse --show-toplevel)
+exec "$repo_root/.github/scripts/validate-branch-name.sh" "$branch"
