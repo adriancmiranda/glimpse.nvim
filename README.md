@@ -91,6 +91,22 @@ sudo apt install imagemagick ffmpeg
 sudo pacman -S imagemagick ffmpeg
 ```
 
+### Markdown renderer
+
+Markdown previews use the first executable found in the configured list. Install at least one renderer:
+
+```bash
+# macOS (Homebrew)
+brew install leaf-markdown-viewer
+brew install glow
+brew install mdcat
+brew install pandoc
+```
+
+For Homebrew, install `leaf` with `brew install leaf-markdown-viewer`. Other installation options are documented in the [leaf installation guide](https://github.com/rivolink/leaf#install). On Linux, install `pandoc` with your distribution package manager, or use the official installation instructions for `leaf`, `glow`, or `mdcat`.
+
+You do not need to install every renderer. The default fallback order is `leaf`, `glow`, `mdcat`, `pandoc`, then `cat`.
+
 ### Verify installation
 
 ```bash
@@ -98,6 +114,10 @@ magick --version
 f3d --version
 file --version
 xxd -h
+leaf --version       # optional
+glow --version       # optional
+mdcat --version      # optional
+pandoc --version     # optional
 ```
 
 ## Usage
