@@ -29,6 +29,10 @@
 - [`3ddd930`](https://github.com/adriancmiranda/glimpse.nvim/commit/3ddd9302d6ea70736e427d8e1886f63c7a96973b) [#130](https://github.com/adriancmiranda/glimpse.nvim/pull/130 "PR de @adriancmiranda") Link pull requests in changelog
 - [`8a7e01f`](https://github.com/adriancmiranda/glimpse.nvim/commit/8a7e01fda07457fdd0f0d482504941a7d04c0dc3) [#141](https://github.com/adriancmiranda/glimpse.nvim/pull/141 "PR de @adriancmiranda") Document markdown renderer installation
 
+### ⚙️ Miscellaneous Tasks
+
+- [`e60e421`](https://github.com/adriancmiranda/glimpse.nvim/commit/e60e421b2c3850c78f2f991f8e99673e36d890c9) [#142](https://github.com/adriancmiranda/glimpse.nvim/pull/142 "PR de @adriancmiranda") Validate branch naming
+
 
 ## [2.2.0](https://github.com/adriancmiranda/glimpse.nvim/compare/v2.1.0..v2.2.0) - 2026-06-23
 
